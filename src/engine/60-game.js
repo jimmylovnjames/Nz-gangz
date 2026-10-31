@@ -539,7 +539,8 @@ function createGame(world) {
       window.__auTelemetry = { engine: 'three', started, paused: pauseOpen, x: camera.position.x, z: camera.position.z, joyX: joy.x, joyY: joy.y };
       window.AUControls?.setPosition?.(camera.position.x, camera.position.z, 'THREE');
       if (Math.abs(joy.x) + Math.abs(joy.y) > 0.1) $('joyReadout').textContent = `${Math.round(camera.position.x)},${Math.round(camera.position.z)}`;
-      fists.update(dt, moving, sprinting);
+      const guardUp = enemies.some(e => e.alive && dist(e.p.position) < 8) || (darrenState.hostile && dist(darren.position) < 8) || (jobState.kev === 'fight' && dist(JOBS.kev.npc.position) < 8);
+      fists.update(dt, moving, sprinting, guardUp);
       for (const e of enemies) {
         if (!e.alive) continue;
         const h = e.p.userData.human;

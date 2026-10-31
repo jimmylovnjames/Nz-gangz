@@ -3,12 +3,12 @@
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
 const ASSET_CDN = 'https://cdn.jsdelivr.net/gh/jimmylovnjames/Nz-gangz@ccr-e2a07ab1-xlsvi1/assets/';
-// material key -> [Poly Haven asset, tile size in metres, rotate 90° (planks laid the other way)]
+// material key -> [Poly Haven asset, tile size in metres, rotate 90° (planks laid the other way), albedo boost]
 const PHOTO = {
   asphalt: ['asphalt_02', 3.0], patch: ['asphalt_02', 3.0], chipseal: ['tarred_gravel', 2.2],
   concrete: ['concrete_pavement', 1.8], kerb: ['concrete_floor_02', 2.0], path: ['concrete_floor_02', 2.0],
   pavers: ['herringbone_brick', 1.8], plazaPavers: ['herringbone_brick', 1.8],
-  brick: ['brick_wall_02', 2.0], plaster: ['beige_wall_002', 3.0], weatherboard: ['distressed_painted_planks', 1.6, true],
+  brick: ['brick_wall_02', 2.0], plaster: ['beige_wall_002', 3.0, false, 1.15], weatherboard: ['distressed_painted_planks', 1.6, true, 1.9],
   corrugated: ['corrugated_iron', 1.12], corrugatedRust: ['worn_corrugated_iron', 1.8],
   grass: ['leafy_grass', 2.0], gravel: ['gravel_floor', 2.25], yard: ['gravel_floor', 2.25],
   roller: ['painted_metal_shutter', 2.0], wood: ['weathered_brown_planks', 1.8, true], bark: ['bark_willow', 1.0],
@@ -64,7 +64,8 @@ class PhotoAssets {
     };
     m.map = prep(set.map); m.normalMap = prep(set.normalMap);
     m.roughnessMap = m.metalnessMap = m.aoMap = prep(set.arm);
-    m.normalScale.set(1, 1); m.needsUpdate = true;
+    m.normalScale.set(1, 1); if (p[3]) m.color.setScalar(p[3]); // scans painted darker than the house colours expect
+    m.needsUpdate = true;
   }
   // HDRI sky: decoded once, rotated so its sun sits at the preset's azimuth, analysed for sun and horizon colour.
   async loadHDRI(file, azimuthDeg) {

@@ -298,8 +298,12 @@ class Fists {
     }
     geo.computeVertexNormals();
   }
-  swing() { const i = this.next; this.punch[i] = 1; this.next = 1 - i; }
-  update(dt, moving, sprint) {
+  swing() { const i = this.next; this.punch[i] = 1; this.next = 1 - i; this.raised = 1.2; }
+  // Hands stay out of view until you swing or a fight is on; they slide up from below the frame.
+  update(dt, moving, sprint, guard) {
+    this.raised = Math.max(guard ? 1 : 0, (this.raised || 0) - dt);
+    this.show = lerp(this.show || 0, this.raised > 0 ? 1 : 0, 1 - Math.exp(-dt * 10));
+    this.group.visible = this.show > 0.02; this.group.position.y = (1 - this.show) * -0.35;
     this.bob += dt * (moving ? (sprint ? 13 : 9) : 1.6);
     this.hands.forEach((g, i) => {
       const s = g.userData.side;

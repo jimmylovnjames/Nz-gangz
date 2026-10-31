@@ -931,12 +931,12 @@ class TextureForge {
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
 const ASSET_CDN = 'https://cdn.jsdelivr.net/gh/jimmylovnjames/Nz-gangz@ccr-e2a07ab1-xlsvi1/assets/';
-// material key -> [Poly Haven asset, tile size in metres, rotate 90° (planks laid the other way)]
+// material key -> [Poly Haven asset, tile size in metres, rotate 90° (planks laid the other way), albedo boost]
 const PHOTO = {
   asphalt: ['asphalt_02', 3.0], patch: ['asphalt_02', 3.0], chipseal: ['tarred_gravel', 2.2],
   concrete: ['concrete_pavement', 1.8], kerb: ['concrete_floor_02', 2.0], path: ['concrete_floor_02', 2.0],
   pavers: ['herringbone_brick', 1.8], plazaPavers: ['herringbone_brick', 1.8],
-  brick: ['brick_wall_02', 2.0], plaster: ['beige_wall_002', 3.0], weatherboard: ['distressed_painted_planks', 1.6, true],
+  brick: ['brick_wall_02', 2.0], plaster: ['beige_wall_002', 3.0, false, 1.15], weatherboard: ['distressed_painted_planks', 1.6, true, 1.9],
   corrugated: ['corrugated_iron', 1.12], corrugatedRust: ['worn_corrugated_iron', 1.8],
   grass: ['leafy_grass', 2.0], gravel: ['gravel_floor', 2.25], yard: ['gravel_floor', 2.25],
   roller: ['painted_metal_shutter', 2.0], wood: ['weathered_brown_planks', 1.8, true], bark: ['bark_willow', 1.0],
@@ -992,7 +992,8 @@ class PhotoAssets {
     };
     m.map = prep(set.map); m.normalMap = prep(set.normalMap);
     m.roughnessMap = m.metalnessMap = m.aoMap = prep(set.arm);
-    m.normalScale.set(1, 1); m.needsUpdate = true;
+    m.normalScale.set(1, 1); if (p[3]) m.color.setScalar(p[3]); // scans painted darker than the house colours expect
+    m.needsUpdate = true;
   }
   // HDRI sky: decoded once, rotated so its sun sits at the preset's azimuth, analysed for sun and horizon colour.
   async loadHDRI(file, azimuthDeg) {
@@ -3096,8 +3097,12 @@ class Fists {
     }
     geo.computeVertexNormals();
   }
-  swing() { const i = this.next; this.punch[i] = 1; this.next = 1 - i; }
-  update(dt, moving, sprint) {
+  swing() { const i = this.next; this.punch[i] = 1; this.next = 1 - i; this.raised = 1.2; }
+  // Hands stay out of view until you swing or a fight is on; they slide up from below the frame.
+  update(dt, moving, sprint, guard) {
+    this.raised = Math.max(guard ? 1 : 0, (this.raised || 0) - dt);
+    this.show = lerp(this.show || 0, this.raised > 0 ? 1 : 0, 1 - Math.exp(-dt * 10));
+    this.group.visible = this.show > 0.02; this.group.position.y = (1 - this.show) * -0.35;
     this.bob += dt * (moving ? (sprint ? 13 : 9) : 1.6);
     this.hands.forEach((g, i) => {
       const s = g.userData.side;
@@ -4680,7 +4685,8 @@ function createGame(world) {
       window.__auTelemetry = { engine: 'three', started, paused: pauseOpen, x: camera.position.x, z: camera.position.z, joyX: joy.x, joyY: joy.y };
       window.AUControls?.setPosition?.(camera.position.x, camera.position.z, 'THREE');
       if (Math.abs(joy.x) + Math.abs(joy.y) > 0.1) $('joyReadout').textContent = `${Math.round(camera.position.x)},${Math.round(camera.position.z)}`;
-      fists.update(dt, moving, sprinting);
+      const guardUp = enemies.some(e => e.alive && dist(e.p.position) < 8) || (darrenState.hostile && dist(darren.position) < 8) || (jobState.kev === 'fight' && dist(JOBS.kev.npc.position) < 8);
+      fists.update(dt, moving, sprinting, guardUp);
       for (const e of enemies) {
         if (!e.alive) continue;
         const h = e.p.userData.human;
