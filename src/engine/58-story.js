@@ -5,6 +5,10 @@ const CAST = {
   manu: { name: 'MANU', color: '#f3d98c' },
   you: { name: 'YOU', color: '#b8f5e1' },
   darren: { name: 'DARREN', color: '#ff9a7a' },
+  shorty: { name: 'SHORTY', color: '#9fd86a' },
+  kev: { name: 'KEV', color: '#ffb04a' },
+  mikey: { name: 'MIKEY', color: '#7ac8ff' },
+  pita: { name: 'UNCLE PITA', color: '#e0c8ff' },
 };
 const SCRIPT = {
   proIntro: [
@@ -93,9 +97,101 @@ const SCRIPT = {
     { who: 'manu', id: 'ret_h3', text: 'Hard out. Here, a hundred\'s yours.', goto: 'returnEnd' },
   ],
   returnEnd: [
-    { who: 'manu', id: 'ret_4', text: 'Word gets round quick here, eh. Couple of the crews down the square been asking who you are.' },
-    { who: 'manu', id: 'ret_5', text: 'Go see who\'s keen. Just watch yourself.', result: 'done' },
+    { who: 'manu', id: 'ret_4', text: 'Bro, real talk... you\'re good at this, eh.' },
+    { who: 'manu', id: 'ret_5', text: 'My mate Shorty, the fulla I get my green off, he\'s always moaning. Reckons half the town owes him money.' },
+    { who: 'manu', id: 'ret_6', text: 'Want me to give him your number?' },
+    { choice: [
+      { who: 'you', id: 'ret_you_yes', text: 'Yeah, flick it to him.', next: 'numberYes' },
+      { who: 'you', id: 'ret_you_no', text: 'Nah, I\'m good, cuz.', next: 'numberNo' },
+    ] },
   ],
+  numberYes: [{ who: 'manu', id: 'ret_7', text: 'Sweet as. He\'ll flick you a text. Don\'t tell Aunty.', result: 'done' }],
+  numberNo: [{ who: 'manu', id: 'ret_8', text: 'Easy money, bro. ...Yeah, I\'m giving it to him anyway.', result: 'done' }],
+  manuAfter: [{ who: 'manu', id: 'manu_after', text: 'Shorty text you yet? Keep your phone on you, bro.' }],
+
+  // Shorty's place: three people owe him.
+  shortyMeet: [
+    { who: 'shorty', id: 'sh_01', text: 'So you\'re Manu\'s cousin. Thought you\'d be bigger.' },
+    { who: 'you', id: 'sh_02', text: 'Manu said you had a problem.' },
+    { who: 'shorty', id: 'sh_03', text: 'Problems, bro. Plural. Three of \'em.' },
+    { who: 'shorty', id: 'sh_04', text: 'Kev at the panel shop owes me six hundred. Reckons he forgot. He didn\'t forget.' },
+    { who: 'shorty', id: 'sh_05', text: 'Mikey owes three hundred. Skinny little hōha. He runs, every time. Hope you got your running shoes on.' },
+    { who: 'shorty', id: 'sh_06', text: 'And Uncle Pita. Hundred and fifty. ...He\'s alright, Pita. Just get it if you can, eh.' },
+    { who: 'shorty', id: 'sh_07', text: 'Bring it all back and you get a quarter. Sweet?' },
+    { choice: [{ who: 'you', id: 'sh_you_1', text: 'Sweet. Text me where they\'re at.', result: 'jobs' }] },
+  ],
+  shortyWaiting: [{ who: 'shorty', id: 'sh_wait', text: 'Still waiting on my money, bro. Kev, Mikey, Pita. It\'s all in your phone.' }],
+
+  kevMeet: [
+    { who: 'kev', id: 'kev_01', text: 'Who the hell are you?' },
+    { choice: [{ who: 'you', id: 'kev_you_1', text: 'Shorty sent me. Six hundred, Kev.', next: 'kevRefuses' }] },
+  ],
+  kevRefuses: [
+    { who: 'kev', id: 'kev_02', text: 'Shorty can come get it himself. Now get off my lot before I put you through the windscreen.' },
+    { choice: [{ who: 'you', id: 'kev_you_2', text: 'I\'m not going anywhere.', next: 'kevFights' }] },
+  ],
+  kevFights: [{ who: 'kev', id: 'kev_03', text: 'Right. Your funeral, boy.', result: 'fight' }],
+  kevBeaten: [
+    { who: 'kev', id: 'kev_04', text: 'Alright! Alright... it\'s in the till. Take it.' },
+    { who: 'you', id: 'kev_05', text: 'Pleasure doing business, Kev.', result: 'paid' },
+  ],
+  kevAgain: [{ who: 'kev', id: 'kev_06', text: 'You got your money. Piss off.' }],
+
+  mikeyRuns: [{ who: 'mikey', id: 'mikey_01', text: 'Nah nah nah, not today, bro!' }],
+  mikeyCaught: [
+    { who: 'mikey', id: 'mikey_02', text: 'Okay! Okay! I give up! Bro, you\'re fast.' },
+    { who: 'you', id: 'mikey_03', text: 'Three hundred, Mikey.' },
+    { who: 'mikey', id: 'mikey_04', text: '...That\'s all I got. Tell Shorty I\'m sorry, eh. Tell him I\'m sorry.', result: 'paid' },
+  ],
+  mikeyAgain: [{ who: 'mikey', id: 'mikey_05', text: 'I already paid! Leave us alone, man.' }],
+
+  pitaMeet: [
+    { who: 'pita', id: 'pita_01', text: 'Kia ora, boy. You\'re one of Shorty\'s, aren\'t you.' },
+    { who: 'you', id: 'pita_02', text: 'He says you owe him a hundred and fifty, Uncle.' },
+    { who: 'pita', id: 'pita_03', text: 'I know, I know. It\'s for my back, the weed. Doctor won\'t give me nothing that works.' },
+    { who: 'pita', id: 'pita_04', text: 'I\'ve got it here. It\'s the mokos\' school uniform money, but... here.' },
+    { choice: [
+      { who: 'you', id: 'pita_you_take', text: 'Sorry, Uncle. It\'s not personal.', next: 'pitaTake' },
+      { who: 'you', id: 'pita_you_cover', text: 'Keep it, Uncle. I\'ll square it with Shorty.', next: 'pitaCover' },
+    ] },
+  ],
+  pitaTake: [{ who: 'pita', id: 'pita_05', text: '...Tell him we\'re square.', result: 'take' }],
+  pitaCover: [{ who: 'pita', id: 'pita_06', text: 'Bless you, boy. Your nan raised you right.', result: 'cover' }],
+  pitaAgain: [{ who: 'pita', id: 'pita_07', text: 'Look after yourself out there, boy.' }],
+
+  shortyBackAll: [
+    { who: 'shorty', id: 'sh_back_1', text: 'Kev, Mikey and Pita? All three? Bro, you\'re a machine.', goto: 'shortyBackEnd' },
+  ],
+  shortyBackCovered: [
+    { who: 'shorty', id: 'sh_back_2', text: 'Pita\'s money smells a lot like your money, bro.' },
+    { who: 'you', id: 'sh_back_3', text: 'Money\'s money.' },
+    { who: 'shorty', id: 'sh_back_4', text: 'Ha. Fair. Paid is paid.', goto: 'shortyBackEnd' },
+  ],
+  shortyBackShort: [
+    { who: 'shorty', id: 'sh_back_5', text: 'You let Pita off? Soft, bro. That hundred and fifty\'s coming out of your end then.', goto: 'shortyBackEnd' },
+  ],
+  shortyBackEnd: [
+    { who: 'shorty', id: 'sh_back_6', text: 'Here. That\'s your quarter.' },
+    { who: 'shorty', id: 'sh_back_7', text: 'Listen. People are talking about you. The crews down the square want to see you.' },
+    { who: 'shorty', id: 'sh_back_8', text: 'That\'s a big deal, bro. Don\'t muck it up.', result: 'done' },
+  ],
+};
+
+// Phone texts (not voiced). {vars} are filled in by the game.
+const TEXTS = {
+  shortyHello: [
+    { from: 'shorty', text: 'yo its shorty. manus cuz?' },
+    { from: 'shorty', text: 'heard u sorted daz out 😂' },
+    { from: 'shorty', text: 'got a few ppl taking the piss. come thru, ill make it worth ur while' },
+    { from: 'shorty', text: '📍 {shortyPlace}' },
+    { from: 'you', text: 'on my way' },
+  ],
+  shortyJobs: [
+    { from: 'shorty', text: 'KEV - {kevPlace} - $600' },
+    { from: 'shorty', text: 'MIKEY - {mikeyPlace} - $300. he runs lol' },
+    { from: 'shorty', text: 'UNCLE PITA - {pitaPlace} - $150' },
+  ],
+  shortyDone: [{ from: 'shorty', text: 'all 3 sorted?? come see me' }],
 };
 
 class VoiceBank {

@@ -1,4 +1,4 @@
-# AOTEAROA: UNDERWORLD, Run 13 (cousin prologue + graphics overhaul)
+# AOTEAROA: UNDERWORLD, Run 14 (Manu, Darren and Shorty's jobs)
 
 Open `index.html` in a modern browser with internet access (Three.js loads from jsDelivr). On the phone: extract the ZIP and open `index.html`. For best results on a computer, serve the folder with `python -m http.server 8000` and visit `http://localhost:8000`.
 
@@ -6,14 +6,20 @@ Desktop: WASD or arrow keys to move, mouse to look (click to lock), click or HIT
 
 This is a playable *fictional district* vertical slice, not a geographically accurate map. All crews, characters and events are invented. Run 12 replaced the real gang names used in earlier runs with fictional crews; old saves are converted automatically.
 
-## Story: Chapter Zero (Run 13)
+## Story: Chapter Zero (Runs 13–14)
 
 1. **Friday night at Manu's.** You start on your cousin's couch playing *Kiwi Knuckle Kings 2 Turbo Edition*, a budget console fighter, best of three against him on an old CRT. Fight pad on phone: ◀ ▶ BLOCK SPECIAL KICK PUNCH. Desktop: A/D or arrows, J punch, K kick, L block, I or Space special. SKIP jumps to the end of the match.
 2. **The debt.** Mid-match Manu brings up Darren, who owes him $400 and has been dodging him. After the match you can offer to go collect it.
 3. **Darren.** He hangs out somewhere different depending on your hometown (outside a main-street shop, the park or the car park). Go soft (take $200, rest by Friday) or go hard (demand all $400, he squares up, knock him down).
-4. **Back to Manu** at his house in the suburbs for your cut, then the crews at the square want to meet you (the faction chapter from Run 11 continues from there).
+4. **Back to Manu** at his house in the suburbs for your cut. Impressed, he brings up his mate Shorty (his weed man), who's always moaning that half the town owes him, and offers to pass on your number.
+5. **Shorty texts you.** A phone button appears (top right) with MESSAGES and JOBS; texts buzz in with a toast. Every house has a street address now (NZ tree and bird street names), so Shorty sends his.
+6. **Three jobs for Shorty**, in any order:
+   - **Kev** at the panel shop, $600: tells you to get off his lot, so it's a scrap (he's tougher and hits harder than Darren).
+   - **Mikey**, $300: bolts as soon as you get close. He sprints in bursts then blows out, so use RUN to catch him. If he gets away he comes back to his spot.
+   - **Uncle Pita**, $150: a koro buying weed for his back with the grandkids' uniform money. Take it, or let him keep it and cover it yourself (if you can't, Shorty takes it out of your cut).
+7. **Back to Shorty** for a quarter of what you brought in. He reacts to how you handled Pita, then tells you the crews at the square want to see you (the faction chapter from Run 11 continues from there).
 
-Dialogue appears as subtitles with the speaker's name; tap the box to skip ahead. Every line has a voice slot: see **VOICE_SCRIPT.md** for all 55 lines with their ids. Put recordings in `voice/` next to `index.html` and list them in `voice/manifest.js` (`window.AU_VOICE = { pro_01: 'pro_01.m4a', ... }`). Lines without a recording stay as subtitles.
+Dialogue appears as subtitles with the speaker's name; tap the box to skip ahead. Every line has a voice slot: see **VOICE_SCRIPT.md** for all 100 lines with their ids. Put recordings in `voice/` next to `index.html` and list them in `voice/manifest.js` (`window.AU_VOICE = { pro_01: 'pro_01.m4a', ... }`). Lines without a recording stay as subtitles.
 
 Saves from Run 11 that were partway through the old hometown errand continue as the Darren job.
 

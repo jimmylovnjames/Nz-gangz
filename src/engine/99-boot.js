@@ -69,12 +69,16 @@ async function boot() {
   const dialogue = new Dialogue();
   const prologue = new Prologue(lounge, knuckle, dialogue);
   const homes = city.houses.filter(h => h.ring === 2);
-  const cousinHome = (homes.length ? homes : city.houses).reduce((best, h) => !best || Math.hypot(h.pos.x + 130, h.pos.z - 70) < Math.hypot(best.pos.x + 130, best.pos.z - 70) ? h : best, null);
-  const world = { scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0, dialogue, prologue, cousinHome, spots: city.spots };
+  const nearestHome = (x, z, skip) => (homes.length ? homes : city.houses).filter(h => !skip.includes(h)).reduce((best, h) => !best || Math.hypot(h.pos.x - x, h.pos.z - z) < Math.hypot(best.pos.x - x, best.pos.z - z) ? h : best, null);
+  const cousinHome = nearestHome(-130, 70, []);
+  const shortyHome = nearestHome(140, -75, [cousinHome]);
+  const pitaHome = nearestHome(85, 135, [cousinHome, shortyHome]);
+  const phone = new Phone();
+  const world = { scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0, dialogue, prologue, phone, cousinHome, shortyHome, pitaHome, spots: city.spots, realDt: 0 };
   window.__auDebug = { scene, renderer, camera, post, sky, city, lounge };
   window.__auStory = {
     get active() { return dialogue.active; }, get line() { return dialogue.line; }, get prologue() { return prologue.active; },
-    advance: () => dialogue.advance(), choose: i => dialogue.choose(i), skip: () => prologue.skip(), minigame: knuckle,
+    advance: () => dialogue.advance(), choose: i => dialogue.choose(i), skip: () => prologue.skip(), minigame: knuckle, phone,
   };
   setLoad(0.9, 'Compiling shaders…'); await nextTick();
   const game = createGame(world);
@@ -140,6 +144,8 @@ async function boot() {
     } else {
       setLook(false);
       dialogue.setPaused(game.isPaused()); dialogue.update(dt);
+      world.realDt = Math.min(elapsed / 1000, 0.5);
+      if (!game.isPaused()) phone.update(world.realDt);
       const forward = game.update(dt, now, G.uTime.value);
       sky.update(camera, forward);
       rain.update(camera);

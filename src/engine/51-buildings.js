@@ -340,6 +340,7 @@ Object.assign(City.prototype, {
         ops.sort((p, q) => p.a0 - q.a0);
         this.windowRow(wall, 'tiltslab', tint, 0, H, ops, 0, L, [0.7, 0.7, 1, 1]);
         const sign = 28 + Math.floor(this.rng() * 4);
+        this.spots.push(this.spotFrom(m, L * 0.35, -3, SHOP_NAMES[sign], 'warehouse'));
         const u0 = (sign % 2) * 0.5, v0 = 1 - (Math.floor(sign / 2) + 1) / 16;
         this.b.rect('signs', WP(wall, L / 2 - 4, H - 1.4, -0.03), wall.U, UP, 8, 0.9, { uv: [u0, v0, u0 + 0.5, v0, u0 + 0.5, v0 + 1 / 16, u0, v0 + 1 / 16] });
         this.wallBox('lamp', wall, L / 2 - 0.3, L / 2 + 0.3, H - 0.35, H - 0.2, -0.5, 0);

@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>AOTEAROA UNDERWORLD | RUN 13</title><style>body{margin:0;background:#080b0d;color:white;font:14px system-ui;overflow:hidden}canvas{display:block}#hud{position:absolute;top:12px;left:12px;text-shadow:0 2px 4px black;pointer-events:none}#panel{position:absolute;inset:0;background:#071014ed;display:grid;place-items:center;z-index:5}#menu{max-width:520px;padding:25px}h1{font-size:32px;margin:0;color:#e8ba55}button{background:#b88a35;color:#111;border:0;border-radius:8px;padding:12px;margin:5px;font-weight:bold}#notice{position:absolute;bottom:95px;left:50%;transform:translateX(-50%);background:#111c;padding:10px;border-radius:7px;text-align:center;max-width:85%}#cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:23px;pointer-events:none}#touch{position:absolute;bottom:15px;width:100%;display:flex;justify-content:space-between;pointer-events:none}#touch button{pointer-events:auto;opacity:.8;min-width:56px}#mapcredit{position:absolute;bottom:2px;right:5px;font-size:10px;color:#ddd}small{color:#bbb}
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>AOTEAROA UNDERWORLD | RUN 14</title><style>body{margin:0;background:#080b0d;color:white;font:14px system-ui;overflow:hidden}canvas{display:block}#hud{position:absolute;top:12px;left:12px;text-shadow:0 2px 4px black;pointer-events:none}#panel{position:absolute;inset:0;background:#071014ed;display:grid;place-items:center;z-index:5}#menu{max-width:520px;padding:25px}h1{font-size:32px;margin:0;color:#e8ba55}button{background:#b88a35;color:#111;border:0;border-radius:8px;padding:12px;margin:5px;font-weight:bold}#notice{position:absolute;bottom:95px;left:50%;transform:translateX(-50%);background:#111c;padding:10px;border-radius:7px;text-align:center;max-width:85%}#cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:23px;pointer-events:none}#touch{position:absolute;bottom:15px;width:100%;display:flex;justify-content:space-between;pointer-events:none}#touch button{pointer-events:auto;opacity:.8;min-width:56px}#mapcredit{position:absolute;bottom:2px;right:5px;font-size:10px;color:#ddd}small{color:#bbb}
 #panel{overflow-y:auto;align-items:start}#menu{width:min(560px,calc(100vw - 36px));margin:auto;box-sizing:border-box}#factions{max-height:180px;overflow:auto;padding:4px;background:#15201b}#factions button{font-size:11px;padding:8px;margin:3px}#factions button.selected{outline:2px solid #fff3a5}#hud{max-width:72%;line-height:1.45}#hud b{color:#f3d98c}#missionDistance{color:#b8f5e1}#notice{bottom:104px;min-width:180px;z-index:2}#pauseButton{position:absolute;right:8px;top:8px;z-index:3;background:#19231c;color:white;border:1px solid #829688}#choicePanel,#pausePanel{position:absolute;inset:0;z-index:8;background:#02080be8;display:none;align-items:center;justify-content:center;padding:18px;box-sizing:border-box}#choicePanel .dialog,#pausePanel .dialog{max-width:520px;width:100%;background:#17201f;border:1px solid #8c7650;border-radius:14px;padding:20px;box-sizing:border-box}#choicePanel button,#pausePanel button{display:block;width:100%;margin:9px 0;padding:15px;text-align:left}#saveState{font-size:12px;color:#b8f5e1}#continue{display:none;background:#52795f;color:white}#touch button{touch-action:none}#cross{color:#ffedac}#quest{color:#f6e2af}#waypoint{position:absolute;top:33%;left:50%;transform:translateX(-50%);font-weight:bold;text-shadow:0 2px 4px black;color:#f5da6c;pointer-events:none}#location{font-size:12px;color:#eee}@media(max-width:600px){#hud{top:8px;left:8px;font-size:12px;max-width:80%}#pauseButton{padding:8px;margin:3px}#notice{font-size:12px;bottom:115px}#touch button{min-width:50px;padding:11px;margin:2px}#mapcredit{display:none}}
 #miniMap{position:absolute;right:10px;bottom:143px;width:142px;height:142px;background:#081b19d9;border:1px solid #b7d2ae88;border-radius:10px;z-index:3;box-shadow:0 4px 18px #0009;touch-action:manipulation}#miniMap.compact{width:66px;height:66px;opacity:.8}@media(max-width:600px){#miniMap{right:7px;bottom:132px;width:112px;height:112px}}
 
@@ -18,9 +18,9 @@
 @media (pointer:fine) and (min-width:900px){#joystick{display:none}#touch{display:none}}
 
 /* Run 12: graphics overhaul UI */
-body:has(#panel:not([style*="none"])) :is(#joystick,#touch,#hud,#cross,#pauseButton,#miniMap,#waypoint,#notice,#fps,#dialogue,#mgPad,#mgSkip){display:none!important}
+body:has(#panel:not([style*="none"])) :is(#joystick,#touch,#hud,#cross,#pauseButton,#miniMap,#waypoint,#notice,#fps,#dialogue,#mgPad,#mgSkip,#phoneBtn,#phone,#toast){display:none!important}
 #loadState{margin:10px 0 4px;font-size:12px;color:#b8f5e1}#loadBar{height:4px;background:#1d2b28;border-radius:2px;overflow:hidden;margin-bottom:8px}#loadBar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#b88a35,#f3d98c);transition:width .25s}
-#fps{position:fixed;right:8px;top:calc(52px + env(safe-area-inset-top));z-index:3;font:11px ui-monospace,monospace;color:#cfe;background:#0009;padding:3px 6px;border-radius:5px;pointer-events:none;display:none}
+#fps{position:fixed;right:8px;top:calc(108px + env(safe-area-inset-top));z-index:3;font:11px ui-monospace,monospace;color:#cfe;background:#0009;padding:3px 6px;border-radius:5px;pointer-events:none;display:none}
 #gfxPanel{margin:10px 0;padding:10px;background:#0e1716;border-radius:10px}#gfxPanel .row{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:6px 0}#gfxPanel .row>span{width:72px;font-size:11px;color:#c9c2a8;letter-spacing:.06em}
 #pausePanel #gfxPanel button{display:inline-block;width:auto;margin:2px;padding:8px 10px;font-size:11px;text-align:center;background:#24302d;color:#e9e1c8;border:1px solid #4d5d57}#pausePanel #gfxPanel button.on{background:#b88a35;color:#111;border-color:#f3d98c}#gfxNote{font-size:11px;color:#b8f5e1;margin:4px 0 0}
 #pausePanel .dialog{max-height:calc(100vh - 36px);overflow-y:auto}
@@ -38,8 +38,24 @@ body.prologue.mg #mgPad{display:flex;position:fixed;left:0;right:0;bottom:calc(1
 #mgPad button[data-mg=punch]{background:#a87535e0}#mgPad button[data-mg=kick]{background:#8a3a2ae0}#mgPad button[data-mg=special]{background:#5a3a8ae0}
 body.prologue.mg #dialogue{bottom:auto;top:calc(10px + env(safe-area-inset-top));padding:7px 12px 8px}body.prologue.mg #dlgText{font-size:13px}
 #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:20;transition:opacity .65s}
+/* Phone */
+#phoneBtn{position:fixed;right:8px;top:calc(56px + env(safe-area-inset-top));z-index:4;width:44px;height:44px;padding:0;margin:0;border-radius:12px;font-size:20px;background:#19231c;border:1px solid #829688;color:#fff}
+#phoneBtn.ring{animation:ring .9s infinite;border-color:#9fd86a}#phoneBtn[data-unread]:not([data-unread=""])::after{content:attr(data-unread);position:absolute;top:-6px;right:-6px;background:#d23a2a;color:#fff;font:bold 11px system-ui;border-radius:9px;padding:1px 6px}
+@keyframes ring{0%,100%{transform:rotate(0)}10%{transform:rotate(-12deg)}20%{transform:rotate(12deg)}30%{transform:rotate(-8deg)}40%{transform:rotate(0)}}
+#phone{position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(92vw,380px);height:min(62vh,520px);background:#0c1113;border:2px solid #2c3338;border-radius:26px;z-index:9;display:none;flex-direction:column;overflow:hidden;box-shadow:0 10px 40px #000c}
+#phone.show{display:flex}.ph-head{display:flex;justify-content:space-between;align-items:center;padding:14px 16px 8px;font:bold 12px system-ui;letter-spacing:.1em;color:#c9d6d0}
+#phClose{margin:0;padding:6px 10px;background:#222a2e;color:#ddd;border-radius:8px}.ph-tabs{display:flex;gap:6px;padding:0 12px 8px}
+.ph-tabs button{flex:1;margin:0;padding:8px;font:bold 11px system-ui;background:#1a2124;color:#9fb0aa;border:1px solid #2c3338}.ph-tabs button.on{background:#2a3a30;color:#e8f5e8;border-color:#9fd86a}
+#phMsgs{flex:1;overflow-y:auto;padding:8px 12px 14px;display:flex;flex-direction:column;gap:6px}
+.bubble{max-width:78%;padding:8px 11px;border-radius:14px;font:14px/1.35 system-ui;word-wrap:break-word}.bubble b{display:block;font-size:10px;letter-spacing:.08em;color:#9fd86a;margin-bottom:2px}
+.bubble.them{align-self:flex-start;background:#232b2f;color:#eef}.bubble.me{align-self:flex-end;background:#2f6a4a;color:#fff}
+#phJobs{flex:1;overflow-y:auto;padding:4px 12px 14px}.job{background:#182024;border:1px solid #2c3338;border-radius:12px;padding:10px 12px;margin-bottom:8px;display:grid;gap:3px}
+.job b{color:#f3d98c;font:bold 14px system-ui}.job span{color:#c9d6d0;font-size:12px}.job i{font-style:normal;font-size:11px;color:#9fd86a;letter-spacing:.06em}.job.done{opacity:.55}.job.done b{text-decoration:line-through}.empty{color:#889;font-size:13px}
+#toast{position:fixed;left:50%;top:calc(10px + env(safe-area-inset-top));transform:translate(-50%,-140%);background:#0f1714f2;border:1px solid #9fd86a;color:#eef;padding:9px 14px;border-radius:12px;font:13px system-ui;z-index:12;max-width:86vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:transform .35s}
+#toast.show{transform:translate(-50%,0)}
+body.prologue :is(#phoneBtn,#phone){display:none!important}
 #hitFlash{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,transparent 45%,#7a0a0a 120%);opacity:0;transition:opacity .35s}
-</style><canvas id="miniMap" class="compact" width="180" height="180" aria-label="District minimap, tap to collapse" title="Tap to collapse minimap"></canvas><div id="panel"><div id="menu"><h1>AOTEAROA: UNDERWORLD</h1><p>CHAPTER ZERO: NOBODY KNOWS YOUR NAME</p><p>Friday night on your cousin Manu's couch. A busted old console, a few cans, and a debt somebody needs to collect. Fourteen crews are watching who steps up. Your hometown and your choices change how it plays out.</p><label for="hometown">CHOOSE YOUR HOMETOWN</label><select id="hometown" style="display:block;width:100%;padding:12px;margin:10px 0;background:#152320;color:white;border:1px solid #879b83"></select><p id="originStory"></p><div id="factions"></div><button id="independent">INDEPENDENT / NO FACTION</button><p><small>Choose a crew to approach after the prologue, or stay independent.</small></p><p><small>Playable vertical slice. Fictional characters and story. Desktop: WASD, mouse look, click to attack, Shift sprint, E interact, Esc pause. Phone: floating left joystick, drag right side to look, HIT/TALK, pause button. Save is device-local.</small></p><div id="loadState" aria-live="polite">Loading 3D engine…</div><div id="loadBar"><i></i></div><button id="start" disabled title="Loading 3D engine">NEW GAME</button><button id="continue" disabled title="Loading 3D engine">CONTINUE SAVED GAME</button><div id="saveState" aria-live="polite"></div></div></div><div id="hud"><small style="opacity:.65">R13 • COUSIN PROLOGUE</small><b id="status">HEALTH 100 | REP 0</b><div id="quest">Find your hometown contact</div><div id="missionDistance"></div><div id="location">FICTIONAL DISTRICT</div></div><div id="cross">+</div><div id="waypoint" aria-live="off"></div><button id="pauseButton" aria-label="Pause game">Ⅱ</button><div id="notice">Find the yellow diamond above your hometown contact. Press E or TALK nearby.</div><div id="joystick" aria-label="Floating movement joystick"><div id="joyBase"><div id="joyThumb"></div><span id="joyReadout" aria-live="off">MOVE</span></div><span id="controlStatus" aria-live="off">ENGINE WAIT</span></div><div id="touch"><div id="actions"><button id="interact">TALK</button><button id="attack">HIT</button><button data-m="sprint" id="sprint" aria-label="Hold to sprint">RUN</button></div></div><div id="choicePanel" role="dialog" aria-modal="true"><div class="dialog"><h2 id="choiceTitle">Choose your path</h2><p id="choiceText"></p><button id="routeCourier">The quiet job: collect the package</button><button id="routeBrawl">The loud job: win three fights</button><button id="choiceBack">Not yet</button></div></div><div id="pausePanel" role="dialog" aria-modal="true"><div class="dialog"><h2>PAUSED</h2><p>Progress saves automatically on mission changes and periodically on this device.</p><button id="resume">RESUME</button><button id="saveNow">SAVE NOW</button><div id="gfxPanel"><div class="row"><span>GRAPHICS</span><button data-gfx="low">LOW</button><button data-gfx="medium">MEDIUM</button><button data-gfx="high">HIGH</button><button data-gfx="ultra">ULTRA</button></div><div class="row"><span>TIME</span><button data-time="golden">GOLDEN HOUR</button><button data-time="overcast">OVERCAST</button><button data-time="night">NIGHT</button></div><div class="row"><span>WEATHER</span><button data-rain="0">DRY</button><button data-rain="1">DRIZZLE</button><button data-rain="2">RAIN</button></div><div class="row"><span>DISPLAY</span><button id="fpsToggle">SHOW FPS</button></div><p id="gfxNote"></p></div><button id="exportSave">EXPORT SAVE FILE</button><button id="importSave">IMPORT SAVE FILE</button><input id="saveFile" type="file" accept=".json,application/json" hidden><p id="transferStatus" role="status" aria-live="polite"></p><button id="restart">NEW GAME (RESTART)</button></div></div><div id="dialogue" role="dialog" aria-live="polite"><div id="dlgWho"></div><div id="dlgText"></div><div id="dlgChoices"></div></div><div id="mgPad"><div><button data-mg="left" aria-label="Move left">◀</button><button data-mg="right" aria-label="Move right">▶</button></div><div><button data-mg="block">BLOCK</button><button data-mg="special">SPECIAL</button><button data-mg="kick">KICK</button><button data-mg="punch">PUNCH</button></div></div><button id="mgSkip">SKIP ▶▶</button><div id="fade"></div><div id="fps"></div><div id="hitFlash"></div><div id="mapcredit">3D gameplay layout is fictional, not surveyed GIS</div><script>
+</style><canvas id="miniMap" class="compact" width="180" height="180" aria-label="District minimap, tap to collapse" title="Tap to collapse minimap"></canvas><div id="panel"><div id="menu"><h1>AOTEAROA: UNDERWORLD</h1><p>CHAPTER ZERO: NOBODY KNOWS YOUR NAME</p><p>Friday night on your cousin Manu's couch. A busted old console, a few cans, and a debt somebody needs to collect. Fourteen crews are watching who steps up. Your hometown and your choices change how it plays out.</p><label for="hometown">CHOOSE YOUR HOMETOWN</label><select id="hometown" style="display:block;width:100%;padding:12px;margin:10px 0;background:#152320;color:white;border:1px solid #879b83"></select><p id="originStory"></p><div id="factions"></div><button id="independent">INDEPENDENT / NO FACTION</button><p><small>Choose a crew to approach after the prologue, or stay independent.</small></p><p><small>Playable vertical slice. Fictional characters and story. Desktop: WASD, mouse look, click to attack, Shift sprint, E interact, Esc pause. Phone: floating left joystick, drag right side to look, HIT/TALK, pause button. Save is device-local.</small></p><div id="loadState" aria-live="polite">Loading 3D engine…</div><div id="loadBar"><i></i></div><button id="start" disabled title="Loading 3D engine">NEW GAME</button><button id="continue" disabled title="Loading 3D engine">CONTINUE SAVED GAME</button><div id="saveState" aria-live="polite"></div></div></div><div id="hud"><small style="opacity:.65">R14 • SHORTY'S JOBS</small><b id="status">HEALTH 100 | REP 0</b><div id="quest">Find your hometown contact</div><div id="missionDistance"></div><div id="location">FICTIONAL DISTRICT</div></div><div id="cross">+</div><div id="waypoint" aria-live="off"></div><button id="pauseButton" aria-label="Pause game">Ⅱ</button><div id="notice">Find the yellow diamond above your hometown contact. Press E or TALK nearby.</div><div id="joystick" aria-label="Floating movement joystick"><div id="joyBase"><div id="joyThumb"></div><span id="joyReadout" aria-live="off">MOVE</span></div><span id="controlStatus" aria-live="off">ENGINE WAIT</span></div><div id="touch"><div id="actions"><button id="interact">TALK</button><button id="attack">HIT</button><button data-m="sprint" id="sprint" aria-label="Hold to sprint">RUN</button></div></div><div id="choicePanel" role="dialog" aria-modal="true"><div class="dialog"><h2 id="choiceTitle">Choose your path</h2><p id="choiceText"></p><button id="routeCourier">The quiet job: collect the package</button><button id="routeBrawl">The loud job: win three fights</button><button id="choiceBack">Not yet</button></div></div><div id="pausePanel" role="dialog" aria-modal="true"><div class="dialog"><h2>PAUSED</h2><p>Progress saves automatically on mission changes and periodically on this device.</p><button id="resume">RESUME</button><button id="saveNow">SAVE NOW</button><div id="gfxPanel"><div class="row"><span>GRAPHICS</span><button data-gfx="low">LOW</button><button data-gfx="medium">MEDIUM</button><button data-gfx="high">HIGH</button><button data-gfx="ultra">ULTRA</button></div><div class="row"><span>TIME</span><button data-time="golden">GOLDEN HOUR</button><button data-time="overcast">OVERCAST</button><button data-time="night">NIGHT</button></div><div class="row"><span>WEATHER</span><button data-rain="0">DRY</button><button data-rain="1">DRIZZLE</button><button data-rain="2">RAIN</button></div><div class="row"><span>DISPLAY</span><button id="fpsToggle">SHOW FPS</button></div><p id="gfxNote"></p></div><button id="exportSave">EXPORT SAVE FILE</button><button id="importSave">IMPORT SAVE FILE</button><input id="saveFile" type="file" accept=".json,application/json" hidden><p id="transferStatus" role="status" aria-live="polite"></p><button id="restart">NEW GAME (RESTART)</button></div></div><div id="dialogue" role="dialog" aria-live="polite"><div id="dlgWho"></div><div id="dlgText"></div><div id="dlgChoices"></div></div><div id="mgPad"><div><button data-mg="left" aria-label="Move left">◀</button><button data-mg="right" aria-label="Move right">▶</button></div><div><button data-mg="block">BLOCK</button><button data-mg="special">SPECIAL</button><button data-mg="kick">KICK</button><button data-mg="punch">PUNCH</button></div></div><button id="mgSkip">SKIP ▶▶</button><div id="fade"></div><button id="phoneBtn" aria-label="Phone">📱</button><div id="phone" role="dialog" aria-label="Phone"><div class="ph-head"><span>PHONE</span><button id="phClose" aria-label="Close phone">✕</button></div><div class="ph-tabs"><button data-ph="msgs" class="on">MESSAGES</button><button data-ph="jobs">JOBS</button></div><div id="phMsgs"></div><div id="phJobs"></div></div><div id="toast" aria-live="polite"></div><div id="fps"></div><div id="hitFlash"></div><div id="mapcredit">3D gameplay layout is fictional, not surveyed GIS</div><script>
 window.__auEngineReady=false;
 // Render hometown choices even when the external 3D engine cannot be fetched.
 const fallbackHometowns={Northland:['Kaikohe','Kaitaia','Whangārei','Opononi'],Auckland:['South Auckland','West Auckland','Central Auckland','North Shore'],Waikato:['Hamilton','Huntly','Tokoroa'],'Bay of Plenty':['Tauranga','Rotorua','Whakatāne'],'East Coast':['Gisborne','Wairoa'],'Hawke’s Bay':['Napier','Hastings'],'Central North Island':['Taupō','New Plymouth','Whanganui','Palmerston North'],Wellington:['Wellington','Lower Hutt','Porirua'],'Top of South':['Nelson','Blenheim'],Canterbury:['Christchurch','Ashburton','Timaru'],'West Coast':['Greymouth','Hokitika'],Otago:['Dunedin','Queenstown','Wānaka'],Southland:['Invercargill','Bluff'],Islands:['Stewart Island / Rakiura','Chatham Islands']};
@@ -1862,6 +1878,7 @@ Object.assign(City.prototype, {
         ops.sort((p, q) => p.a0 - q.a0);
         this.windowRow(wall, 'tiltslab', tint, 0, H, ops, 0, L, [0.7, 0.7, 1, 1]);
         const sign = 28 + Math.floor(this.rng() * 4);
+        this.spots.push(this.spotFrom(m, L * 0.35, -3, SHOP_NAMES[sign], 'warehouse'));
         const u0 = (sign % 2) * 0.5, v0 = 1 - (Math.floor(sign / 2) + 1) / 16;
         this.b.rect('signs', WP(wall, L / 2 - 4, H - 1.4, -0.03), wall.U, UP, 8, 0.9, { uv: [u0, v0, u0 + 0.5, v0, u0 + 0.5, v0 + 1 / 16, u0, v0 + 1 / 16] });
         this.wallBox('lamp', wall, L / 2 - 0.3, L / 2 + 0.3, H - 0.35, H - 0.2, -0.5, 0);
@@ -1883,7 +1900,15 @@ Object.assign(City.prototype, {
 
 // ===== 52-zones.js =====
 // Zone generators: what fills each island. Local frames come from frameFor()/frameRaw().
+// Street names (NZ trees along x, birds along z) so houses get real-sounding addresses.
+const STREETS_X = ['Kauri Rd', 'Rimu St', 'Tōtara Ave', 'Mataī St', 'Kōwhai St', 'Pūriri St', 'Nīkau Pl', 'Rātā St', 'Miro St'];
+const STREETS_Z = ['Tūī St', 'Kererū Rd', 'Pīwakawaka Ave', 'Kea St', 'Kākā Rd', 'Weka St', 'Takahē Pl', 'Ruru St', 'Kōtare St'];
 Object.assign(City.prototype, {
+  streetFor(s, side) {
+    const i = side === 'w' ? s.x0 - ROAD.half : side === 'e' ? s.x1 + ROAD.half : side === 's' ? s.z0 - ROAD.half : s.z1 + ROAD.half;
+    const k = clamp(Math.round(i / ROAD.spacing), -4, 4) + 4;
+    return side === 'w' || side === 'e' ? STREETS_X[k] : STREETS_Z[k];
+  },
   split(len, min, max) {
     const out = []; let left = len;
     while (left > max) { const w = min + this.rng() * (max - min); if (left - w < min) break; out.push(w); left -= w; }
@@ -2071,7 +2096,8 @@ Object.assign(City.prototype.zoneGen, {
         this.b.box('timber', lbx, 0, -0.25, 0.08, 1.0, 0.08, { faces: 'XxZz' });
         this.b.box('trim', lbx, 1.0, -0.25, 0.32, 0.26, 0.42, { tint: col(this.pick([0xc8302a, 0x2a4a7a, 0xe8e2d0, 0x333333])) });
         this.b.setTransform(null);
-        this.houses.push({ ring: s.ring, ...this.spotFrom(m, h.x + h.W / 2, h.setback - 1.8, 'house', 'house'), spawn: this.spotFrom(m, (dx0 + dx1) / 2, -1.0, 'drive', 'drive') });
+        const number = (Math.floor((t + lotW / 2) / 9) * 2 + 1) + (side === 'n' ? 1 : 0);
+        this.houses.push({ ring: s.ring, ...this.spotFrom(m, h.x + h.W / 2, h.setback - 1.8, 'house', 'house'), spawn: this.spotFrom(m, (dx0 + dx1) / 2, -1.0, 'drive', 'drive'), address: `${number} ${this.streetFor(s, side)}` });
         if (this.rng() < 0.35) {
           const c = this.local(m, (dx0 + dx1) / 2, h.setback + 1.2 + this.rng() * 1.5);
           const rot = { s: 0, n: Math.PI, w: Math.PI / 2, e: -Math.PI / 2 }[side] + (this.rng() < 0.6 ? 0 : Math.PI);
@@ -3556,6 +3582,10 @@ const CAST = {
   manu: { name: 'MANU', color: '#f3d98c' },
   you: { name: 'YOU', color: '#b8f5e1' },
   darren: { name: 'DARREN', color: '#ff9a7a' },
+  shorty: { name: 'SHORTY', color: '#9fd86a' },
+  kev: { name: 'KEV', color: '#ffb04a' },
+  mikey: { name: 'MIKEY', color: '#7ac8ff' },
+  pita: { name: 'UNCLE PITA', color: '#e0c8ff' },
 };
 const SCRIPT = {
   proIntro: [
@@ -3644,9 +3674,101 @@ const SCRIPT = {
     { who: 'manu', id: 'ret_h3', text: 'Hard out. Here, a hundred\'s yours.', goto: 'returnEnd' },
   ],
   returnEnd: [
-    { who: 'manu', id: 'ret_4', text: 'Word gets round quick here, eh. Couple of the crews down the square been asking who you are.' },
-    { who: 'manu', id: 'ret_5', text: 'Go see who\'s keen. Just watch yourself.', result: 'done' },
+    { who: 'manu', id: 'ret_4', text: 'Bro, real talk... you\'re good at this, eh.' },
+    { who: 'manu', id: 'ret_5', text: 'My mate Shorty, the fulla I get my green off, he\'s always moaning. Reckons half the town owes him money.' },
+    { who: 'manu', id: 'ret_6', text: 'Want me to give him your number?' },
+    { choice: [
+      { who: 'you', id: 'ret_you_yes', text: 'Yeah, flick it to him.', next: 'numberYes' },
+      { who: 'you', id: 'ret_you_no', text: 'Nah, I\'m good, cuz.', next: 'numberNo' },
+    ] },
   ],
+  numberYes: [{ who: 'manu', id: 'ret_7', text: 'Sweet as. He\'ll flick you a text. Don\'t tell Aunty.', result: 'done' }],
+  numberNo: [{ who: 'manu', id: 'ret_8', text: 'Easy money, bro. ...Yeah, I\'m giving it to him anyway.', result: 'done' }],
+  manuAfter: [{ who: 'manu', id: 'manu_after', text: 'Shorty text you yet? Keep your phone on you, bro.' }],
+
+  // Shorty's place: three people owe him.
+  shortyMeet: [
+    { who: 'shorty', id: 'sh_01', text: 'So you\'re Manu\'s cousin. Thought you\'d be bigger.' },
+    { who: 'you', id: 'sh_02', text: 'Manu said you had a problem.' },
+    { who: 'shorty', id: 'sh_03', text: 'Problems, bro. Plural. Three of \'em.' },
+    { who: 'shorty', id: 'sh_04', text: 'Kev at the panel shop owes me six hundred. Reckons he forgot. He didn\'t forget.' },
+    { who: 'shorty', id: 'sh_05', text: 'Mikey owes three hundred. Skinny little hōha. He runs, every time. Hope you got your running shoes on.' },
+    { who: 'shorty', id: 'sh_06', text: 'And Uncle Pita. Hundred and fifty. ...He\'s alright, Pita. Just get it if you can, eh.' },
+    { who: 'shorty', id: 'sh_07', text: 'Bring it all back and you get a quarter. Sweet?' },
+    { choice: [{ who: 'you', id: 'sh_you_1', text: 'Sweet. Text me where they\'re at.', result: 'jobs' }] },
+  ],
+  shortyWaiting: [{ who: 'shorty', id: 'sh_wait', text: 'Still waiting on my money, bro. Kev, Mikey, Pita. It\'s all in your phone.' }],
+
+  kevMeet: [
+    { who: 'kev', id: 'kev_01', text: 'Who the hell are you?' },
+    { choice: [{ who: 'you', id: 'kev_you_1', text: 'Shorty sent me. Six hundred, Kev.', next: 'kevRefuses' }] },
+  ],
+  kevRefuses: [
+    { who: 'kev', id: 'kev_02', text: 'Shorty can come get it himself. Now get off my lot before I put you through the windscreen.' },
+    { choice: [{ who: 'you', id: 'kev_you_2', text: 'I\'m not going anywhere.', next: 'kevFights' }] },
+  ],
+  kevFights: [{ who: 'kev', id: 'kev_03', text: 'Right. Your funeral, boy.', result: 'fight' }],
+  kevBeaten: [
+    { who: 'kev', id: 'kev_04', text: 'Alright! Alright... it\'s in the till. Take it.' },
+    { who: 'you', id: 'kev_05', text: 'Pleasure doing business, Kev.', result: 'paid' },
+  ],
+  kevAgain: [{ who: 'kev', id: 'kev_06', text: 'You got your money. Piss off.' }],
+
+  mikeyRuns: [{ who: 'mikey', id: 'mikey_01', text: 'Nah nah nah, not today, bro!' }],
+  mikeyCaught: [
+    { who: 'mikey', id: 'mikey_02', text: 'Okay! Okay! I give up! Bro, you\'re fast.' },
+    { who: 'you', id: 'mikey_03', text: 'Three hundred, Mikey.' },
+    { who: 'mikey', id: 'mikey_04', text: '...That\'s all I got. Tell Shorty I\'m sorry, eh. Tell him I\'m sorry.', result: 'paid' },
+  ],
+  mikeyAgain: [{ who: 'mikey', id: 'mikey_05', text: 'I already paid! Leave us alone, man.' }],
+
+  pitaMeet: [
+    { who: 'pita', id: 'pita_01', text: 'Kia ora, boy. You\'re one of Shorty\'s, aren\'t you.' },
+    { who: 'you', id: 'pita_02', text: 'He says you owe him a hundred and fifty, Uncle.' },
+    { who: 'pita', id: 'pita_03', text: 'I know, I know. It\'s for my back, the weed. Doctor won\'t give me nothing that works.' },
+    { who: 'pita', id: 'pita_04', text: 'I\'ve got it here. It\'s the mokos\' school uniform money, but... here.' },
+    { choice: [
+      { who: 'you', id: 'pita_you_take', text: 'Sorry, Uncle. It\'s not personal.', next: 'pitaTake' },
+      { who: 'you', id: 'pita_you_cover', text: 'Keep it, Uncle. I\'ll square it with Shorty.', next: 'pitaCover' },
+    ] },
+  ],
+  pitaTake: [{ who: 'pita', id: 'pita_05', text: '...Tell him we\'re square.', result: 'take' }],
+  pitaCover: [{ who: 'pita', id: 'pita_06', text: 'Bless you, boy. Your nan raised you right.', result: 'cover' }],
+  pitaAgain: [{ who: 'pita', id: 'pita_07', text: 'Look after yourself out there, boy.' }],
+
+  shortyBackAll: [
+    { who: 'shorty', id: 'sh_back_1', text: 'Kev, Mikey and Pita? All three? Bro, you\'re a machine.', goto: 'shortyBackEnd' },
+  ],
+  shortyBackCovered: [
+    { who: 'shorty', id: 'sh_back_2', text: 'Pita\'s money smells a lot like your money, bro.' },
+    { who: 'you', id: 'sh_back_3', text: 'Money\'s money.' },
+    { who: 'shorty', id: 'sh_back_4', text: 'Ha. Fair. Paid is paid.', goto: 'shortyBackEnd' },
+  ],
+  shortyBackShort: [
+    { who: 'shorty', id: 'sh_back_5', text: 'You let Pita off? Soft, bro. That hundred and fifty\'s coming out of your end then.', goto: 'shortyBackEnd' },
+  ],
+  shortyBackEnd: [
+    { who: 'shorty', id: 'sh_back_6', text: 'Here. That\'s your quarter.' },
+    { who: 'shorty', id: 'sh_back_7', text: 'Listen. People are talking about you. The crews down the square want to see you.' },
+    { who: 'shorty', id: 'sh_back_8', text: 'That\'s a big deal, bro. Don\'t muck it up.', result: 'done' },
+  ],
+};
+
+// Phone texts (not voiced). {vars} are filled in by the game.
+const TEXTS = {
+  shortyHello: [
+    { from: 'shorty', text: 'yo its shorty. manus cuz?' },
+    { from: 'shorty', text: 'heard u sorted daz out 😂' },
+    { from: 'shorty', text: 'got a few ppl taking the piss. come thru, ill make it worth ur while' },
+    { from: 'shorty', text: '📍 {shortyPlace}' },
+    { from: 'you', text: 'on my way' },
+  ],
+  shortyJobs: [
+    { from: 'shorty', text: 'KEV - {kevPlace} - $600' },
+    { from: 'shorty', text: 'MIKEY - {mikeyPlace} - $300. he runs lol' },
+    { from: 'shorty', text: 'UNCLE PITA - {pitaPlace} - $150' },
+  ],
+  shortyDone: [{ from: 'shorty', text: 'all 3 sorted?? come see me' }],
 };
 
 class VoiceBank {
@@ -3818,6 +3940,68 @@ class Prologue {
 function fadeOut(then) { const f = $('fade'); f.style.opacity = '1'; setTimeout(then, 700); }
 function fadeIn() { const f = $('fade'); f.style.opacity = '0'; }
 
+// ===== 59-phone.js =====
+// In-game phone: texts arrive one by one with a buzz; JOBS lists who still owes what.
+const CONTACTS = { shorty: 'SHORTY', manu: 'MANU', you: 'YOU' };
+class Phone {
+  constructor() {
+    this.el = $('phone'); this.msgsEl = $('phMsgs'); this.jobsEl = $('phJobs'); this.btn = $('phoneBtn'); this.toast = $('toast');
+    this.log = []; this.jobs = []; this.queue = []; this.timer = 0; this.unread = 0; this.tab = 'msgs';
+    this.btn.addEventListener('click', () => this.isOpen ? this.close() : this.open(this.tab));
+    $('phClose').addEventListener('click', () => this.close());
+    document.querySelectorAll('[data-ph]').forEach(b => b.addEventListener('click', () => this.open(b.dataset.ph)));
+  }
+  get isOpen() { return this.el.classList.contains('show'); }
+  open(tab = 'msgs') {
+    this.tab = tab; this.el.classList.add('show');
+    document.querySelectorAll('[data-ph]').forEach(b => b.classList.toggle('on', b.dataset.ph === tab));
+    this.msgsEl.style.display = tab === 'msgs' ? 'flex' : 'none'; this.jobsEl.style.display = tab === 'jobs' ? 'block' : 'none';
+    if (tab === 'msgs') { this.unread = 0; this.badge(); this.msgsEl.scrollTop = 1e6; }
+  }
+  close() { this.el.classList.remove('show'); }
+  badge() { this.btn.dataset.unread = this.unread || ''; this.btn.classList.toggle('ring', this.unread > 0); }
+  // Queue texts; each arrives after a short "typing" pause. onDone fires after the last one.
+  receive(list, vars, onDone) {
+    const fill = t => t.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
+    list.forEach((m, i) => this.queue.push({ from: m.from, text: fill(m.text), last: i === list.length - 1 ? onDone : null }));
+  }
+  push(m, silent) {
+    this.log.push({ from: m.from, text: m.text }); if (this.log.length > 60) this.log.shift();
+    this.renderMsg(m);
+    if (!silent && m.from !== 'you') {
+      this.unread++; this.badge();
+      this.toast.textContent = `📱 ${CONTACTS[m.from] || m.from}: ${m.text}`; this.toast.classList.add('show');
+      clearTimeout(this.toastT); this.toastT = setTimeout(() => this.toast.classList.remove('show'), 3800);
+      try { navigator.vibrate?.(120); } catch (_) { }
+    }
+  }
+  renderMsg(m) {
+    const b = document.createElement('div'); b.className = 'bubble ' + (m.from === 'you' ? 'me' : 'them');
+    if (m.from !== 'you') { const n = document.createElement('b'); n.textContent = CONTACTS[m.from] || m.from; b.appendChild(n); }
+    b.appendChild(document.createTextNode(m.text)); this.msgsEl.appendChild(b); this.msgsEl.scrollTop = 1e6;
+  }
+  setJobs(jobs) {
+    this.jobs = jobs;
+    this.jobsEl.innerHTML = jobs.length ? '' : '<p class="empty">No jobs right now.</p>';
+    for (const j of jobs) {
+      const row = document.createElement('div'); row.className = 'job' + (j.done ? ' done' : '');
+      row.innerHTML = `<b></b><span></span><i></i>`;
+      row.children[0].textContent = `${j.name} · $${j.amount}`; row.children[1].textContent = j.where; row.children[2].textContent = j.status;
+      this.jobsEl.appendChild(row);
+    }
+  }
+  load(log) { this.log = []; this.msgsEl.innerHTML = ''; for (const m of (log || [])) if (m && typeof m.text === 'string') this.push({ from: String(m.from), text: m.text }, true); this.unread = 0; this.badge(); }
+  update(dt) {
+    if (!this.queue.length) return;
+    this.timer -= dt;
+    if (this.timer > 0) return;
+    const m = this.queue.shift(); this.push(m);
+    this.timer = m.from === 'you' ? 0.8 : 1.4 + Math.min(2, m.text.length * 0.03);
+    if (m.last) m.last();
+  }
+  clear() { this.queue = []; this.load([]); this.setJobs([]); this.close(); }
+}
+
 // ===== 60-game.js =====
 // Game logic ported from Run 11 (missions, factions, saves, UI), unchanged in behaviour except bug fixes:
 // movement no longer turns into NaN, forward follows the view after turning, and the waypoint/radar rotate correctly.
@@ -3836,12 +4020,12 @@ const migrateSave = s => {
 const FACTION_COLORS = [0x3764d8, 0xc33737, 0x4b8e68, 0x9c8d54, 0xe4b82c, 0x7e4b99, 0x2e8692, 0xa67639, 0x9b9b9b, 0x7b4444, 0x67928b, 0xb57e50, 0x6b6a9d, 0x8d6c80];
 const ORIGINS = { Northland: ['Kaikohe', 'Kaitaia', 'Whangārei', 'Opononi'], Auckland: ['South Auckland', 'West Auckland', 'Central Auckland', 'North Shore'], Waikato: ['Hamilton', 'Huntly', 'Tokoroa'], 'Bay of Plenty': ['Tauranga', 'Rotorua', 'Whakatāne'], 'East Coast': ['Gisborne', 'Wairoa'], 'Hawke’s Bay': ['Napier', 'Hastings'], 'Central North Island': ['Taupō', 'New Plymouth', 'Whanganui', 'Palmerston North'], Wellington: ['Wellington', 'Lower Hutt', 'Porirua'], 'Top of South': ['Nelson', 'Blenheim'], Canterbury: ['Christchurch', 'Ashburton', 'Timaru'], 'West Coast': ['Greymouth', 'Hokitika'], Otago: ['Dunedin', 'Queenstown', 'Wānaka'], Southland: ['Invercargill', 'Bluff'], Islands: ['Stewart Island / Rakiura', 'Chatham Islands'] };
 const SAVE_KEY = 'aotearoa-underworld-v2', SAVE_EXPORT_FORMAT = 'aotearoa-underworld-save';
-const STAGES = ['prologue', 'debt-find', 'debt-fight', 'debt-return', 'recruit', 'faction-choice', 'mission-courier', 'mission-brawl', 'mission-return', 'complete'];
+const STAGES = ['prologue', 'debt-find', 'debt-fight', 'debt-return', 'shorty-wait', 'shorty-meet', 'shorty-jobs', 'shorty-return', 'recruit', 'faction-choice', 'mission-courier', 'mission-brawl', 'mission-return', 'complete'];
 const VALID_STAGES = [...STAGES, ...Object.keys(LEGACY_STAGES)];
 const EYE = 1.62;
 
 function createGame(world) {
-  const { scene, camera, collision, charMaterial, fists, renderer, dialogue: dlg, prologue } = world;
+  const { scene, camera, collision, charMaterial, fists, renderer, dialogue: dlg, prologue, phone } = world;
   const mobile = matchMedia('(pointer:coarse)').matches;
   const collides = (x, z, r = 0.55) => collision.collides(x, z, r);
   function slideMove(p, dx, dz, r = 0.55) {
@@ -3962,17 +4146,66 @@ function createGame(world) {
   let hangout = hangouts[0];
   function placeDarren() {
     hangout = hangouts[hometownHash(hometown) % hangouts.length];
+    if (typeof placeJobs === 'function' && JOBS) placeJobs();
     const p = safeSpawn(hangout.pos.x, hangout.pos.z);
     darren.position.set(p.x, groundHeight(p.x, p.z), p.z); darren.rotation.y = hangout.rot;
     darrenState.hp = 3; darrenState.hostile = false; darrenState.down = false; darren.userData.human.reset();
   }
   const storyVars = () => ({ spot: hangout.place, hometown });
+  let JOBS = null;
+  // ---- Shorty's chapter: Manu's weed man has three people who owe him -------------------------
+  const sHome = world.shortyHome, pHome = world.pitaHome;
+  const shorty = person(sHome.pos.x, sHome.pos.z, { seed: 9001, skin: 0x6b4029, top: 0x1f3a2a, topCell: ATLAS.cotton, pants: 0x2a2a2a, pantsCell: ATLAS.track, face: ATLAS.faceC, beanie: 0x2f5a2a, pose: 'crossed', scale: 1.12 });
+  shorty.rotation.y = sHome.rot;
+  const kevSpot = (() => {
+    const ws = world.spots.filter(sp => sp.kind === 'warehouse').sort((a, b) => Math.hypot(a.pos.x, a.pos.z) - Math.hypot(b.pos.x, b.pos.z));
+    const w = ws.find(sp => sp.name === 'KAHU PANEL & PAINT') || ws[0];
+    return w ? { ...w, place: titleCase(w.name) } : { pos: new THREE.Vector3(180, ROAD.kerbH, -30), rot: 0, place: 'the panel shop' };
+  })();
+  JOBS = {
+    kev: { name: 'KEV', amount: 600, spot: kevSpot, npc: person(0, 0, { seed: 31, skin: 0xa86f4c, top: 0x34506a, topCell: ATLAS.canvas, pants: 0x34506a, pantsCell: ATLAS.canvas, face: ATLAS.faceC, shoes: 0x222222, scale: 1.08 }) },
+    mikey: { name: 'MIKEY', amount: 300, spot: null, npc: person(0, 0, { seed: 77, skin: 0xe0b090, top: 0x8a2a3a, topCell: ATLAS.cotton, pants: 0x2a2a2a, pantsCell: ATLAS.track, face: ATLAS.faceB, beanie: 0x222244, shoes: 0xf0f0f0, scale: 0.92 }) },
+    pita: { name: 'UNCLE PITA', amount: 150, spot: { ...pHome, place: pHome.address }, npc: person(0, 0, { seed: 61, skin: 0x7a4b31, top: 0x5a4a3a, topCell: ATLAS.knit, pants: 0x4a4a4a, pantsCell: ATLAS.canvas, face: ATLAS.faceC, beanie: 0x8a8a8a, pose: 'relaxed', scale: 0.96 }) },
+  };
+  let jobState = { kev: 'open', mikey: 'open', pita: 'open' }, shortyTimer = 0;
+  const kevRun = { hp: 4, down: false, attackT: 0 }, mikeyRun = { fleeing: false, burst: 0, tired: 0, escapedT: 0, barked: false };
+  const shortyMarker = new THREE.Mesh(new THREE.OctahedronGeometry(0.2), markerMat(0x9fd86a)); shortyMarker.position.y = 2.45; shorty.add(shortyMarker);
+  for (const j of Object.values(JOBS)) { j.marker = new THREE.Mesh(new THREE.OctahedronGeometry(0.18), markerMat(0x9fd86a)); j.marker.position.y = 2.2; j.npc.add(j.marker); }
+  function placeJobs() {
+    JOBS.mikey.spot = hangouts[(hometownHash(hometown) + 1) % hangouts.length];
+    for (const j of Object.values(JOBS)) {
+      const p = safeSpawn(j.spot.pos.x, j.spot.pos.z);
+      j.npc.position.set(p.x, groundHeight(p.x, p.z), p.z); j.npc.rotation.y = j.spot.rot; j.npc.userData.human.reset();
+    }
+    kevRun.hp = 4; kevRun.down = false; Object.assign(mikeyRun, { fleeing: false, burst: 0, tired: 0, escapedT: 0, barked: false });
+  }
+  const phoneVars = () => ({ shortyPlace: sHome.address, kevPlace: kevSpot.place, mikeyPlace: JOBS.mikey.spot.place, pitaPlace: pHome.address });
+  const jobDone = k => jobState[k] !== 'open' && jobState[k] !== 'fight';
+  const collected = () => (jobState.kev === 'paid' ? 600 : 0) + (jobState.mikey === 'paid' ? 300 : 0) + (jobState.pita === 'take' || jobState.pita === 'cover' ? 150 : 0);
+  function refreshJobs() {
+    const st = { open: 'OPEN', fight: 'SCRAPPING', paid: 'PAID', take: 'PAID', cover: 'YOU COVERED IT', short: 'LET OFF' };
+    phone.setJobs(['shorty-jobs', 'shorty-return'].includes(stage) ? Object.entries(JOBS).map(([k, j]) => ({ name: j.name, amount: j.amount, where: k === 'mikey' ? JOBS.mikey.spot.place + ' (he runs)' : j.spot.place, status: st[jobState[k]], done: jobDone(k) })) : []);
+  }
+  function checkJobs() {
+    refreshJobs();
+    if (stage === 'shorty-jobs' && ['kev', 'mikey', 'pita'].every(jobDone)) {
+      advance('shorty-return', 'That\'s all three. Take the money back to Shorty.');
+      phone.receive(TEXTS.shortyDone, phoneVars());
+    }
+  }
   const dist = p => Math.hypot(camera.position.x - p.x, camera.position.z - p.z);
   function objective() {
     if (stage === 'prologue') return ['Finish your game with Manu.', null];
     if (stage === 'debt-find') return [`Find Darren ${hangout.label} and collect Manu's $400.`, darren.position];
     if (stage === 'debt-fight') return ['Darren wants to scrap. Knock him down.', darren.position];
     if (stage === 'debt-return') return [`Take the $${debtCash} back to Manu at his place.`, manu.position];
+    if (stage === 'shorty-wait') return ['Manu\'s passing your number on. Keep your phone handy.', null];
+    if (stage === 'shorty-meet') return [`Go see Shorty at ${sHome.address}.`, shorty.position];
+    if (stage === 'shorty-jobs') {
+      const open = Object.entries(JOBS).filter(([k]) => !jobDone(k)).sort((a, b) => dist(a[1].npc.position) - dist(b[1].npc.position));
+      return [`Collect for Shorty (${3 - open.length}/3): ${open.map(([, j]) => j.name.replace('UNCLE ', '')).join(', ')}. Check JOBS on your phone.`, open[0]?.[1].npc.position || shorty.position];
+    }
+    if (stage === 'shorty-return') return [`Take the $${collected()} back to Shorty at ${sHome.address}.`, shorty.position];
     if (stage === 'recruit') return ['Meet a faction contact (coloured markers).', contacts[0].p.position];
     if (stage === 'faction-choice') return [`Talk to ${chosen} to choose your initiation.`, contacts.find(c => c.f === chosen)?.p.position || fixer.position];
     if (stage === 'mission-courier') return [`${chosen}: recover the package from the green marker.`, stash.position];
@@ -3989,7 +4222,7 @@ function createGame(world) {
   function store() {
     if (!saveAllowed || !started) return;
     try {
-      const data = { version: 2, stage, hometown, originRegion, chosen, rep, hp, cash, defeated, missionRoute, stamina, debtRoute, debtCash, enemyHP: enemies.map(e => e.hp), enemyAlive: enemies.map(e => e.alive), enemyPositions: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z })), x: camera.position.x, z: camera.position.z, yaw, pitch };
+      const data = { version: 2, stage, hometown, originRegion, chosen, rep, hp, cash, defeated, missionRoute, stamina, debtRoute, debtCash, jobs: jobState, phone: phone.log.slice(-40), enemyHP: enemies.map(e => e.hp), enemyAlive: enemies.map(e => e.alive), enemyPositions: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z })), x: camera.position.x, z: camera.position.z, yaw, pitch };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data)); $('saveState').textContent = 'Saved on this device';
     } catch (e) { $('saveState').textContent = 'Local save unavailable in this browser'; }
   }
@@ -4041,6 +4274,7 @@ function createGame(world) {
   function resetEnemy(e, i) { e.alive = true; e.hp = 3; e.dyingT = 0; e.p.userData.human.reset(); e.p.position.set(enemySpawns[i].x, groundHeight(enemySpawns[i].x, enemySpawns[i].z), enemySpawns[i].z); if (!e.p.parent) scene.add(e.p); }
   function beginNew() {
     saveAllowed = true; stage = 'prologue'; hp = 100; cash = 0; rep = 0; chapter = 0; defeated = 0; missionRoute = ''; stamina = 100; debtRoute = ''; debtCash = 0;
+    jobState = { kev: 'open', mikey: 'open', pita: 'open' }; phone.clear();
     placeDarren();
     enemies.forEach(resetEnemy);
     while (fx.children.length) fx.remove(fx.children[0]);
@@ -4064,7 +4298,11 @@ function createGame(world) {
     chosen = FACTIONS.includes(s.chosen) ? s.chosen : 'Independent';
     stage = s.stage; placeDarren();
     debtRoute = ['smooth', 'hard'].includes(s.debtRoute) ? s.debtRoute : ''; debtCash = [200, 400].includes(s.debtCash) ? s.debtCash : 0;
-    if (stage === 'debt-fight') darrenState.hostile = true; rep = Math.max(0, Number(s.rep) || 0); hp = Math.min(100, Math.max(1, Number(s.hp) || 100)); cash = Math.max(0, Number(s.cash) || 0);
+    if (stage === 'debt-fight') darrenState.hostile = true;
+    const sj = s.jobs || {}, okJob = v => ['open', 'fight', 'paid', 'take', 'cover', 'short'].includes(v);
+    jobState = { kev: okJob(sj.kev) ? sj.kev : 'open', mikey: okJob(sj.mikey) ? sj.mikey : 'open', pita: okJob(sj.pita) ? sj.pita : 'open' };
+    if (jobState.mikey === 'fight') jobState.mikey = 'open';
+    phone.load(Array.isArray(s.phone) ? s.phone.slice(-40) : []); shortyTimer = 6; refreshJobs(); rep = Math.max(0, Number(s.rep) || 0); hp = Math.min(100, Math.max(1, Number(s.hp) || 100)); cash = Math.max(0, Number(s.cash) || 0);
     defeated = Math.max(0, Number(s.defeated) || 0); missionRoute = s.missionRoute || '';
     stamina = Number.isFinite(s.stamina) ? Math.max(0, Math.min(100, s.stamina)) : 100;
     const p = safeSpawn(Number.isFinite(s.x) ? clamp(s.x, -260, 260) : 0, Number.isFinite(s.z) ? clamp(s.z, -260, 260) : 8); // Run 11 saves may sit inside the new buildings
@@ -4098,11 +4336,51 @@ function createGame(world) {
       faceEachOther(manu);
       dlg.run(debtRoute === 'hard' ? 'returnHard' : 'returnSmooth', storyVars(), () => {
         const cut = debtRoute === 'hard' ? 100 : 50; cash += cut; rep += debtRoute === 'hard' ? 30 : 15;
-        advance(chosen === 'Independent' ? 'recruit' : 'faction-choice', `Manu gave you $${cut}. ${chosen === 'Independent' ? 'The crews at the square want to meet you.' : `Go talk to ${chosen} at the square.`}`);
+        shortyTimer = 9; advance('shorty-wait', `Manu gave you $${cut}. He's passing your number to Shorty.`);
       });
       return;
     }
     if (dist(manu.position) < 4.5 && (stage === 'debt-find' || stage === 'debt-fight')) { faceEachOther(manu); dlg.run('manuWaiting', storyVars(), null); return; }
+    if (dist(manu.position) < 4.5 && (stage === 'shorty-wait' || stage === 'shorty-meet')) { faceEachOther(manu); dlg.run('manuAfter', storyVars(), null); return; }
+    if (dist(shorty.position) < 4.5 && stage === 'shorty-meet') {
+      faceEachOther(shorty);
+      dlg.run('shortyMeet', storyVars(), r => { if (r === 'jobs') { advance('shorty-jobs', 'Shorty texted you the three names. Open JOBS on your phone.'); phone.receive(TEXTS.shortyJobs, phoneVars(), () => refreshJobs()); refreshJobs(); } });
+      return;
+    }
+    if (dist(shorty.position) < 4.5 && stage === 'shorty-jobs') { faceEachOther(shorty); dlg.run('shortyWaiting', storyVars(), null); return; }
+    if (dist(shorty.position) < 4.5 && stage === 'shorty-return') {
+      faceEachOther(shorty);
+      const seq = jobState.pita === 'cover' ? 'shortyBackCovered' : jobState.pita === 'short' ? 'shortyBackShort' : 'shortyBackAll';
+      dlg.run(seq, storyVars(), () => {
+        const cut = Math.max(0, Math.round(collected() * 0.25) - (jobState.pita === 'short' ? 150 : 0));
+        cash += cut; rep += 25 + (jobState.pita === 'short' ? 0 : 10);
+        advance(chosen === 'Independent' ? 'recruit' : 'faction-choice', `Shorty paid you $${cut}. ${chosen === 'Independent' ? 'The crews at the square want to meet you.' : `Go talk to ${chosen} at the square.`}`);
+      });
+      return;
+    }
+    if (stage === 'shorty-jobs' || stage === 'shorty-return') {
+      const near = Object.entries(JOBS).filter(([, j]) => dist(j.npc.position) < 4.5).sort((a, b) => dist(a[1].npc.position) - dist(b[1].npc.position))[0];
+      if (near) {
+        const [k, j] = near; faceEachOther(j.npc);
+        if (k === 'kev' && jobState.kev === 'open') {
+          dlg.run('kevMeet', storyVars(), r => { if (r === 'fight') { jobState.kev = 'fight'; refreshJobs(); say('Kev wants to scrap. Knock him down.'); } });
+          return;
+        }
+        if (k === 'mikey' && jobState.mikey === 'open') { catchMikey(); return; }
+        if (k === 'pita' && jobState.pita === 'open') {
+          dlg.run('pitaMeet', storyVars(), r => {
+            if (r === 'take') { jobState.pita = 'take'; say('Uncle Pita paid $150.'); }
+            else if (r === 'cover') {
+              if (cash >= 150) { cash -= 150; jobState.pita = 'cover'; say('You paid Pita\'s $150 out of your own pocket.'); }
+              else { jobState.pita = 'short'; say('You let Uncle Pita off. Shorty will take it out of your cut.'); }
+            }
+            updateHUD(); store(); checkJobs();
+          });
+          return;
+        }
+        if (jobDone(k)) { dlg.run(k === 'kev' ? 'kevAgain' : k === 'mikey' ? 'mikeyAgain' : 'pitaAgain', storyVars(), null); return; }
+      }
+    }
     if (debtRoute && stage !== 'debt-fight' && dist(darren.position) < 4.5 && !darrenState.down) { faceEachOther(darren); dlg.run('darrenAgain', storyVars(), null); return; }
     if (stage === 'recruit') {
       const c = contacts.filter(c => dist(c.p.position) < 5).sort((a, b) => dist(a.p.position) - dist(b.p.position))[0];
@@ -4121,6 +4399,10 @@ function createGame(world) {
     if (stage === 'complete') { say(`Chapter complete. ${hometown} → ${chosen} → ${missionRoute}. Try a different origin and route for a different ending.`); return; }
     say(`Follow your current objective. ${objective()[0]}`);
   }
+  function catchMikey() {
+    mikeyRun.fleeing = false; faceEachOther(JOBS.mikey.npc);
+    dlg.run('mikeyCaught', storyVars(), () => { jobState.mikey = 'paid'; say('Mikey paid $300.'); updateHUD(); store(); checkJobs(); });
+  }
   function hit() {
     if (!started || pauseOpen || dlg.active) return;
     fists.swing();
@@ -4138,6 +4420,18 @@ function createGame(world) {
             advance('debt-return', 'Darren handed over the full $400. Take it to Manu.');
           }), 1400);
         } else say('Hit landed.');
+        updateHUD(); return;
+      }
+    }
+    if (jobState.kev === 'fight' && !kevRun.down) {
+      const kev = JOBS.kev.npc, delta = kev.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position), d = delta.length();
+      if (d < 4 && delta.normalize().dot(forward) > 0.45) {
+        kevRun.hp--; bloodAt(kev.position); slideMove(kev.position, forward.x * 0.35, forward.z * 0.35, 0.4);
+        world.shake = 0.18; kev.userData.human.hit();
+        if (kevRun.hp <= 0) {
+          kevRun.down = true; kev.userData.human.knockDown(); rep += 8; say('Kev is down.');
+          setTimeout(() => dlg.run('kevBeaten', storyVars(), () => { kev.userData.human.reset(); kevRun.down = false; jobState.kev = 'paid'; say('Kev paid $600.'); updateHUD(); store(); checkJobs(); }), 1400);
+        } else say('Hit landed. Kev is tough.');
         updateHUD(); return;
       }
     }
@@ -4290,12 +4584,47 @@ function createGame(world) {
           }
         } else { h.mode = 'idle'; h.speed = 0; }
       }
+      // Shorty texts a little while after Manu passes your number on.
+      if (stage === 'shorty-wait' && (shortyTimer -= world.realDt || dt) <= 0) {
+        shortyTimer = 1e9; phone.receive(TEXTS.shortyHello, phoneVars(), () => advance('shorty-meet', `Shorty texted. Go see him at ${sHome.address}.`));
+      }
+      // Kev fights like a panel beater: slower than Darren, hits harder.
+      if (jobState.kev === 'fight' && !kevRun.down) {
+        const kev = JOBS.kev.npc, h = kev.userData.human, d = dist(kev.position);
+        let sp = 0;
+        if (d < 22 && d > 1.9) { const b0 = kev.position.clone(); slideMove(kev.position, (camera.position.x - kev.position.x) / d * dt * 1.5, (camera.position.z - kev.position.z) / d * dt * 1.5, 0.45); sp = b0.distanceTo(kev.position) / Math.max(dt, 1e-4); }
+        faceEachOther(kev); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle'; kev.position.y = groundHeight(kev.position.x, kev.position.z);
+        if (d < 1.8 && !talking) {
+          hp = Math.max(0, hp - dt * 8);
+          kevRun.attackT -= dt; if (kevRun.attackT <= 0) { kevRun.attackT = 1.0 + rnd() * 0.4; h.punch(); world.hurt = 1; world.shake = 0.16; }
+          if (hp === 0) { hp = 100; const sp2 = sHome.spawn.pos; camera.position.set(sp2.x, groundHeight(sp2.x, sp2.z) + EYE, sp2.z); say('Kev dropped you. You came to outside Shorty\'s.'); }
+        }
+      }
+      // Mikey bolts when you get close: sprint bursts, then he blows out and you can catch him.
+      if (stage === 'shorty-jobs' && jobState.mikey === 'open' && !talking) {
+        const mk = JOBS.mikey.npc, h = mk.userData.human, d = dist(mk.position);
+        if (mikeyRun.escapedT > 0) {
+          if ((mikeyRun.escapedT -= dt) <= 0) { const p = safeSpawn(JOBS.mikey.spot.pos.x, JOBS.mikey.spot.pos.z); mk.position.set(p.x, groundHeight(p.x, p.z), p.z); mikeyRun.fleeing = false; mikeyRun.barked = false; mk.visible = true; }
+        } else if (d < 1.9) catchMikey();
+        else if (!mikeyRun.fleeing && d < 11) { mikeyRun.fleeing = true; mikeyRun.burst = 4.5; mikeyRun.tired = 0; if (!mikeyRun.barked) { mikeyRun.barked = true; dlg.bark('mikeyRuns'); } }
+        if (mikeyRun.fleeing && mikeyRun.escapedT <= 0) {
+          let speed;
+          if (mikeyRun.burst > 0) { mikeyRun.burst -= dt; speed = 9.2; if (mikeyRun.burst <= 0) mikeyRun.tired = 2.4; }
+          else { mikeyRun.tired -= dt; speed = 3.2; if (mikeyRun.tired <= 0) mikeyRun.burst = 3.5; }
+          const ax = (mk.position.x - camera.position.x) / d, az = (mk.position.z - camera.position.z) / d, b0 = mk.position.clone();
+          slideMove(mk.position, ax * speed * dt, az * speed * dt, 0.4);
+          if (b0.distanceTo(mk.position) < speed * dt * 0.3) slideMove(mk.position, -az * speed * dt, ax * speed * dt, 0.4); // cornered: dodge sideways
+          h.speed = b0.distanceTo(mk.position) / Math.max(dt, 1e-4); mk.rotation.y = Math.atan2(mk.position.x - b0.x, mk.position.z - b0.z) || mk.rotation.y;
+          mk.position.y = groundHeight(mk.position.x, mk.position.z);
+          if (d > 70) { mikeyRun.escapedT = 8; mk.visible = false; say(`Mikey got away. He'll be back at ${JOBS.mikey.spot.place} soon.`); }
+        } else h.speed = 0;
+      }
       if (now - lastHud > 180) { updateHUD(); drawMiniMap(); lastHud = now; }
     }
     // Dying enemies stay down for a few seconds, then leave the scene.
     for (const e of enemies) if (!e.alive && e.dyingT > 0) { e.dyingT += dt; if (e.dyingT > 4.5 && e.p.parent) { scene.remove(e.p); e.dyingT = 0; } }
     // Crew contacts and the fixer turn their heads to watch the player.
-    for (const c of [...contacts.map(c => c.p), fixer, manu, ...(darrenState.hostile ? [] : [darren])]) {
+    for (const c of [...contacts.map(c => c.p), fixer, manu, shorty, JOBS.pita.npc, ...(darrenState.hostile ? [] : [darren]), ...(jobState.kev === 'fight' ? [] : [JOBS.kev.npc])]) {
       const h = c.userData.human, dx = camera.position.x - c.position.x, dz = camera.position.z - c.position.z, d = Math.hypot(dx, dz);
       const want = d < 9 ? Math.atan2(dx, dz) - c.rotation.y : 0;
       h.lookYaw = lerp(h.lookYaw, Math.atan2(Math.sin(want), Math.cos(want)), 1 - Math.exp(-dt * 4));
@@ -4306,12 +4635,14 @@ function createGame(world) {
     stashMarker.rotation.y += dt; stashMarker.position.y = 1.0 + Math.sin(t * 2.2 + 1) * 0.08;
     const storyMarker = (m, show, base) => { m.visible = show; if (show) { m.rotation.y += dt; m.position.y = base + Math.sin(t * 2) * 0.06; } };
     storyMarker(manuMarker, stage === 'debt-return', 2.3); storyMarker(darrenMarker, stage === 'debt-find', 2.2);
-    fixerMarker.visible = !['debt-find', 'debt-fight', 'debt-return', 'prologue'].includes(stage);
+    fixerMarker.visible = !['debt-find', 'debt-fight', 'debt-return', 'prologue', 'shorty-wait', 'shorty-meet', 'shorty-jobs', 'shorty-return'].includes(stage);
+    storyMarker(shortyMarker, stage === 'shorty-meet' || stage === 'shorty-return', 2.45);
+    for (const [k, j] of Object.entries(JOBS)) storyMarker(j.marker, stage === 'shorty-jobs' && !jobDone(k) && !(k === 'kev' && jobState.kev === 'fight'), 2.2);
     camera.rotation.order = 'YXZ';
     const sh = world.shake || 0; world.shake = Math.max(0, sh - dt);
     camera.rotation.set(pitch + (Math.random() - 0.5) * sh * 0.12, yaw + (Math.random() - 0.5) * sh * 0.12, 0);
     // Animate characters near the camera every frame, distant ones at a lower rate.
-    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, ...enemies.map(e => e.p)]) {
+    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.map(e => e.p)]) {
       if (!p.parent) continue;
       const d = p.position.distanceTo(camera.position);
       const h = p.userData.human;
@@ -4328,7 +4659,8 @@ function createGame(world) {
     state: () => ({ stage, hp, rep, cash, chosen, defeated, started, x: camera.position.x, z: camera.position.z, yaw, objective: objective()[0] }),
     teleport(x, z) { camera.position.set(x, groundHeight(x, z) + EYE, z); },
     face(y) { yaw = y; }, talk, hit, collides,
-    targets: () => ({ fixer: fixer.position.clone(), manu: manu.position.clone(), darren: darren.position.clone(), stash: stash.position.clone(), contacts: contacts.map(c => ({ f: c.f, x: c.p.position.x, z: c.p.position.z })), enemies: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z, alive: e.alive })) }),
+    jobs: () => ({ ...jobState }),
+    targets: () => ({ fixer: fixer.position.clone(), manu: manu.position.clone(), darren: darren.position.clone(), shorty: shorty.position.clone(), kev: JOBS.kev.npc.position.clone(), mikey: JOBS.mikey.npc.position.clone(), pita: JOBS.pita.npc.position.clone(), stash: stash.position.clone(), contacts: contacts.map(c => ({ f: c.f, x: c.p.position.x, z: c.p.position.z })), enemies: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z, alive: e.alive })) }),
   };
   return { update, isStarted: () => started, isPaused: () => pauseOpen, inPrologue: () => inPrologue };
 }
@@ -4405,12 +4737,16 @@ async function boot() {
   const dialogue = new Dialogue();
   const prologue = new Prologue(lounge, knuckle, dialogue);
   const homes = city.houses.filter(h => h.ring === 2);
-  const cousinHome = (homes.length ? homes : city.houses).reduce((best, h) => !best || Math.hypot(h.pos.x + 130, h.pos.z - 70) < Math.hypot(best.pos.x + 130, best.pos.z - 70) ? h : best, null);
-  const world = { scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0, dialogue, prologue, cousinHome, spots: city.spots };
+  const nearestHome = (x, z, skip) => (homes.length ? homes : city.houses).filter(h => !skip.includes(h)).reduce((best, h) => !best || Math.hypot(h.pos.x - x, h.pos.z - z) < Math.hypot(best.pos.x - x, best.pos.z - z) ? h : best, null);
+  const cousinHome = nearestHome(-130, 70, []);
+  const shortyHome = nearestHome(140, -75, [cousinHome]);
+  const pitaHome = nearestHome(85, 135, [cousinHome, shortyHome]);
+  const phone = new Phone();
+  const world = { scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0, dialogue, prologue, phone, cousinHome, shortyHome, pitaHome, spots: city.spots, realDt: 0 };
   window.__auDebug = { scene, renderer, camera, post, sky, city, lounge };
   window.__auStory = {
     get active() { return dialogue.active; }, get line() { return dialogue.line; }, get prologue() { return prologue.active; },
-    advance: () => dialogue.advance(), choose: i => dialogue.choose(i), skip: () => prologue.skip(), minigame: knuckle,
+    advance: () => dialogue.advance(), choose: i => dialogue.choose(i), skip: () => prologue.skip(), minigame: knuckle, phone,
   };
   setLoad(0.9, 'Compiling shaders…'); await nextTick();
   const game = createGame(world);
@@ -4476,6 +4812,8 @@ async function boot() {
     } else {
       setLook(false);
       dialogue.setPaused(game.isPaused()); dialogue.update(dt);
+      world.realDt = Math.min(elapsed / 1000, 0.5);
+      if (!game.isPaused()) phone.update(world.realDt);
       const forward = game.update(dt, now, G.uTime.value);
       sky.update(camera, forward);
       rain.update(camera);

@@ -21,9 +21,21 @@ const SCENES = {
   darrenBeaten: ['Hard route: after you knock Darren down', 'Darren winded, on the ground.'],
   darrenAgain: ['Talking to Darren again after he has paid', ''], manuWaiting: ['Talking to Manu before you have the money', ''],
   returnSmooth: ['Back at Manu\'s with $200', ''], returnHard: ['Back at Manu\'s with the full $400', 'Impressed, a bit worried.'],
-  returnEnd: ['Manu points you toward the crews at the square', ''],
+  returnEnd: ['Manu is impressed and brings up his mate Shorty', 'Leaning on the fence, half joking, half serious.'],
+  numberYes: ['Player says yes to giving Shorty the number', ''], numberNo: ['Player says no (Manu does it anyway)', 'Grinning.'],
+  manuAfter: ['Talking to Manu while you wait for Shorty\'s text', ''],
+  shortyMeet: ['Shorty\'s driveway: he sizes you up and lays out the three jobs', 'Shorty: big unit, slow talker, always half-annoyed. Sh_06 softer, he likes Pita.'],
+  shortyWaiting: ['Talking to Shorty before the jobs are done', ''],
+  kevMeet: ['Kev\'s panel shop yard', 'Kev: older, rough as, wiping his hands on a rag.'], kevRefuses: ['Kev tells you to get lost', ''], kevFights: ['Kev squares up', ''],
+  kevBeaten: ['After you knock Kev down', 'Kev winded.'], kevAgain: ['Kev after he\'s paid', ''],
+  mikeyRuns: ['Mikey sees you coming and bolts', 'Shouted over his shoulder, already running.'],
+  mikeyCaught: ['You catch Mikey', 'Mikey out of breath, panicking.'], mikeyAgain: ['Mikey after he\'s paid', ''],
+  pitaMeet: ['Uncle Pita at his front door, the grandkids inside', 'Pita: koro, gentle, tired, a bit embarrassed. Player picks: take it, or cover it.'],
+  pitaTake: ['Player takes Pita\'s money', 'Quiet.'], pitaCover: ['Player lets Pita keep it', 'Warm.'], pitaAgain: ['Pita after it\'s sorted', ''],
+  shortyBackAll: ['Back at Shorty\'s with every cent', 'Impressed.'], shortyBackCovered: ['Back at Shorty\'s, you paid Pita\'s share yourself', 'Shorty sees right through it.'],
+  shortyBackShort: ['Back at Shorty\'s, you let Pita off', 'Unimpressed.'], shortyBackEnd: ['Shorty pays your cut and points you to the crews', ''],
 };
-const name = { manu: 'MANU', you: 'YOU', darren: 'DARREN' };
+const name = { manu: 'MANU', you: 'YOU', darren: 'DARREN', shorty: 'SHORTY', kev: 'KEV', mikey: 'MIKEY', pita: 'UNCLE PITA' };
 let md = `# Voice script\n\nEvery spoken line has an id. Record each line as its own file, put the files in the \`voice/\` folder next to \`index.html\`, and list them in \`voice/manifest.js\`:\n\n\`\`\`js\nwindow.AU_VOICE = { pro_01: 'pro_01.m4a', pro_02: 'pro_02.m4a' };\n\`\`\`\n\nAny format the phone plays works (m4a from the recorder app is fine). Lines without a recording show as subtitles only, so you can add them a few at a time. \`{spot}\` is filled in with where Darren hangs out (it changes with your hometown), so record it as a general "round the shops" or send me the variants.\n\nThe game runs from \`src/engine/58-story.js\` (SCRIPT); change the wording there and run \`node tools/voice-script.mjs\` to refresh this file.\n`;
 let count = 0;
 for (const [key, lines] of Object.entries(SCRIPT)) {

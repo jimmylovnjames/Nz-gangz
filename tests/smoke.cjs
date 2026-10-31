@@ -113,9 +113,61 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   check('knocking Darren down gets the full $400', (await state(page)).stage === 'debt-return' && (await state(page)).objective.includes('$400'), (await state(page)).objective);
   T = await page.evaluate(() => window.__auGame.targets());
   await walkTo(page, T.manu.x + 1.5, T.manu.z); await page.evaluate(() => window.__auGame.talk());
+  await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice));
+  await page.evaluate(() => window.__auStory.choose(0));
   await advanceUntil(page, () => !window.__auStory.active);
   const afterManu = await state(page);
-  check('handing Manu the money pays a cut and opens the crews', afterManu.stage === 'recruit' && afterManu.cash === 100, `stage ${afterManu.stage} cash ${afterManu.cash}`);
+  check('Manu pays a cut and offers your number to Shorty', afterManu.stage === 'shorty-wait' && afterManu.cash === 100, `stage ${afterManu.stage} cash ${afterManu.cash}`);
+  // Shorty's chapter: the text, the meeting, three jobs, the payout.
+  await page.waitForFunction(() => window.__auGame.state().stage === 'shorty-meet', null, { timeout: 120000 }).catch(() => { });
+  check('Shorty texts you and the meeting is set', (await state(page)).stage === 'shorty-meet' && await page.evaluate(() => window.__auStory.phone.log.some(m => m.from === 'shorty')), (await state(page)).objective);
+  T = await page.evaluate(() => window.__auGame.targets());
+  await walkTo(page, T.shorty.x + 1.5, T.shorty.z); await page.evaluate(() => window.__auGame.talk());
+  await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice));
+  await page.evaluate(() => window.__auStory.choose(0));
+  await advanceUntil(page, () => !window.__auStory.active);
+  check('Shorty hands out three jobs', (await state(page)).stage === 'shorty-jobs' && await page.evaluate(() => window.__auStory.phone.jobs.length === 3));
+  // Kev: talk, refuse, scrap.
+  T = await page.evaluate(() => window.__auGame.targets());
+  await walkTo(page, T.kev.x + 2.2, T.kev.z); await page.evaluate(() => window.__auGame.talk());
+  for (let c = 0; c < 2; c++) { await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice)); await page.evaluate(() => window.__auStory.choose(0)); }
+  await advanceUntil(page, () => !window.__auStory.active);
+  check('Kev refuses and squares up', (await page.evaluate(() => window.__auGame.jobs())).kev === 'fight');
+  for (let k = 0; k < 8 && (await page.evaluate(() => window.__auGame.jobs())).kev === 'fight' && !(await page.evaluate(() => window.__auStory.active)); k++) {
+    const d = (await page.evaluate(() => window.__auGame.targets())).kev;
+    await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 2.2, z); g.face(Math.atan2(2.2, 0)); }, [d.x, d.z]);
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+    await page.evaluate(() => window.__auGame.hit());
+  }
+  await page.waitForFunction(() => window.__auStory.active, null, { timeout: 30000 }).catch(() => { });
+  await advanceUntil(page, () => !window.__auStory.active);
+  check('knocking Kev down collects $600', (await page.evaluate(() => window.__auGame.jobs())).kev === 'paid');
+  // Mikey: runs when you get close, caught when you reach him.
+  T = await page.evaluate(() => window.__auGame.targets());
+  await walkTo(page, T.mikey.x + 8, T.mikey.z);
+  await page.waitForFunction(m0 => { const m = window.__auGame.targets().mikey; return Math.hypot(m.x - m0.x, m.z - m0.z) > 1; }, T.mikey, { timeout: 60000 }).catch(() => { });
+  const m1 = (await page.evaluate(() => window.__auGame.targets())).mikey;
+  check('Mikey bolts when you get close', Math.hypot(m1.x - T.mikey.x, m1.z - T.mikey.z) > 1, `moved ${Math.hypot(m1.x - T.mikey.x, m1.z - T.mikey.z).toFixed(1)}m`);
+  for (let k = 0; k < 10 && !(await page.evaluate(() => window.__auStory.active)); k++) {
+    const m = (await page.evaluate(() => window.__auGame.targets())).mikey;
+    await page.evaluate(([x, z]) => window.__auGame.teleport(x + 1.0, z), [m.x, m.z]);
+    await page.waitForTimeout(400);
+  }
+  await advanceUntil(page, () => !window.__auStory.active);
+  check('catching Mikey collects $300', (await page.evaluate(() => window.__auGame.jobs())).mikey === 'paid');
+  // Uncle Pita: let him off (you can't cover $150 with $100, so Shorty docks your cut).
+  T = await page.evaluate(() => window.__auGame.targets());
+  await walkTo(page, T.pita.x + 1.5, T.pita.z); await page.evaluate(() => window.__auGame.talk());
+  await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice));
+  await page.evaluate(() => window.__auStory.choose(1));
+  await advanceUntil(page, () => !window.__auStory.active);
+  check('letting Uncle Pita off is recorded', (await page.evaluate(() => window.__auGame.jobs())).pita === 'short');
+  check('all three done sends you back to Shorty', (await state(page)).stage === 'shorty-return', (await state(page)).objective);
+  T = await page.evaluate(() => window.__auGame.targets());
+  await walkTo(page, T.shorty.x + 1.5, T.shorty.z); await page.evaluate(() => window.__auGame.talk());
+  await advanceUntil(page, () => !window.__auStory.active);
+  const afterShorty = await state(page);
+  check('Shorty pays a quarter minus Pita\'s $150 and opens the crews', afterShorty.stage === 'recruit' && afterShorty.cash === 175, `stage ${afterShorty.stage} cash ${afterShorty.cash}`);
   // Crew chapter (unchanged from Run 11).
   T = await page.evaluate(() => window.__auGame.targets());
   const c0 = T.contacts[0];

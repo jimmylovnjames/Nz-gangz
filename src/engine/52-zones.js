@@ -1,5 +1,13 @@
 // Zone generators: what fills each island. Local frames come from frameFor()/frameRaw().
+// Street names (NZ trees along x, birds along z) so houses get real-sounding addresses.
+const STREETS_X = ['Kauri Rd', 'Rimu St', 'Tōtara Ave', 'Mataī St', 'Kōwhai St', 'Pūriri St', 'Nīkau Pl', 'Rātā St', 'Miro St'];
+const STREETS_Z = ['Tūī St', 'Kererū Rd', 'Pīwakawaka Ave', 'Kea St', 'Kākā Rd', 'Weka St', 'Takahē Pl', 'Ruru St', 'Kōtare St'];
 Object.assign(City.prototype, {
+  streetFor(s, side) {
+    const i = side === 'w' ? s.x0 - ROAD.half : side === 'e' ? s.x1 + ROAD.half : side === 's' ? s.z0 - ROAD.half : s.z1 + ROAD.half;
+    const k = clamp(Math.round(i / ROAD.spacing), -4, 4) + 4;
+    return side === 'w' || side === 'e' ? STREETS_X[k] : STREETS_Z[k];
+  },
   split(len, min, max) {
     const out = []; let left = len;
     while (left > max) { const w = min + this.rng() * (max - min); if (left - w < min) break; out.push(w); left -= w; }
@@ -187,7 +195,8 @@ Object.assign(City.prototype.zoneGen, {
         this.b.box('timber', lbx, 0, -0.25, 0.08, 1.0, 0.08, { faces: 'XxZz' });
         this.b.box('trim', lbx, 1.0, -0.25, 0.32, 0.26, 0.42, { tint: col(this.pick([0xc8302a, 0x2a4a7a, 0xe8e2d0, 0x333333])) });
         this.b.setTransform(null);
-        this.houses.push({ ring: s.ring, ...this.spotFrom(m, h.x + h.W / 2, h.setback - 1.8, 'house', 'house'), spawn: this.spotFrom(m, (dx0 + dx1) / 2, -1.0, 'drive', 'drive') });
+        const number = (Math.floor((t + lotW / 2) / 9) * 2 + 1) + (side === 'n' ? 1 : 0);
+        this.houses.push({ ring: s.ring, ...this.spotFrom(m, h.x + h.W / 2, h.setback - 1.8, 'house', 'house'), spawn: this.spotFrom(m, (dx0 + dx1) / 2, -1.0, 'drive', 'drive'), address: `${number} ${this.streetFor(s, side)}` });
         if (this.rng() < 0.35) {
           const c = this.local(m, (dx0 + dx1) / 2, h.setback + 1.2 + this.rng() * 1.5);
           const rot = { s: 0, n: Math.PI, w: Math.PI / 2, e: -Math.PI / 2 }[side] + (this.rng() < 0.6 ? 0 : Math.PI);
