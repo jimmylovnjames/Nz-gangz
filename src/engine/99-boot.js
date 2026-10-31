@@ -5,6 +5,9 @@ async function boot() {
   renderer.domElement.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:none';
   document.body.prepend(renderer.domElement);
   const detected = detectTier(renderer);
+  // HDR post-processing renders to half-float targets; without colour-buffer-float support use the direct path.
+  const hdrOK = renderer.extensions.has('EXT_color_buffer_float') || renderer.extensions.has('EXT_color_buffer_half_float');
+  if (!hdrOK) for (const k in QUALITY) Object.assign(QUALITY[k], { post: 0, ao: 0, bloom: 0, msaa: 0 });
   let tierName = QUALITY[settings.tier] ? settings.tier : detected.tier, q = QUALITY[tierName];
   const startTex = q.tex;
   renderer.outputColorSpace = THREE.SRGBColorSpace;

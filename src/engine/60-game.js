@@ -390,9 +390,10 @@ function createGame(world) {
       const h = c.userData.human, dx = camera.position.x - c.position.x, dz = camera.position.z - c.position.z, d = Math.hypot(dx, dz);
       const want = d < 9 ? Math.atan2(dx, dz) - c.rotation.y : 0;
       h.lookYaw = lerp(h.lookYaw, Math.atan2(Math.sin(want), Math.cos(want)), 1 - Math.exp(-dt * 4));
-      if (c.userData.marker) c.userData.marker.position.y = 2.25 + Math.sin(t * 2 + c.position.x) * 0.06;
+      if (c.userData.marker) { c.userData.marker.position.y = 2.25 + Math.sin(t * 2 + c.position.x) * 0.06; c.userData.marker.material.opacity = clamp((d - 1.5) / 5, 0.12, 0.9); }
     }
     fixerMarker.rotation.y += dt; fixerMarker.position.y = 2.3 + Math.sin(t * 2) * 0.06;
+    fixerMarker.material.opacity = clamp((dist(fixer.position) - 1.5) / 5, 0.12, 0.9);
     pickupMarker.rotation.y += dt; stashMarker.rotation.y += dt;
     pickupMarker.position.y = 1.0 + Math.sin(t * 2.2) * 0.08; stashMarker.position.y = 1.0 + Math.sin(t * 2.2 + 1) * 0.08;
     camera.rotation.order = 'YXZ';

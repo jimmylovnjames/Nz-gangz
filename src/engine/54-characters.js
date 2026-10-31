@@ -211,8 +211,10 @@ class Human {
     let armL = sw * amp * 0.9, armR = -sw * amp * 0.9, foreL = -0.25 - 0.5 * run, foreR = -0.25 - 0.5 * run;
     b('armL').rotation.z = 0.12; b('armR').rotation.z = -0.12;
     if (this.pose === 'crossed' && sp < 0.1 && this.mode === 'idle') {
-      armL = -0.55; armR = -0.55; foreL = -1.9; foreR = -1.9;
-      b('armL').rotation.z = 0.32; b('armR').rotation.z = -0.32; b('foreL').rotation.y = -0.9; b('foreR').rotation.y = 0.9;
+      // Forearms fold across the chest: swing about z to point across the body, then forward about y.
+      armL = -0.4; armR = -0.4; foreL = 0; foreR = 0;
+      b('armL').rotation.z = 0.06; b('armR').rotation.z = -0.06;
+      b('foreL').rotation.set(0, 0.55, -1.72); b('foreR').rotation.set(0, -0.48, 1.68);
     }
     if (this.mode === 'guard') {
       armL = -0.9; armR = -0.75; foreL = -2.0; foreR = -2.1;
