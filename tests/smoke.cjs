@@ -109,6 +109,17 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   check('continue button offered after reload', await page.evaluate(() => getComputedStyle(document.getElementById('continue')).display) !== 'none');
   await page.click('#continue');
   check('saved chapter restores', (await state(page)).stage === 'complete');
+  // A Run 11 save with a real gang name loads under the renamed fictional crew.
+  // Back to the menu first: an active session saves itself when the page hides on reload.
+  await page.click('#pauseButton'); await page.click('#restart');
+  await page.evaluate(() => localStorage.setItem('aotearoa-underworld-v2', JSON.stringify({ version: 2, stage: 'mission-courier', hometown: 'Kaikohe', originRegion: 'Northland', chosen: 'Mongrel Mob', rep: 25, hp: 100, cash: 40, defeated: 0, missionRoute: 'courier', stamina: 100, x: 0, z: 8, yaw: 0, pitch: 0 })));
+  await page.reload();
+  await page.waitForFunction(() => document.documentElement.dataset.engine === 'ready', null, { timeout: 300000 });
+  const realNames = ['Black Power', 'Mongrel', 'Tribesmen', 'Head Hunters', 'Killer Beez', 'King Cobras', 'Comancheros', 'Bandidos', 'Hells Angels', 'Mongols', 'Rebels MC', 'Highway 61', 'Nomads', 'Immortal Souls'];
+  const menuText = await page.evaluate(() => document.body.innerText);
+  check('menu shows only fictional crew names', !realNames.some(n => menuText.includes(n)), realNames.filter(n => menuText.includes(n)).join(', '));
+  await page.click('#continue');
+  check('Run 11 save keeps its crew under the new name', (await state(page)).chosen === 'Stray Dogs', (await state(page)).chosen);
   check('no page errors in desktop session', errors.length === 0, errors.slice(0, 3).join(' | '));
   await ctx.close();
 

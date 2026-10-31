@@ -1,6 +1,10 @@
 // Game logic ported from Run 11 (missions, factions, saves, UI), unchanged in behaviour except bug fixes:
 // movement no longer turns into NaN, forward follows the view after turning, and the waypoint/radar rotate correctly.
-const FACTIONS = ['Black Power', 'Mongrel Mob', 'Tribesmen', 'Head Hunters', 'Killer Beez', 'King Cobras', 'Comancheros MC', 'Bandidos MC', 'Hells Angels MC', 'Mongols MC', 'Rebels MC', 'Highway 61', 'New Zealand Nomads', 'Immortal Souls MC'];
+// Fictional crews. Order matches the colours and contact positions used since Run 1.
+const FACTIONS = ['Black Tide', 'Stray Dogs', 'Clansmen', 'Bone Collectors', 'Southside Hornets', 'Royal Taipans', 'Conquistadors MC', 'Sundowners MC', 'Dark Seraphs MC', 'Iron Horde MC', 'Insurgents MC', 'Route 77', 'Southern Wanderers', 'Phantom Souls MC'];
+// Saves from Run 11 and earlier store the old crew names; map them so those saves keep their crew.
+const LEGACY_FACTIONS = Object.fromEntries(['Black Power', 'Mongrel Mob', 'Tribesmen', 'Head Hunters', 'Killer Beez', 'King Cobras', 'Comancheros MC', 'Bandidos MC', 'Hells Angels MC', 'Mongols MC', 'Rebels MC', 'Highway 61', 'New Zealand Nomads', 'Immortal Souls MC'].map((name, i) => [name, FACTIONS[i]]));
+const migrateSave = s => { if (s && LEGACY_FACTIONS[s.chosen]) s.chosen = LEGACY_FACTIONS[s.chosen]; return s; };
 const FACTION_COLORS = [0x3764d8, 0xc33737, 0x4b8e68, 0x9c8d54, 0xe4b82c, 0x7e4b99, 0x2e8692, 0xa67639, 0x9b9b9b, 0x7b4444, 0x67928b, 0xb57e50, 0x6b6a9d, 0x8d6c80];
 const ORIGINS = { Northland: ['Kaikohe', 'Kaitaia', 'Whangārei', 'Opononi'], Auckland: ['South Auckland', 'West Auckland', 'Central Auckland', 'North Shore'], Waikato: ['Hamilton', 'Huntly', 'Tokoroa'], 'Bay of Plenty': ['Tauranga', 'Rotorua', 'Whakatāne'], 'East Coast': ['Gisborne', 'Wairoa'], 'Hawke’s Bay': ['Napier', 'Hastings'], 'Central North Island': ['Taupō', 'New Plymouth', 'Whanganui', 'Palmerston North'], Wellington: ['Wellington', 'Lower Hutt', 'Porirua'], 'Top of South': ['Nelson', 'Blenheim'], Canterbury: ['Christchurch', 'Ashburton', 'Timaru'], 'West Coast': ['Greymouth', 'Hokitika'], Otago: ['Dunedin', 'Queenstown', 'Wānaka'], Southland: ['Invercargill', 'Bluff'], Islands: ['Stewart Island / Rakiura', 'Chatham Islands'] };
 const ORIGIN_TALES = {
@@ -158,7 +162,7 @@ function createGame(world) {
     try {
       const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
       if (!s || s.version !== 2 || typeof s.hometown !== 'string' || !Object.values(ORIGINS).some(ts => ts.includes(s.hometown)) || !STAGES.includes(s.stage)) return null;
-      return s;
+      return migrateSave(s);
     } catch (e) { return null; }
   }
   function exportSave() {
@@ -173,7 +177,7 @@ function createGame(world) {
   }
   function validateImportedSave(payload) {
     if (!payload || payload.format !== SAVE_EXPORT_FORMAT || !payload.save || payload.save.version !== 2) throw Error('Not an AOTEAROA: UNDERWORLD v2 save file.');
-    const s = payload.save;
+    const s = migrateSave(payload.save);
     if (typeof s.hometown !== 'string' || !Object.values(ORIGINS).some(towns => towns.includes(s.hometown))) throw Error('Unknown hometown.');
     if (!['Independent', ...FACTIONS].includes(s.chosen)) throw Error('Unknown faction.');
     if (!STAGES.includes(s.stage)) throw Error('Unknown mission stage.');

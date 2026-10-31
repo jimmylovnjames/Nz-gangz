@@ -4,7 +4,7 @@ Open `index.html` in a modern browser with internet access (Three.js loads from 
 
 Desktop: WASD or arrow keys to move, mouse to look (click to lock), click or HIT to attack, Shift to sprint, E to talk, Escape to pause. Phone: touch the lower-left circle and slide to walk, swipe the right side to look, TAP TALK/HIT, HOLD RUN. Tap the radar to collapse it. Saves stay in the device's browser storage; PAUSE has EXPORT/IMPORT SAVE FILE for moving between phones.
 
-This is a playable *fictional district* vertical slice, not a geographically accurate map. Real named groups are fictionalized game factions. All characters and events are invented.
+This is a playable *fictional district* vertical slice, not a geographically accurate map. All crews, characters and events are invented. Run 12 replaced the real gang names used in earlier runs with fictional crews; old saves are converted automatically.
 
 ## Run 12: what changed
 
