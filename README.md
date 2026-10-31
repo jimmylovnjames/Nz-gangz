@@ -1,4 +1,4 @@
-# AOTEAROA: UNDERWORLD, Run 14 (Manu, Darren and Shorty's jobs)
+# AOTEAROA: UNDERWORLD, Run 15 (photo-scanned surfaces and sky)
 
 Open `index.html` in a modern browser with internet access (Three.js loads from jsDelivr). On the phone: extract the ZIP and open `index.html`. For best results on a computer, serve the folder with `python -m http.server 8000` and visit `http://localhost:8000`.
 
@@ -22,6 +22,12 @@ This is a playable *fictional district* vertical slice, not a geographically acc
 Dialogue appears as subtitles with the speaker's name; tap the box to skip ahead. Every line has a voice slot: see **VOICE_SCRIPT.md** for all 100 lines with their ids. Put recordings in `voice/` next to `index.html` and list them in `voice/manifest.js` (`window.AU_VOICE = { pro_01: 'pro_01.m4a', ... }`). Lines without a recording stay as subtitles.
 
 Saves from Run 11 that were partway through the old hometown errand continue as the Darren job.
+
+## Run 15: photographic surfaces and sky
+
+Roads, footpaths, kerbs, the town square, brick, plaster, weatherboard, corrugated iron, lawns, gravel, roller doors, fences and bark now use photo-scanned CC0 textures from Poly Haven (1K colour, normal and roughness/AO). Golden hour and overcast use real HDRI sky photos for the background, the lighting, reflections, the sun direction and the haze colour. Night keeps the generated sky. Credits and the full list are in `assets/README.md`.
+
+They download once (about 14 MB) after the district is playable, from jsDelivr when the game is opened as a file, or from `assets/` when served over http. With no connection, or on the LOW setting, the game keeps its generated textures and sky.
 
 ## Run 12: what changed
 

@@ -34,6 +34,8 @@ async function boot() {
   const names = Object.keys(TEX_DEFS);
   for (let i = 0; i < names.length; i++) { forge.make(names[i]); if (i % 3 === 2) { setLoad(0.05 + 0.2 * i / names.length); await nextTick(); } }
   const lib = new MaterialLib(forge, q);
+  const photo = new PhotoAssets(renderer, lib, q);
+  sky.photo = photo;
 
   setLoad(0.28, 'Building the district…');
   const city = new City(lib, scene, q);
@@ -101,7 +103,7 @@ async function boot() {
     $('gfxNote').textContent = q.tex !== startTex ? 'Texture detail for this setting applies after you reload the page.' : `Graphics: ${tierName.toUpperCase()}. GPU: ${detected.gpu}`;
     persist();
   }));
-  document.querySelectorAll('[data-time]').forEach(b => b.addEventListener('click', () => { timeName = b.dataset.time; const wasIndoor = indoor; setLook(false); sky.apply(timeName, post); if (wasIndoor) setLook(true); applyNight(); rain.set(rainLevel, q, sky.preset.night); persist(); }));
+  document.querySelectorAll('[data-time]').forEach(b => b.addEventListener('click', () => { timeName = b.dataset.time; applySky(); loadSkyPhoto(); applyNight(); rain.set(rainLevel, q, sky.preset.night); persist(); }));
   document.querySelectorAll('[data-rain]').forEach(b => b.addEventListener('click', () => { rainLevel = +b.dataset.rain; rain.set(rainLevel, q, sky.preset.night); persist(); }));
   $('fpsToggle').addEventListener('click', () => { settings.fps = !settings.fps; persist(); });
   $('gfxNote').textContent = `Auto-detected: ${detected.tier.toUpperCase()} (${detected.gpu})`;
@@ -129,6 +131,17 @@ async function boot() {
     }
     indoor = inside;
   }
+  // Re-apply the sky without disturbing the lounge's indoor look.
+  function applySky() { const wasIndoor = indoor; setLook(false); sky.apply(timeName, post); if (wasIndoor) setLook(true); }
+  function loadSkyPhoto() {
+    const p = TIME_PRESETS[timeName];
+    if (!p.hdri || photo.hdri[p.hdri]) return;
+    const want = timeName;
+    photo.loadHDRI(p.hdri, p.sunAzim).then(() => { if (timeName === want) applySky(); }).catch(err => console.info('Photo sky unavailable, keeping the generated sky.', err?.message));
+  }
+  // Photographic textures and sky stream in after the district is playable.
+  photo.loadTextures().then(n => { if (n) console.info(`Photo textures applied: ${n} sets`); });
+  loadSkyPhoto();
   let prev = performance.now(), frames = 0, frameMs = 0, cooldown = 0, fpsShown = 0, fpsTimer = 0;
   const hitFlash = $('hitFlash');
   function loop(now) {

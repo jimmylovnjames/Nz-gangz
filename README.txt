@@ -1,7 +1,9 @@
-AOTEAROA: UNDERWORLD | RUN 14 (SHORTY'S JOBS)
+AOTEAROA: UNDERWORLD | RUN 15 (PHOTO-SCANNED SURFACES + SKY)
 
 Extract this ZIP and keep the voice folder next to index.html. Open index.html on your phone with internet on.
 Give the progress bar a few seconds on first load, then tap NEW GAME.
+Photo-scanned textures and a real photo sky stream in after it loads (about 14 MB the first time, then cached).
+Use wifi for the first run. Without internet it falls back to the generated look.
 
 You start on Manu's couch playing Kiwi Knuckle Kings 2 on his old TV.
 Fight pad: arrows to move, BLOCK, SPECIAL, KICK, PUNCH. SKIP ends the match early.

@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>AOTEAROA UNDERWORLD | RUN 14</title><style>body{margin:0;background:#080b0d;color:white;font:14px system-ui;overflow:hidden}canvas{display:block}#hud{position:absolute;top:12px;left:12px;text-shadow:0 2px 4px black;pointer-events:none}#panel{position:absolute;inset:0;background:#071014ed;display:grid;place-items:center;z-index:5}#menu{max-width:520px;padding:25px}h1{font-size:32px;margin:0;color:#e8ba55}button{background:#b88a35;color:#111;border:0;border-radius:8px;padding:12px;margin:5px;font-weight:bold}#notice{position:absolute;bottom:95px;left:50%;transform:translateX(-50%);background:#111c;padding:10px;border-radius:7px;text-align:center;max-width:85%}#cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:23px;pointer-events:none}#touch{position:absolute;bottom:15px;width:100%;display:flex;justify-content:space-between;pointer-events:none}#touch button{pointer-events:auto;opacity:.8;min-width:56px}#mapcredit{position:absolute;bottom:2px;right:5px;font-size:10px;color:#ddd}small{color:#bbb}
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>AOTEAROA UNDERWORLD | RUN 15</title><style>body{margin:0;background:#080b0d;color:white;font:14px system-ui;overflow:hidden}canvas{display:block}#hud{position:absolute;top:12px;left:12px;text-shadow:0 2px 4px black;pointer-events:none}#panel{position:absolute;inset:0;background:#071014ed;display:grid;place-items:center;z-index:5}#menu{max-width:520px;padding:25px}h1{font-size:32px;margin:0;color:#e8ba55}button{background:#b88a35;color:#111;border:0;border-radius:8px;padding:12px;margin:5px;font-weight:bold}#notice{position:absolute;bottom:95px;left:50%;transform:translateX(-50%);background:#111c;padding:10px;border-radius:7px;text-align:center;max-width:85%}#cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:23px;pointer-events:none}#touch{position:absolute;bottom:15px;width:100%;display:flex;justify-content:space-between;pointer-events:none}#touch button{pointer-events:auto;opacity:.8;min-width:56px}#mapcredit{position:absolute;bottom:2px;right:5px;font-size:10px;color:#ddd}small{color:#bbb}
 #panel{overflow-y:auto;align-items:start}#menu{width:min(560px,calc(100vw - 36px));margin:auto;box-sizing:border-box}#factions{max-height:180px;overflow:auto;padding:4px;background:#15201b}#factions button{font-size:11px;padding:8px;margin:3px}#factions button.selected{outline:2px solid #fff3a5}#hud{max-width:72%;line-height:1.45}#hud b{color:#f3d98c}#missionDistance{color:#b8f5e1}#notice{bottom:104px;min-width:180px;z-index:2}#pauseButton{position:absolute;right:8px;top:8px;z-index:3;background:#19231c;color:white;border:1px solid #829688}#choicePanel,#pausePanel{position:absolute;inset:0;z-index:8;background:#02080be8;display:none;align-items:center;justify-content:center;padding:18px;box-sizing:border-box}#choicePanel .dialog,#pausePanel .dialog{max-width:520px;width:100%;background:#17201f;border:1px solid #8c7650;border-radius:14px;padding:20px;box-sizing:border-box}#choicePanel button,#pausePanel button{display:block;width:100%;margin:9px 0;padding:15px;text-align:left}#saveState{font-size:12px;color:#b8f5e1}#continue{display:none;background:#52795f;color:white}#touch button{touch-action:none}#cross{color:#ffedac}#quest{color:#f6e2af}#waypoint{position:absolute;top:33%;left:50%;transform:translateX(-50%);font-weight:bold;text-shadow:0 2px 4px black;color:#f5da6c;pointer-events:none}#location{font-size:12px;color:#eee}@media(max-width:600px){#hud{top:8px;left:8px;font-size:12px;max-width:80%}#pauseButton{padding:8px;margin:3px}#notice{font-size:12px;bottom:115px}#touch button{min-width:50px;padding:11px;margin:2px}#mapcredit{display:none}}
 #miniMap{position:absolute;right:10px;bottom:143px;width:142px;height:142px;background:#081b19d9;border:1px solid #b7d2ae88;border-radius:10px;z-index:3;box-shadow:0 4px 18px #0009;touch-action:manipulation}#miniMap.compact{width:66px;height:66px;opacity:.8}@media(max-width:600px){#miniMap{right:7px;bottom:132px;width:112px;height:112px}}
 
@@ -55,7 +55,7 @@ body.prologue.mg #dialogue{bottom:auto;top:calc(10px + env(safe-area-inset-top))
 #toast.show{transform:translate(-50%,0)}
 body.prologue :is(#phoneBtn,#phone){display:none!important}
 #hitFlash{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,transparent 45%,#7a0a0a 120%);opacity:0;transition:opacity .35s}
-</style><canvas id="miniMap" class="compact" width="180" height="180" aria-label="District minimap, tap to collapse" title="Tap to collapse minimap"></canvas><div id="panel"><div id="menu"><h1>AOTEAROA: UNDERWORLD</h1><p>CHAPTER ZERO: NOBODY KNOWS YOUR NAME</p><p>Friday night on your cousin Manu's couch. A busted old console, a few cans, and a debt somebody needs to collect. Fourteen crews are watching who steps up. Your hometown and your choices change how it plays out.</p><label for="hometown">CHOOSE YOUR HOMETOWN</label><select id="hometown" style="display:block;width:100%;padding:12px;margin:10px 0;background:#152320;color:white;border:1px solid #879b83"></select><p id="originStory"></p><div id="factions"></div><button id="independent">INDEPENDENT / NO FACTION</button><p><small>Choose a crew to approach after the prologue, or stay independent.</small></p><p><small>Playable vertical slice. Fictional characters and story. Desktop: WASD, mouse look, click to attack, Shift sprint, E interact, Esc pause. Phone: floating left joystick, drag right side to look, HIT/TALK, pause button. Save is device-local.</small></p><div id="loadState" aria-live="polite">Loading 3D engine…</div><div id="loadBar"><i></i></div><button id="start" disabled title="Loading 3D engine">NEW GAME</button><button id="continue" disabled title="Loading 3D engine">CONTINUE SAVED GAME</button><div id="saveState" aria-live="polite"></div></div></div><div id="hud"><small style="opacity:.65">R14 • SHORTY'S JOBS</small><b id="status">HEALTH 100 | REP 0</b><div id="quest">Find your hometown contact</div><div id="missionDistance"></div><div id="location">FICTIONAL DISTRICT</div></div><div id="cross">+</div><div id="waypoint" aria-live="off"></div><button id="pauseButton" aria-label="Pause game">Ⅱ</button><div id="notice">Find the yellow diamond above your hometown contact. Press E or TALK nearby.</div><div id="joystick" aria-label="Floating movement joystick"><div id="joyBase"><div id="joyThumb"></div><span id="joyReadout" aria-live="off">MOVE</span></div><span id="controlStatus" aria-live="off">ENGINE WAIT</span></div><div id="touch"><div id="actions"><button id="interact">TALK</button><button id="attack">HIT</button><button data-m="sprint" id="sprint" aria-label="Hold to sprint">RUN</button></div></div><div id="choicePanel" role="dialog" aria-modal="true"><div class="dialog"><h2 id="choiceTitle">Choose your path</h2><p id="choiceText"></p><button id="routeCourier">The quiet job: collect the package</button><button id="routeBrawl">The loud job: win three fights</button><button id="choiceBack">Not yet</button></div></div><div id="pausePanel" role="dialog" aria-modal="true"><div class="dialog"><h2>PAUSED</h2><p>Progress saves automatically on mission changes and periodically on this device.</p><button id="resume">RESUME</button><button id="saveNow">SAVE NOW</button><div id="gfxPanel"><div class="row"><span>GRAPHICS</span><button data-gfx="low">LOW</button><button data-gfx="medium">MEDIUM</button><button data-gfx="high">HIGH</button><button data-gfx="ultra">ULTRA</button></div><div class="row"><span>TIME</span><button data-time="golden">GOLDEN HOUR</button><button data-time="overcast">OVERCAST</button><button data-time="night">NIGHT</button></div><div class="row"><span>WEATHER</span><button data-rain="0">DRY</button><button data-rain="1">DRIZZLE</button><button data-rain="2">RAIN</button></div><div class="row"><span>DISPLAY</span><button id="fpsToggle">SHOW FPS</button></div><p id="gfxNote"></p></div><button id="exportSave">EXPORT SAVE FILE</button><button id="importSave">IMPORT SAVE FILE</button><input id="saveFile" type="file" accept=".json,application/json" hidden><p id="transferStatus" role="status" aria-live="polite"></p><button id="restart">NEW GAME (RESTART)</button></div></div><div id="dialogue" role="dialog" aria-live="polite"><div id="dlgWho"></div><div id="dlgText"></div><div id="dlgChoices"></div></div><div id="mgPad"><div><button data-mg="left" aria-label="Move left">◀</button><button data-mg="right" aria-label="Move right">▶</button></div><div><button data-mg="block">BLOCK</button><button data-mg="special">SPECIAL</button><button data-mg="kick">KICK</button><button data-mg="punch">PUNCH</button></div></div><button id="mgSkip">SKIP ▶▶</button><div id="fade"></div><button id="phoneBtn" aria-label="Phone">📱</button><div id="phone" role="dialog" aria-label="Phone"><div class="ph-head"><span>PHONE</span><button id="phClose" aria-label="Close phone">✕</button></div><div class="ph-tabs"><button data-ph="msgs" class="on">MESSAGES</button><button data-ph="jobs">JOBS</button></div><div id="phMsgs"></div><div id="phJobs"></div></div><div id="toast" aria-live="polite"></div><div id="fps"></div><div id="hitFlash"></div><div id="mapcredit">3D gameplay layout is fictional, not surveyed GIS</div><script>
+</style><canvas id="miniMap" class="compact" width="180" height="180" aria-label="District minimap, tap to collapse" title="Tap to collapse minimap"></canvas><div id="panel"><div id="menu"><h1>AOTEAROA: UNDERWORLD</h1><p>CHAPTER ZERO: NOBODY KNOWS YOUR NAME</p><p>Friday night on your cousin Manu's couch. A busted old console, a few cans, and a debt somebody needs to collect. Fourteen crews are watching who steps up. Your hometown and your choices change how it plays out.</p><label for="hometown">CHOOSE YOUR HOMETOWN</label><select id="hometown" style="display:block;width:100%;padding:12px;margin:10px 0;background:#152320;color:white;border:1px solid #879b83"></select><p id="originStory"></p><div id="factions"></div><button id="independent">INDEPENDENT / NO FACTION</button><p><small>Choose a crew to approach after the prologue, or stay independent.</small></p><p><small>Playable vertical slice. Fictional characters and story. Desktop: WASD, mouse look, click to attack, Shift sprint, E interact, Esc pause. Phone: floating left joystick, drag right side to look, HIT/TALK, pause button. Save is device-local.</small></p><div id="loadState" aria-live="polite">Loading 3D engine…</div><div id="loadBar"><i></i></div><button id="start" disabled title="Loading 3D engine">NEW GAME</button><button id="continue" disabled title="Loading 3D engine">CONTINUE SAVED GAME</button><div id="saveState" aria-live="polite"></div></div></div><div id="hud"><small style="opacity:.65">R15 • PHOTO SURFACES</small><b id="status">HEALTH 100 | REP 0</b><div id="quest">Find your hometown contact</div><div id="missionDistance"></div><div id="location">FICTIONAL DISTRICT</div></div><div id="cross">+</div><div id="waypoint" aria-live="off"></div><button id="pauseButton" aria-label="Pause game">Ⅱ</button><div id="notice">Find the yellow diamond above your hometown contact. Press E or TALK nearby.</div><div id="joystick" aria-label="Floating movement joystick"><div id="joyBase"><div id="joyThumb"></div><span id="joyReadout" aria-live="off">MOVE</span></div><span id="controlStatus" aria-live="off">ENGINE WAIT</span></div><div id="touch"><div id="actions"><button id="interact">TALK</button><button id="attack">HIT</button><button data-m="sprint" id="sprint" aria-label="Hold to sprint">RUN</button></div></div><div id="choicePanel" role="dialog" aria-modal="true"><div class="dialog"><h2 id="choiceTitle">Choose your path</h2><p id="choiceText"></p><button id="routeCourier">The quiet job: collect the package</button><button id="routeBrawl">The loud job: win three fights</button><button id="choiceBack">Not yet</button></div></div><div id="pausePanel" role="dialog" aria-modal="true"><div class="dialog"><h2>PAUSED</h2><p>Progress saves automatically on mission changes and periodically on this device.</p><button id="resume">RESUME</button><button id="saveNow">SAVE NOW</button><div id="gfxPanel"><div class="row"><span>GRAPHICS</span><button data-gfx="low">LOW</button><button data-gfx="medium">MEDIUM</button><button data-gfx="high">HIGH</button><button data-gfx="ultra">ULTRA</button></div><div class="row"><span>TIME</span><button data-time="golden">GOLDEN HOUR</button><button data-time="overcast">OVERCAST</button><button data-time="night">NIGHT</button></div><div class="row"><span>WEATHER</span><button data-rain="0">DRY</button><button data-rain="1">DRIZZLE</button><button data-rain="2">RAIN</button></div><div class="row"><span>DISPLAY</span><button id="fpsToggle">SHOW FPS</button></div><p id="gfxNote"></p></div><button id="exportSave">EXPORT SAVE FILE</button><button id="importSave">IMPORT SAVE FILE</button><input id="saveFile" type="file" accept=".json,application/json" hidden><p id="transferStatus" role="status" aria-live="polite"></p><button id="restart">NEW GAME (RESTART)</button></div></div><div id="dialogue" role="dialog" aria-live="polite"><div id="dlgWho"></div><div id="dlgText"></div><div id="dlgChoices"></div></div><div id="mgPad"><div><button data-mg="left" aria-label="Move left">◀</button><button data-mg="right" aria-label="Move right">▶</button></div><div><button data-mg="block">BLOCK</button><button data-mg="special">SPECIAL</button><button data-mg="kick">KICK</button><button data-mg="punch">PUNCH</button></div></div><button id="mgSkip">SKIP ▶▶</button><div id="fade"></div><button id="phoneBtn" aria-label="Phone">📱</button><div id="phone" role="dialog" aria-label="Phone"><div class="ph-head"><span>PHONE</span><button id="phClose" aria-label="Close phone">✕</button></div><div class="ph-tabs"><button data-ph="msgs" class="on">MESSAGES</button><button data-ph="jobs">JOBS</button></div><div id="phMsgs"></div><div id="phJobs"></div></div><div id="toast" aria-live="polite"></div><div id="fps"></div><div id="hitFlash"></div><div id="mapcredit">3D gameplay layout is fictional, not surveyed GIS</div><script>
 window.__auEngineReady=false;
 // Render hometown choices even when the external 3D engine cannot be fetched.
 const fallbackHometowns={Northland:['Kaikohe','Kaitaia','Whangārei','Opononi'],Auckland:['South Auckland','West Auckland','Central Auckland','North Shore'],Waikato:['Hamilton','Huntly','Tokoroa'],'Bay of Plenty':['Tauranga','Rotorua','Whakatāne'],'East Coast':['Gisborne','Wairoa'],'Hawke’s Bay':['Napier','Hastings'],'Central North Island':['Taupō','New Plymouth','Whanganui','Palmerston North'],Wellington:['Wellington','Lower Hutt','Porirua'],'Top of South':['Nelson','Blenheim'],Canterbury:['Christchurch','Ashburton','Timaru'],'West Coast':['Greymouth','Hokitika'],Otago:['Dunedin','Queenstown','Wānaka'],Southland:['Invercargill','Bluff'],Islands:['Stewart Island / Rakiura','Chatham Islands']};
@@ -467,6 +467,7 @@ const TIME_PRESETS = {
     cover: 0.45, fog: lin(0xb4b6b9), fogSun: lin(0xf7b27a), fogDensity: 0.0023, fogFalloff: 0.03,
     exposure: 0.95, env: 0.95, night: 0, litFrac: 0.14, sat: 1.06, contrast: 1.1, tone: 0,
     shadowTint: [-0.012, 0.0, 0.016], highTint: [0.02, 0.008, -0.014],
+    hdri: 'kloppenheim_06_puresky_2k.hdr', hdriSun: 3.4, hdriExposure: 0.52, hdriEnv: 0.9, bgIntensity: 1.0, hdriFog: 0.0016, hdriContrast: 1.14, hdriSat: 1.1,
   },
   overcast: {
     sunElev: 38, sunAzim: -20, sunColor: lin(0xdfe6ef), sunIntensity: 1.1,
@@ -474,6 +475,7 @@ const TIME_PRESETS = {
     cover: 0.93, fog: lin(0xaeb6bd), fogSun: lin(0xc8cdd2), fogDensity: 0.0055, fogFalloff: 0.025,
     exposure: 1.1, env: 1.25, night: 0, litFrac: 0.22, sat: 0.98, contrast: 1.08, tone: 0,
     shadowTint: [-0.006, 0.0, 0.01], highTint: [0.0, 0.0, 0.0],
+    hdri: 'kloofendal_overcast_puresky_1k.hdr', hdriSun: 0.8, hdriExposure: 0.75, hdriEnv: 1.1, bgIntensity: 1.0, hdriFog: 0.004, hdriContrast: 1.1, hdriSat: 1.0,
   },
   night: {
     sunElev: 34, sunAzim: 60, sunColor: lin(0x9fb4e6), sunIntensity: 0.16,
@@ -561,8 +563,7 @@ class SkySystem {
     this.fog.color.copy(p.fog); this.fog.density = p.fogDensity;
     G.uSunDir.value.copy(this.sunDir); G.uFogSun.value.copy(p.fogSun); G.uFogFalloff.value = p.fogFalloff;
     G.uNight.value = p.night; G.uLitFrac.value = p.litFrac;
-    this.lightRight.crossVectors(new THREE.Vector3(0, 1, 0), this.sunDir).normalize();
-    this.lightUp.crossVectors(this.sunDir, this.lightRight).normalize();
+    this.updateLightBasis();
     this.renderer.toneMappingExposure = p.exposure;
     if (post) {
       const f = post.finalMat.uniforms;
@@ -570,8 +571,29 @@ class SkySystem {
       f.uShadowTint.value.fromArray(p.shadowTint); f.uHighTint.value.fromArray(p.highTint);
       post.bloom.threshold = p.night ? 0.9 : 1.6; post.bloom.strength = p.night ? 0.55 : 0.32;
     }
-    this.bakeEnvironment();
-    this.scene.environmentIntensity = p.env;
+    const h = p.hdri && this.photo?.hdri[p.hdri];
+    if (h) this.useHDRI(h, p, post);
+    else { this.mesh.visible = true; this.scene.background = null; this.bakeEnvironment(); this.scene.environmentIntensity = p.env; }
+  }
+  updateLightBasis() {
+    this.lightRight.crossVectors(new THREE.Vector3(0, 1, 0), this.sunDir).normalize();
+    this.lightUp.crossVectors(this.sunDir, this.lightRight).normalize();
+  }
+  // Photographic sky: background, image-based light, sun direction/colour and haze all come from the HDRI.
+  useHDRI(h, p, post) {
+    this.mesh.visible = false;
+    this.scene.background = h.tex; this.scene.backgroundIntensity = p.bgIntensity;
+    this.scene.environment = h.env.texture; this.scene.environmentIntensity = p.hdriEnv;
+    this.sunDir.copy(h.sunDir); G.uSunDir.value.copy(h.sunDir); this.uniforms.uSkySun.value.copy(h.sunDir);
+    const c = h.sunColor.clone(), mx = Math.max(c.r, c.g, c.b, 1e-4); c.multiplyScalar(1 / mx).lerp(p.sunColor, 0.35);
+    this.sun.color.copy(c); this.sun.intensity = p.hdriSun;
+    this.fog.color.copy(h.horizon).multiplyScalar(p.bgIntensity * 0.85); this.fog.density = p.hdriFog;
+    const ts = h.towardSun.clone(), cap = Math.max(h.horizon.r, h.horizon.g, h.horizon.b) * 2.5, tm = Math.max(ts.r, ts.g, ts.b);
+    if (tm > cap) ts.multiplyScalar(cap / tm);
+    G.uFogSun.value.copy(ts);
+    this.updateLightBasis();
+    this.renderer.toneMappingExposure = p.hdriExposure;
+    if (post) { const f = post.finalMat.uniforms; f.toneMappingExposure.value = p.hdriExposure; f.uContrast.value = p.hdriContrast; f.uSat.value = p.hdriSat; }
   }
   bakeEnvironment() {
     const envScene = new THREE.Scene();
@@ -903,13 +925,127 @@ class TextureForge {
   }
 }
 
+// ===== 25-photo.js =====
+// Photographic assets: CC0 scanned PBR textures and HDRI skies (Poly Haven), streamed in after the
+// district is playable. Anything that fails to load leaves the GPU-generated texture or sky in place.
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+
+const ASSET_CDN = 'https://cdn.jsdelivr.net/gh/jimmylovnjames/Nz-gangz@ccr-e2a07ab1-xlsvi1/assets/';
+// material key -> [Poly Haven asset, tile size in metres, rotate 90° (planks laid the other way)]
+const PHOTO = {
+  asphalt: ['asphalt_02', 3.0], patch: ['asphalt_02', 3.0], chipseal: ['tarred_gravel', 2.2],
+  concrete: ['concrete_pavement', 1.8], kerb: ['concrete_floor_02', 2.0], path: ['concrete_floor_02', 2.0],
+  pavers: ['herringbone_brick', 1.8], plazaPavers: ['herringbone_brick', 1.8],
+  brick: ['brick_wall_02', 2.0], plaster: ['beige_wall_002', 3.0], weatherboard: ['distressed_painted_planks', 1.6, true],
+  corrugated: ['corrugated_iron', 1.12], corrugatedRust: ['worn_corrugated_iron', 1.8],
+  grass: ['leafy_grass', 2.0], gravel: ['gravel_floor', 2.25], yard: ['gravel_floor', 2.25],
+  roller: ['painted_metal_shutter', 2.0], wood: ['weathered_brown_planks', 1.8, true], bark: ['bark_willow', 1.0],
+};
+
+function assetBases() {
+  const p = new URLSearchParams(location.search).get('assets');
+  if (p === 'off') return [];
+  if (p === 'cdn' || !location.protocol.startsWith('http')) return [ASSET_CDN];
+  return ['assets/', ASSET_CDN];
+}
+function loadWithFallback(loader, path, bases) {
+  return new Promise((resolve, reject) => {
+    const tryAt = i => {
+      if (i >= bases.length) return reject(new Error('asset unavailable: ' + path));
+      loader.load(bases[i] + path, resolve, undefined, () => tryAt(i + 1));
+    };
+    tryAt(0);
+  });
+}
+
+class PhotoAssets {
+  constructor(renderer, lib, quality) {
+    this.renderer = renderer; this.lib = lib; this.q = quality; this.bases = assetBases();
+    this.texLoader = new THREE.TextureLoader(); this.sets = {}; this.applied = new Set(); this.hdri = {};
+    this.enabled = this.bases.length > 0 && quality.tex >= 1024;
+  }
+  // Loads every scanned set in parallel and applies each as soon as its three maps arrive.
+  async loadTextures(onProgress) {
+    if (!this.enabled) return 0;
+    const assets = [...new Set(Object.values(PHOTO).map(p => p[0]))];
+    let done = 0;
+    await Promise.all(assets.map(async name => {
+      try {
+        const [map, normalMap, arm] = await Promise.all(['diff', 'nor', 'arm'].map(k => loadWithFallback(this.texLoader, `tex/${name}/${name}_${k}_1k.jpg`, this.bases)));
+        map.colorSpace = THREE.SRGBColorSpace; normalMap.colorSpace = THREE.NoColorSpace; arm.colorSpace = THREE.NoColorSpace;
+        this.sets[name] = { map, normalMap, arm };
+        for (const [key, p] of Object.entries(PHOTO)) if (p[0] === name) this.applyTo(key);
+      } catch (_) { /* keep the generated texture for this surface */ }
+      onProgress?.(++done / assets.length);
+    }));
+    return Object.keys(this.sets).length;
+  }
+  applyTo(key) {
+    const m = this.lib.cache[key], p = PHOTO[key], set = this.sets[p?.[0]];
+    if (!m || !set || this.applied.has(m)) return;
+    this.applied.add(m);
+    const repeat = (MAT_DEFS[key]?.scale || 1) / p[1], aniso = Math.min(this.q.aniso, this.renderer.capabilities.getMaxAnisotropy());
+    const prep = t => {
+      const c = t.clone(); c.wrapS = c.wrapT = THREE.RepeatWrapping; c.repeat.set(repeat, repeat); c.anisotropy = aniso;
+      if (p[2]) { c.center.set(0.5, 0.5); c.rotation = Math.PI / 2; }
+      c.needsUpdate = true; return c;
+    };
+    m.map = prep(set.map); m.normalMap = prep(set.normalMap);
+    m.roughnessMap = m.metalnessMap = m.aoMap = prep(set.arm);
+    m.normalScale.set(1, 1); m.needsUpdate = true;
+  }
+  // HDRI sky: decoded once, rotated so its sun sits at the preset's azimuth, analysed for sun and horizon colour.
+  async loadHDRI(file, azimuthDeg) {
+    if (!this.enabled) return null;
+    if (this.hdri[file]) return this.hdri[file];
+    const loader = new RGBELoader().setDataType(THREE.HalfFloatType);
+    const tex = await loadWithFallback(loader, 'hdri/' + file, this.bases);
+    const { width: W, height: H, data } = tex.image, h2f = THREE.DataUtils.fromHalfFloat;
+    // Brightest pixel = the sun (sampled on a grid, then refined).
+    let best = -1, bx = 0, by = 0;
+    for (let y = 0; y < H * 0.55; y += 2) for (let x = 0; x < W; x += 2) {
+      const i = (y * W + x) * 4, l = h2f(data[i]) * 0.3 + h2f(data[i + 1]) * 0.59 + h2f(data[i + 2]) * 0.11;
+      if (l > best) { best = l; bx = x; by = y; }
+    }
+    const sunPix = (by * W + bx) * 4, sunColor = new THREE.Color(h2f(data[sunPix]), h2f(data[sunPix + 1]), h2f(data[sunPix + 2]));
+    // Rows run top to bottom (texture.flipY), so v = 1 - row/H. three's equirect: u = atan(z, x)/2π + 0.5.
+    const u0 = (bx + 0.5) / W, theta = (1 - (by + 0.5) / H - 0.5) * Math.PI;
+    const A = THREE.MathUtils.degToRad(azimuthDeg), phiT = Math.atan2(-Math.cos(A), Math.sin(A)), uT = phiT / TAU + 0.5;
+    const shift = Math.round((u0 - uT) * W);
+    if (shift) {
+      const row = new Uint16Array(W * 4);
+      for (let y = 0; y < H; y++) {
+        const o = y * W * 4;
+        for (let x = 0; x < W; x++) { const sx = ((x + shift) % W + W) % W; row.set(data.subarray(o + sx * 4, o + sx * 4 + 4), x * 4); }
+        data.set(row, o);
+      }
+    }
+    const phi = (uT - 0.5) * TAU;
+    const sunDir = new THREE.Vector3(Math.cos(theta) * Math.cos(phi), Math.sin(theta), Math.cos(theta) * Math.sin(phi)).normalize();
+    if (sunDir.y < 0.06) { sunDir.y = 0.06; sunDir.normalize(); }
+    // Horizon colours: average just above the horizon, and the part facing the sun.
+    const hz = new THREE.Color(0, 0, 0), toward = new THREE.Color(0, 0, 0); let n = 0, nt = 0;
+    const yH = Math.floor(H * 0.47);
+    for (let y = yH - 4; y < yH; y++) for (let x = 0; x < W; x += 4) {
+      const i = (y * W + x) * 4, c = new THREE.Color(h2f(data[i]), h2f(data[i + 1]), h2f(data[i + 2]));
+      const near = Math.abs(((x / W - uT + 1.5) % 1) - 0.5) < 0.08;
+      if (near) { toward.add(c); nt++; } else { hz.add(c); n++; }
+    }
+    hz.multiplyScalar(1 / Math.max(1, n)); toward.multiplyScalar(1 / Math.max(1, nt));
+    tex.mapping = THREE.EquirectangularReflectionMapping; tex.needsUpdate = true;
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    const env = pmrem.fromEquirectangular(tex); pmrem.dispose();
+    return (this.hdri[file] = { tex, env, sunDir, sunColor, horizon: hz, towardSun: toward, sunLum: best });
+  }
+}
+
 // ===== 30-materials.js =====
 // Material library. Geometry uses metre-based UVs; `scale` is metres per texture tile.
 const MAT_DEFS = {
   asphalt: { tex: 'asphalt', scale: 4, wet: 1 },
   chipseal: { tex: 'chipseal', scale: 3, wet: 1 },
   concrete: { tex: 'concrete', scale: 3, wet: 0.8 },
-  kerb: { alias: 'concrete', scale: 1.2 },
+  kerb: { tex: 'concrete', scale: 1.2, wet: 0.6 },
   pavers: { tex: 'pavers', scale: 2.4, wet: 0.9 },
   brick: { tex: 'brick', scale: 2.44, cast: 1 },
   plaster: { tex: 'plaster', scale: 3, cast: 1 },
@@ -4702,6 +4838,8 @@ async function boot() {
   const names = Object.keys(TEX_DEFS);
   for (let i = 0; i < names.length; i++) { forge.make(names[i]); if (i % 3 === 2) { setLoad(0.05 + 0.2 * i / names.length); await nextTick(); } }
   const lib = new MaterialLib(forge, q);
+  const photo = new PhotoAssets(renderer, lib, q);
+  sky.photo = photo;
 
   setLoad(0.28, 'Building the district…');
   const city = new City(lib, scene, q);
@@ -4769,7 +4907,7 @@ async function boot() {
     $('gfxNote').textContent = q.tex !== startTex ? 'Texture detail for this setting applies after you reload the page.' : `Graphics: ${tierName.toUpperCase()}. GPU: ${detected.gpu}`;
     persist();
   }));
-  document.querySelectorAll('[data-time]').forEach(b => b.addEventListener('click', () => { timeName = b.dataset.time; const wasIndoor = indoor; setLook(false); sky.apply(timeName, post); if (wasIndoor) setLook(true); applyNight(); rain.set(rainLevel, q, sky.preset.night); persist(); }));
+  document.querySelectorAll('[data-time]').forEach(b => b.addEventListener('click', () => { timeName = b.dataset.time; applySky(); loadSkyPhoto(); applyNight(); rain.set(rainLevel, q, sky.preset.night); persist(); }));
   document.querySelectorAll('[data-rain]').forEach(b => b.addEventListener('click', () => { rainLevel = +b.dataset.rain; rain.set(rainLevel, q, sky.preset.night); persist(); }));
   $('fpsToggle').addEventListener('click', () => { settings.fps = !settings.fps; persist(); });
   $('gfxNote').textContent = `Auto-detected: ${detected.tier.toUpperCase()} (${detected.gpu})`;
@@ -4797,6 +4935,17 @@ async function boot() {
     }
     indoor = inside;
   }
+  // Re-apply the sky without disturbing the lounge's indoor look.
+  function applySky() { const wasIndoor = indoor; setLook(false); sky.apply(timeName, post); if (wasIndoor) setLook(true); }
+  function loadSkyPhoto() {
+    const p = TIME_PRESETS[timeName];
+    if (!p.hdri || photo.hdri[p.hdri]) return;
+    const want = timeName;
+    photo.loadHDRI(p.hdri, p.sunAzim).then(() => { if (timeName === want) applySky(); }).catch(err => console.info('Photo sky unavailable, keeping the generated sky.', err?.message));
+  }
+  // Photographic textures and sky stream in after the district is playable.
+  photo.loadTextures().then(n => { if (n) console.info(`Photo textures applied: ${n} sets`); });
+  loadSkyPhoto();
   let prev = performance.now(), frames = 0, frameMs = 0, cooldown = 0, fpsShown = 0, fpsTimer = 0;
   const hitFlash = $('hitFlash');
   function loop(now) {

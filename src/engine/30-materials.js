@@ -3,7 +3,7 @@ const MAT_DEFS = {
   asphalt: { tex: 'asphalt', scale: 4, wet: 1 },
   chipseal: { tex: 'chipseal', scale: 3, wet: 1 },
   concrete: { tex: 'concrete', scale: 3, wet: 0.8 },
-  kerb: { alias: 'concrete', scale: 1.2 },
+  kerb: { tex: 'concrete', scale: 1.2, wet: 0.6 },
   pavers: { tex: 'pavers', scale: 2.4, wet: 0.9 },
   brick: { tex: 'brick', scale: 2.44, cast: 1 },
   plaster: { tex: 'plaster', scale: 3, cast: 1 },

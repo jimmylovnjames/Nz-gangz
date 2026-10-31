@@ -1,0 +1,167 @@
+{
+ "asphalt_02": {
+  "dims": [
+   3000.000238418579,
+   3000
+  ],
+  "maps": [
+   "arm",
+   "diff",
+   "nor"
+  ]
+ },
+ "tarred_gravel": {
+  "dims": [
+   2200.000047683716,
+   2200.000047683716
+  ],
+  "maps": [
+   "arm",
+   "diff",
+   "nor"
+  ]
+ },
+ "concrete_pavement": {
+  "dims": [
+   1800.0000715255737,
+   1800.0000715255737
+  ],
+  "maps": [
+   "arm",
+   "diff",
+   "nor"
+  ]
+ },
+ "concrete_floor_02": {
+  "dims": [
+   2000,
+   2000
+  ],
+  "maps": [
+   "arm",
+   "diff",
+   "nor"
+  ]
+ },
+ "herringbone_brick": {
+  "dims": [
+   1800.0000715255737,
+   1800.0000715255737
+  ],
+  "maps": [
+   "arm",
+   "diff",
+   "nor"
+  ]
+ },
+ "brick_wall_02": {
+  "dims": [
+   2000,
+   2000
+  ],
+  "maps": [
+   "arm",
+   "diff",
+   "nor"
+  ]
+ },
+ "beige_wall_002": {
+  "dims": [
+   3000,
+   3000.000238418579
+  ],
+  "maps": [
+   "arm",
+   "diff",
+   "nor"
+  ]
+ },
+ "distressed_painted_planks": {
+  "dims": [
+   1599.9999046325684,
+   1599.9999046325684
+  ],
+  "maps": [
+   "arm",
+   "diff",
+   "nor"
+  ]
+ },
+ "corrugated_iron": {
+  "dims": [
+   1120.0000047683716,
+   1120.0000047683716
+  ],
+  "maps": [
+   "arm",
+   "diff",
+   "nor"
+  ]
+ },
+ "worn_corrugated_iron": {
+  "dims": [
+   1799.9995946884155,
+   1799.9995946884155
+  ],
+  "maps": [
+   "arm",
+   "diff",
+   "nor"
+  ]
+ },
+ "leafy_grass": {
+  "dims": [
+   2000,
+   2000
+  ],
+  "maps": [
+   "arm",
+   "diff",
+   "nor"
+  ]
+ },
+ "gravel_floor": {
+  "dims": [
+   2250,
+   2250
+  ],
+  "maps": [
+   "arm",
+   "diff",
+   "nor"
+  ]
+ },
+ "painted_metal_shutter": {
+  "dims": [
+   2000,
+   2000
+  ],
+  "maps": [
+   "arm",
+   "diff",
+   "nor"
+  ]
+ },
+ "weathered_brown_planks": {
+  "dims": [
+   1799.9999523162842,
+   1799.9999523162842
+  ],
+  "maps": [
+   "arm",
+   "diff",
+   "nor"
+  ]
+ },
+ "bark_willow": {
+  "dims": [
+   1000,
+   1000
+  ],
+  "maps": [
+   "arm",
+   "diff",
+   "nor"
+  ]
+ }
+}

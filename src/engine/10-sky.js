@@ -7,6 +7,7 @@ const TIME_PRESETS = {
     cover: 0.45, fog: lin(0xb4b6b9), fogSun: lin(0xf7b27a), fogDensity: 0.0023, fogFalloff: 0.03,
     exposure: 0.95, env: 0.95, night: 0, litFrac: 0.14, sat: 1.06, contrast: 1.1, tone: 0,
     shadowTint: [-0.012, 0.0, 0.016], highTint: [0.02, 0.008, -0.014],
+    hdri: 'kloppenheim_06_puresky_2k.hdr', hdriSun: 3.4, hdriExposure: 0.52, hdriEnv: 0.9, bgIntensity: 1.0, hdriFog: 0.0016, hdriContrast: 1.14, hdriSat: 1.1,
   },
   overcast: {
     sunElev: 38, sunAzim: -20, sunColor: lin(0xdfe6ef), sunIntensity: 1.1,
@@ -14,6 +15,7 @@ const TIME_PRESETS = {
     cover: 0.93, fog: lin(0xaeb6bd), fogSun: lin(0xc8cdd2), fogDensity: 0.0055, fogFalloff: 0.025,
     exposure: 1.1, env: 1.25, night: 0, litFrac: 0.22, sat: 0.98, contrast: 1.08, tone: 0,
     shadowTint: [-0.006, 0.0, 0.01], highTint: [0.0, 0.0, 0.0],
+    hdri: 'kloofendal_overcast_puresky_1k.hdr', hdriSun: 0.8, hdriExposure: 0.75, hdriEnv: 1.1, bgIntensity: 1.0, hdriFog: 0.004, hdriContrast: 1.1, hdriSat: 1.0,
   },
   night: {
     sunElev: 34, sunAzim: 60, sunColor: lin(0x9fb4e6), sunIntensity: 0.16,
@@ -101,8 +103,7 @@ class SkySystem {
     this.fog.color.copy(p.fog); this.fog.density = p.fogDensity;
     G.uSunDir.value.copy(this.sunDir); G.uFogSun.value.copy(p.fogSun); G.uFogFalloff.value = p.fogFalloff;
     G.uNight.value = p.night; G.uLitFrac.value = p.litFrac;
-    this.lightRight.crossVectors(new THREE.Vector3(0, 1, 0), this.sunDir).normalize();
-    this.lightUp.crossVectors(this.sunDir, this.lightRight).normalize();
+    this.updateLightBasis();
     this.renderer.toneMappingExposure = p.exposure;
     if (post) {
       const f = post.finalMat.uniforms;
@@ -110,8 +111,29 @@ class SkySystem {
       f.uShadowTint.value.fromArray(p.shadowTint); f.uHighTint.value.fromArray(p.highTint);
       post.bloom.threshold = p.night ? 0.9 : 1.6; post.bloom.strength = p.night ? 0.55 : 0.32;
     }
-    this.bakeEnvironment();
-    this.scene.environmentIntensity = p.env;
+    const h = p.hdri && this.photo?.hdri[p.hdri];
+    if (h) this.useHDRI(h, p, post);
+    else { this.mesh.visible = true; this.scene.background = null; this.bakeEnvironment(); this.scene.environmentIntensity = p.env; }
+  }
+  updateLightBasis() {
+    this.lightRight.crossVectors(new THREE.Vector3(0, 1, 0), this.sunDir).normalize();
+    this.lightUp.crossVectors(this.sunDir, this.lightRight).normalize();
+  }
+  // Photographic sky: background, image-based light, sun direction/colour and haze all come from the HDRI.
+  useHDRI(h, p, post) {
+    this.mesh.visible = false;
+    this.scene.background = h.tex; this.scene.backgroundIntensity = p.bgIntensity;
+    this.scene.environment = h.env.texture; this.scene.environmentIntensity = p.hdriEnv;
+    this.sunDir.copy(h.sunDir); G.uSunDir.value.copy(h.sunDir); this.uniforms.uSkySun.value.copy(h.sunDir);
+    const c = h.sunColor.clone(), mx = Math.max(c.r, c.g, c.b, 1e-4); c.multiplyScalar(1 / mx).lerp(p.sunColor, 0.35);
+    this.sun.color.copy(c); this.sun.intensity = p.hdriSun;
+    this.fog.color.copy(h.horizon).multiplyScalar(p.bgIntensity * 0.85); this.fog.density = p.hdriFog;
+    const ts = h.towardSun.clone(), cap = Math.max(h.horizon.r, h.horizon.g, h.horizon.b) * 2.5, tm = Math.max(ts.r, ts.g, ts.b);
+    if (tm > cap) ts.multiplyScalar(cap / tm);
+    G.uFogSun.value.copy(ts);
+    this.updateLightBasis();
+    this.renderer.toneMappingExposure = p.hdriExposure;
+    if (post) { const f = post.finalMat.uniforms; f.toneMappingExposure.value = p.hdriExposure; f.uContrast.value = p.hdriContrast; f.uSat.value = p.hdriSat; }
   }
   bakeEnvironment() {
     const envScene = new THREE.Scene();
