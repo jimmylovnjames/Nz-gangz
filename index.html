@@ -1,0 +1,353 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>AOTEAROA UNDERWORLD | RUN 11</title><style>body{margin:0;background:#080b0d;color:white;font:14px system-ui;overflow:hidden}canvas{display:block}#hud{position:absolute;top:12px;left:12px;text-shadow:0 2px 4px black;pointer-events:none}#panel{position:absolute;inset:0;background:#071014ed;display:grid;place-items:center;z-index:5}#menu{max-width:520px;padding:25px}h1{font-size:32px;margin:0;color:#e8ba55}button{background:#b88a35;color:#111;border:0;border-radius:8px;padding:12px;margin:5px;font-weight:bold}#notice{position:absolute;bottom:95px;left:50%;transform:translateX(-50%);background:#111c;padding:10px;border-radius:7px;text-align:center;max-width:85%}#cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:23px;pointer-events:none}#touch{position:absolute;bottom:15px;width:100%;display:flex;justify-content:space-between;pointer-events:none}#touch button{pointer-events:auto;opacity:.8;min-width:56px}#mapcredit{position:absolute;bottom:2px;right:5px;font-size:10px;color:#ddd}small{color:#bbb}
+#panel{overflow-y:auto;align-items:start}#menu{width:min(560px,calc(100vw - 36px));margin:auto;box-sizing:border-box}#factions{max-height:180px;overflow:auto;padding:4px;background:#15201b}#factions button{font-size:11px;padding:8px;margin:3px}#factions button.selected{outline:2px solid #fff3a5}#hud{max-width:72%;line-height:1.45}#hud b{color:#f3d98c}#missionDistance{color:#b8f5e1}#notice{bottom:104px;min-width:180px;z-index:2}#pauseButton{position:absolute;right:8px;top:8px;z-index:3;background:#19231c;color:white;border:1px solid #829688}#choicePanel,#pausePanel{position:absolute;inset:0;z-index:8;background:#02080be8;display:none;align-items:center;justify-content:center;padding:18px;box-sizing:border-box}#choicePanel .dialog,#pausePanel .dialog{max-width:520px;width:100%;background:#17201f;border:1px solid #8c7650;border-radius:14px;padding:20px;box-sizing:border-box}#choicePanel button,#pausePanel button{display:block;width:100%;margin:9px 0;padding:15px;text-align:left}#saveState{font-size:12px;color:#b8f5e1}#continue{display:none;background:#52795f;color:white}#touch button{touch-action:none}#cross{color:#ffedac}#quest{color:#f6e2af}#waypoint{position:absolute;top:33%;left:50%;transform:translateX(-50%);font-weight:bold;text-shadow:0 2px 4px black;color:#f5da6c;pointer-events:none}#location{font-size:12px;color:#eee}@media(max-width:600px){#hud{top:8px;left:8px;font-size:12px;max-width:80%}#pauseButton{padding:8px;margin:3px}#notice{font-size:12px;bottom:115px}#touch button{min-width:50px;padding:11px;margin:2px}#mapcredit{display:none}}
+#miniMap{position:absolute;right:10px;bottom:143px;width:142px;height:142px;background:#081b19d9;border:1px solid #b7d2ae88;border-radius:10px;z-index:3;box-shadow:0 4px 18px #0009;touch-action:manipulation}#miniMap.compact{width:66px;height:66px;opacity:.8}@media(max-width:600px){#miniMap{right:7px;bottom:132px;width:112px;height:112px}}
+
+/* Run 8: thumb-zone floating joystick, unobstructed cinematic viewport */
+#joystick{position:fixed;left:10px;bottom:calc(16px + env(safe-area-inset-bottom));width:154px;height:154px;z-index:6;touch-action:none;pointer-events:auto;user-select:none;border-radius:50%;background:#15212755;border:1px solid #d4d9db50;box-sizing:border-box}
+#joyBase{position:absolute;width:112px;height:112px;border:1px solid #ffffff65;border-radius:50%;background:#121c2190;box-shadow:0 0 0 7px #1116;display:block;transform:translate(-50%,-50%);pointer-events:none}
+#controlStatus{position:absolute;bottom:6px;left:0;width:100%;text-align:center;font:10px system-ui;color:#e4d9b7;pointer-events:none;text-shadow:0 1px 3px #000}#joyReadout{position:absolute;left:50%;top:8px;transform:translateX(-50%);font:10px system-ui;color:#c6d2d6;pointer-events:none}#joyThumb{position:absolute;left:50%;top:50%;width:49px;height:49px;border-radius:50%;background:#e5d6b9aa;border:2px solid #fff8;transform:translate(-50%,-50%)}
+#touch{width:auto;right:10px;left:auto;bottom:calc(20px + env(safe-area-inset-bottom));z-index:4}
+#actions{display:flex;align-items:flex-end;gap:6px}
+#actions button{border-radius:50%;width:58px;height:58px;min-width:0!important;padding:0!important;margin:0!important;font-size:12px;background:#182323b8;color:#f3e4c4;border:1px solid #c8b89099;backdrop-filter:blur(5px)}
+#actions #attack{width:70px;height:70px;border-color:#d5a458;background:#a87535c9}
+#hud{top:calc(12px + env(safe-area-inset-top));left:12px;max-width:calc(100vw - 94px);font-size:12px!important;line-height:1.35;z-index:2;background:#101a1b73;border-radius:8px;padding:7px 9px;backdrop-filter:blur(3px)}
+#location{display:none}#notice{bottom:92px;max-width:65vw;font-size:11px;padding:6px 9px;pointer-events:none}
+#miniMap{width:78px!important;height:78px!important;right:10px!important;bottom:105px!important;opacity:.84}
+#miniMap.compact{width:42px!important;height:42px!important}#waypoint{top:31%;font-size:16px}
+#hud>small{display:block;margin-bottom:3px;letter-spacing:.08em}#notice{position:fixed;left:50%;right:auto;transform:translateX(-50%);bottom:190px;width:max-content;min-width:0;max-width:min(70vw,310px);padding:7px 10px;background:#0c1418bd;border-radius:9px;text-align:center;box-sizing:border-box}
+@media (pointer:fine) and (min-width:900px){#joystick{display:none}#touch{display:none}}
+</style><canvas id="miniMap" class="compact" width="180" height="180" aria-label="District minimap, tap to collapse" title="Tap to collapse minimap"></canvas><div id="panel"><div id="menu"><h1>AOTEAROA: UNDERWORLD</h1><p>CHAPTER ZERO: NOBODY KNOWS YOUR NAME</p><p>You have one dodgy suitcase, no money, and fourteen crews who might remember your name. Your hometown changes the prologue, recovery location and your choices change the ending.</p><label for="hometown">CHOOSE YOUR HOMETOWN</label><select id="hometown" style="display:block;width:100%;padding:12px;margin:10px 0;background:#152320;color:white;border:1px solid #879b83"></select><p id="originStory"></p><div id="factions"></div><button id="independent">INDEPENDENT / NO FACTION</button><p><small>Choose a faction to approach after your hometown prologue, or remain independent.</small></p><p><small>Playable vertical slice. Fictional characters and story. Desktop: WASD, mouse look, click to attack, Shift sprint, E interact, Esc pause. Phone: floating left joystick, drag right side to look, HIT/TALK, pause button. Save is device-local.</small></p><button id="start" disabled title="Loading 3D engine">NEW GAME</button><button id="continue" disabled title="Loading 3D engine">CONTINUE SAVED GAME</button><div id="saveState" aria-live="polite"></div></div></div><div id="hud"><small style="opacity:.65">R11 • INPUT FIX</small><b id="status">HEALTH 100 | REP 0</b><div id="quest">Find your hometown contact</div><div id="missionDistance"></div><div id="location">FICTIONAL DISTRICT</div></div><div id="cross">+</div><div id="waypoint" aria-live="off"></div><button id="pauseButton" aria-label="Pause game">Ⅱ</button><div id="notice">Find the yellow diamond above your hometown contact. Press E or TALK nearby.</div><div id="joystick" aria-label="Floating movement joystick"><div id="joyBase"><div id="joyThumb"></div><span id="joyReadout" aria-live="off">MOVE</span></div><span id="controlStatus" aria-live="off">ENGINE WAIT</span></div><div id="touch"><div id="actions"><button id="interact">TALK</button><button id="attack">HIT</button><button data-m="sprint" id="sprint" aria-label="Hold to sprint">RUN</button></div></div><div id="choicePanel" role="dialog" aria-modal="true"><div class="dialog"><h2 id="choiceTitle">Choose your path</h2><p id="choiceText"></p><button id="routeCourier">The quiet job: collect the package</button><button id="routeBrawl">The loud job: win three fights</button><button id="choiceBack">Not yet</button></div></div><div id="pausePanel" role="dialog" aria-modal="true"><div class="dialog"><h2>PAUSED</h2><p>Progress saves automatically on mission changes and periodically on this device.</p><button id="resume">RESUME</button><button id="saveNow">SAVE NOW</button><button id="exportSave">EXPORT SAVE FILE</button><button id="importSave">IMPORT SAVE FILE</button><input id="saveFile" type="file" accept=".json,application/json" hidden><p id="transferStatus" role="status" aria-live="polite"></p><button id="restart">NEW GAME (RESTART)</button></div></div><div id="mapcredit">3D gameplay layout is fictional, not surveyed GIS</div><script>
+window.__auEngineReady=false;
+// Render hometown choices even when the external 3D engine cannot be fetched.
+const fallbackHometowns={Northland:['Kaikohe','Kaitaia','Whangārei','Opononi'],Auckland:['South Auckland','West Auckland','Central Auckland','North Shore'],Waikato:['Hamilton','Huntly','Tokoroa'],'Bay of Plenty':['Tauranga','Rotorua','Whakatāne'],'East Coast':['Gisborne','Wairoa'],'Hawke’s Bay':['Napier','Hastings'],'Central North Island':['Taupō','New Plymouth','Whanganui','Palmerston North'],Wellington:['Wellington','Lower Hutt','Porirua'],'Top of South':['Nelson','Blenheim'],Canterbury:['Christchurch','Ashburton','Timaru'],'West Coast':['Greymouth','Hokitika'],Otago:['Dunedin','Queenstown','Wānaka'],Southland:['Invercargill','Bluff'],Islands:['Stewart Island / Rakiura','Chatham Islands']};
+
+window.addEventListener('DOMContentLoaded',()=>{
+ const hometownSelect=document.querySelector('#hometown');if(hometownSelect&&!hometownSelect.options.length){for(const [region,places] of Object.entries(fallbackHometowns)){const group=document.createElement('optgroup');group.label=region;for(const town of places){const opt=document.createElement('option');opt.textContent=town;opt.value=town;group.appendChild(opt)}hometownSelect.appendChild(group)}}
+ const warning=document.createElement('p');warning.id='engineWarning';warning.setAttribute('role','alert');warning.style.cssText='color:#ffd09a;font-size:12px;display:none';
+ warning.textContent='3D engine could not load. Check your internet connection, then reload this page.';
+ document.querySelector('#menu')?.appendChild(warning);
+ setTimeout(()=>{if(!window.__auEngineReady&&document.documentElement.dataset.engine!=='webgl-unavailable'){warning.style.display='block';document.documentElement.dataset.engine='failed';}},15000);
+});
+</script>
+<script>
+// Run 11: one mobile input system for both renderers. Registered before CDN import.
+(()=>{
+'use strict';
+const zone=document.getElementById('joystick'),thumb=document.getElementById('joyThumb'),base=document.getElementById('joyBase');
+const label=document.getElementById('joyReadout'),status=document.getElementById('controlStatus');
+const state={x:0,y:0,active:false,source:'idle',touchId:null,pointerId:null,events:0,lastPosition:null};
+window.AUControls=state;
+base.style.left='50%';base.style.top='50%';
+const RADIUS=46,DEADZONE=.08;
+function update(clientX,clientY,source){
+ const rect=zone.getBoundingClientRect(),dx=clientX-(rect.left+rect.width/2),dy=clientY-(rect.top+rect.height/2);
+ const length=Math.hypot(dx,dy),scale=Math.min(1,RADIUS/(length||1));
+ let x=dx*scale/RADIUS,y=dy*scale/RADIUS;
+ if(Math.hypot(x,y)<DEADZONE){x=0;y=0;}
+ state.x=x;state.y=y;state.active=true;state.source=source;state.events++;
+ thumb.style.transform=`translate(calc(-50% + ${x*RADIUS}px),calc(-50% + ${y*RADIUS}px))`;
+ label.textContent=`${source==='touch'?'T':'P'} ${Math.round(x*100)},${Math.round(y*100)}`;
+}
+function reset(){state.x=0;state.y=0;state.active=false;state.source='idle';label.textContent='MOVE';thumb.style.transform='translate(-50%,-50%)';}
+zone.addEventListener('pointerdown',e=>{
+ if(state.pointerId!==null)return;
+ state.pointerId=e.pointerId;update(e.clientX,e.clientY,'pointer');e.preventDefault();
+ try{zone.setPointerCapture(e.pointerId)}catch(_){}
+});
+document.addEventListener('pointermove',e=>{
+ if(e.pointerId!==state.pointerId)return;
+ update(e.clientX,e.clientY,state.touchId===null?'pointer':'touch');e.preventDefault();
+},true);
+for(const name of ['pointerup','pointercancel'])document.addEventListener(name,e=>{
+ if(e.pointerId!==state.pointerId)return;
+ state.pointerId=null;if(state.touchId===null)reset();
+},true);
+zone.addEventListener('touchstart',e=>{
+ if(state.touchId!==null)return;
+ const t=e.changedTouches[0];if(!t)return;
+ state.touchId=t.identifier;update(t.clientX,t.clientY,'touch');e.preventDefault();
+},{passive:false});
+document.addEventListener('touchmove',e=>{
+ if(state.touchId===null)return;
+ const t=Array.from(e.changedTouches).find(t=>t.identifier===state.touchId);
+ if(!t)return;update(t.clientX,t.clientY,'touch');e.preventDefault();
+},{capture:true,passive:false});
+for(const name of ['touchend','touchcancel'])document.addEventListener(name,e=>{
+ if(state.touchId===null)return;
+ if(Array.from(e.changedTouches).some(t=>t.identifier===state.touchId)){
+  state.touchId=null;if(state.pointerId===null)reset();
+ }
+},true);
+window.addEventListener('blur',()=>{state.touchId=null;state.pointerId=null;reset()});
+let lastStatus=0;
+state.setPosition=(x,z,engine)=>{
+ const now=performance.now();state.lastPosition={x,z,engine};
+ if(now-lastStatus<180)return;lastStatus=now;
+ status.textContent=`${engine} X${x.toFixed(1)} Z${z.toFixed(1)}`;
+};
+})();
+</script><script>
+window.addEventListener('error',()=>{
+ if(window.__auThreeBooting&&!window.__auEngineReady){
+  window.__auThreeBooting=false;
+  const n=document.getElementById('controlStatus');if(n)n.textContent='ENGINE RECOVERY';
+  setTimeout(()=>{if(!window.__auEngineReady&&!window.__auOfflineWebGL)window.__auStartOffline();},250);
+ }
+});
+window.__auStartOffline=function(){
+// Independent native WebGL fallback. No CDN, build step, or third-party code.
+(()=>{
+'use strict';
+if(window.__auEngineReady)return;
+const glCanvas=document.createElement('canvas');glCanvas.id='offlineWorld';glCanvas.setAttribute('aria-label','Live WebGL 3D world');
+glCanvas.style.cssText='position:fixed;inset:0;width:100%;height:100%;z-index:0';document.body.prepend(glCanvas);
+const gl=glCanvas.getContext('webgl',{antialias:false,alpha:false})||glCanvas.getContext('experimental-webgl');
+if(!gl){const warning=document.getElementById('engineWarning');if(warning){warning.style.display='block';warning.textContent='This device does not support WebGL. The 3D world cannot start.';}document.documentElement.dataset.engine='webgl-unavailable';return;}
+const vs=`attribute vec3 position;attribute vec3 color;uniform mat4 projection;uniform mat4 view;varying vec3 vColor;void main(){vColor=color;gl_Position=projection*view*vec4(position,1.);}`;
+const fs=`precision mediump float;varying vec3 vColor;void main(){gl_FragColor=vec4(vColor,1.);}`;
+function shader(type,source){const sh=gl.createShader(type);gl.shaderSource(sh,source);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw Error(gl.getShaderInfoLog(sh));return sh;}
+const program=gl.createProgram();gl.attachShader(program,shader(gl.VERTEX_SHADER,vs));gl.attachShader(program,shader(gl.FRAGMENT_SHADER,fs));gl.linkProgram(program);if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(program));gl.useProgram(program);
+const vertices=[];function tri(a,b,c,col){for(const p of [a,b,c])vertices.push(...p,...col);}
+function quad(a,b,c,d,col){tri(a,b,c,col);tri(a,c,d,col);}
+function cube(x,y,z,w,h,d,col){const x0=x-w/2,x1=x+w/2,y0=y,y1=y+h,z0=z-d/2,z1=z+d/2;quad([x0,y0,z0],[x1,y0,z0],[x1,y1,z0],[x0,y1,z0],col);quad([x1,y0,z1],[x0,y0,z1],[x0,y1,z1],[x1,y1,z1],col.map(v=>v*.82));quad([x0,y0,z1],[x0,y0,z0],[x0,y1,z0],[x0,y1,z1],col.map(v=>v*.72));quad([x1,y0,z0],[x1,y0,z1],[x1,y1,z1],[x1,y1,z0],col.map(v=>v*.9));quad([x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1],col.map(v=>v*1.12));}
+quad([-100,-.05,-100],[-100,-.05,100],[100,-.05,100],[100,-.05,-100],[.17,.24,.19]);
+quad([-5,0,-100],[-5,0,100],[5,0,100],[5,0,-100],[.19,.20,.22]);
+for(let z=-95;z<95;z+=12)cube(0,.01,z,0.25,.025,4,[.86,.72,.29]);
+let seed=47;function random(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;}
+for(let z=-85;z<=85;z+=15){for(const side of [-1,1]){const x=side*(12+random()*8),h=5+random()*14;cube(x,0,z,8,h,9,[.26+random()*.22,.30+random()*.2,.29+random()*.17]);cube(side*6,.03,z,1,.15,10,[.45,.45,.42]);}}
+for(let z=-80;z<85;z+=24){cube(-5.6,0,z,.25,5,.25,[.38,.39,.38]);cube(-5.6,5,z,2,.3,.3,[.85,.75,.38]);}
+cube(0,0,-13,1.2,2,1.2,[.92,.68,.18]);cube(2,0,-26,1.2,2,1.2,[.65,.17,.19]);
+const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(vertices),gl.STATIC_DRAW);const pos=gl.getAttribLocation(program,'position'),color=gl.getAttribLocation(program,'color');gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos,3,gl.FLOAT,false,24,0);gl.enableVertexAttribArray(color);gl.vertexAttribPointer(color,3,gl.FLOAT,false,24,12);gl.enable(gl.DEPTH_TEST);
+let contextLost=false;glCanvas.addEventListener('webglcontextlost',event=>{event.preventDefault();contextLost=true;paused=true;setInfo('Graphics context lost. Reload to restore the district.');});
+const projLoc=gl.getUniformLocation(program,'projection'),viewLoc=gl.getUniformLocation(program,'view');
+function projection(aspect){const f=1/Math.tan(Math.PI/6),n=.1,far=280;return new Float32Array([f/aspect,0,0,0,0,f,0,0,0,0,(far+n)/(n-far),-1,0,0,2*far*n/(n-far),0]);}
+function view(x,y,z,yaw,pitch){const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);const forward=[sy*cp,sp,-cy*cp],right=[cy,0,sy],up=[-sy*sp,cp,cy*sp];return new Float32Array([right[0],up[0],-forward[0],0,right[1],up[1],-forward[1],0,right[2],up[2],-forward[2],0,-(right[0]*x+right[1]*y+right[2]*z),-(up[0]*x+up[1]*y+up[2]*z),forward[0]*x+forward[1]*y+forward[2]*z,1]);}
+let x=0,z=9,yaw=0,pitch=0,stamina=100,last=performance.now(),started=false,paused=false;const keys=new Set(),touch=new Set();
+function setInfo(msg){const n=document.getElementById('notice');if(n)n.textContent=msg;}
+function choose(){document.getElementById('panel').style.display='none';started=true;paused=false;document.getElementById('hud').style.display='block';document.getElementById('touch').style.display='flex';document.getElementById('cross').style.display='block';document.getElementById('pauseButton').style.display='block';setInfo('Offline WebGL district loaded. Walk to the yellow contact. E or TALK to interact.');}
+function start(){choose();}
+const startBtn=document.getElementById('start'),continueBtn=document.getElementById('continue');startBtn.disabled=false;continueBtn.disabled=false;startBtn.title='Native WebGL offline mode';continueBtn.title='Native WebGL offline mode';startBtn.addEventListener('click',start,true);continueBtn.addEventListener('click',start,true);
+const pauseButton=document.getElementById('pauseButton');pauseButton.addEventListener('click',()=>{if(!started)return;paused=!paused;document.getElementById('pausePanel').style.display=paused?'flex':'none';});document.getElementById('resume').addEventListener('click',()=>{paused=false;document.getElementById('pausePanel').style.display='none';});
+addEventListener('keydown',e=>{keys.add(e.code);if(e.code==='Escape'&&started){paused=!paused;document.getElementById('pausePanel').style.display=paused?'flex':'none';}if(e.code==='KeyE'&&started)setInfo('Contact: The suitcase is only the beginning. Your hometown changes the story in the full Three.js build.');});addEventListener('keyup',e=>keys.delete(e.code));
+document.querySelectorAll('[data-m]').forEach(btn=>{const key=btn.dataset.m;btn.addEventListener('pointerdown',e=>{e.preventDefault();touch.add(key);btn.setPointerCapture(e.pointerId);});for(const event of ['pointerup','pointercancel','lostpointercapture'])btn.addEventListener(event,()=>touch.delete(key));});
+// Joystick input is shared with the Three.js engine through window.AUControls.
+let pointerX=null,pointerY=null;glCanvas.addEventListener('pointerdown',e=>{pointerX=e.clientX;pointerY=e.clientY;});glCanvas.addEventListener('pointermove',e=>{if(pointerX===null)return;yaw+=(e.clientX-pointerX)*.004;pitch=Math.max(-1.2,Math.min(1.2,pitch-(e.clientY-pointerY)*.004));pointerX=e.clientX;pointerY=e.clientY;});glCanvas.addEventListener('pointerup',()=>{pointerX=null;pointerY=null;});
+function frame(now){if(contextLost)return;const dt=Math.min(.05,(now-last)/1000);last=now;const w=Math.max(1,Math.floor(innerWidth*Math.min(devicePixelRatio||1,1.5))),h=Math.max(1,Math.floor(innerHeight*Math.min(devicePixelRatio||1,1.5)));if(glCanvas.width!==w||glCanvas.height!==h){glCanvas.width=w;glCanvas.height=h;gl.viewport(0,0,w,h);}gl.clearColor(.15,.19,.22,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);if(started&&!paused){const joy=window.AUControls||{x:0,y:0};const f=Number(keys.has('KeyW')||keys.has('ArrowUp')||touch.has('forward'))-Number(keys.has('KeyS')||touch.has('back'))-joy.y,r=Number(keys.has('KeyD')||touch.has('right'))-Number(keys.has('KeyA')||touch.has('left'))+joy.x;const moving=!!(f||r),sprint=moving&&(keys.has('ShiftLeft')||keys.has('ShiftRight')||touch.has('sprint'))&&stamina>0;stamina=Math.max(0,Math.min(100,stamina+(sprint?-24:17)*dt));const speed=(sprint?12:7)*dt;x+=(Math.sin(yaw)*f+Math.cos(yaw)*r)*speed;z+=(-Math.cos(yaw)*f+Math.sin(yaw)*r)*speed;document.getElementById('status').textContent=`HEALTH 100 | ENERGY ${Math.ceil(stamina)} | WEBGL OFFLINE`;document.getElementById('quest').textContent='Explore the district | offline 3D fallback';window.__auTelemetry={engine:'offline-webgl',started,paused,x,z,joyX:joy.x,joyY:joy.y};window.AUControls?.setPosition(x,z,'OFFLINE');}
+gl.uniformMatrix4fv(projLoc,false,projection(w/h));gl.uniformMatrix4fv(viewLoc,false,view(x,1.8,z,yaw,pitch));gl.drawArrays(gl.TRIANGLES,0,vertices.length/6);requestAnimationFrame(frame);}
+window.__auEngineReady=true;window.__auOfflineWebGL=true;document.documentElement.dataset.engine='offline-webgl';const warning=document.getElementById('engineWarning');if(warning){warning.style.display='block';warning.textContent='OFFLINE 3D MODE: Native WebGL running. Full missions require the Three.js engine.';}requestAnimationFrame(frame);
+})();
+
+};
+</script><script>setTimeout(()=>{if(!window.__auEngineReady&&!window.__auThreeBooting&&!window.__auOfflineWebGL){window.__auStartOffline();}},7000);</script><script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js';
+if(!window.__auOfflineWebGL){
+window.__auThreeBooting=true;
+const mobile=matchMedia('(pointer:coarse)').matches;const qualityMax=Math.min(devicePixelRatio,mobile?1.35:1.8);let qualityDpr=Math.min(qualityMax,mobile?1.15:1.6);const scene=new THREE.Scene();scene.background=new THREE.Color(0x303b42);scene.fog=new THREE.FogExp2(0x35434a,.017);const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,600);const renderer=new THREE.WebGLRenderer({antialias:!mobile,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(qualityDpr);renderer.shadowMap.enabled=!mobile;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;document.body.prepend(renderer.domElement);scene.add(new THREE.HemisphereLight(0xa8bfd3,0x252e2a,1.25));const sun=new THREE.DirectionalLight(0xc9d5e5,1.05);sun.position.set(-80,120,60);sun.castShadow=true;sun.shadow.mapSize.set(mobile?512:1024);scene.add(sun);
+const mat=(c,r=1)=>new THREE.MeshStandardMaterial({color:c,roughness:r});const asphalt=mat(0x1c242b,.23),grass=mat(0x344b3b),concrete=mat(0x656a68,.66),wall=[mat(0x60696c),mat(0x4a545a),mat(0x6d6d65),mat(0x4e5855)],roof=mat(0x22292e),glass=mat(0x172b38,.12);function box(x,y,z,w,h,d,m,shadow=true){let o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=shadow;o.receiveShadow=true;scene.add(o);return o}function instancedBoxes(positions,w,h,d,material){if(!positions.length)return null;const mesh=new THREE.InstancedMesh(new THREE.BoxGeometry(w,h,d),material,positions.length);const transform=new THREE.Object3D();positions.forEach(([x,y,z],i)=>{transform.position.set(x,y,z);transform.updateMatrix();mesh.setMatrixAt(i,transform.matrix)});mesh.instanceMatrix.needsUpdate=true;mesh.frustumCulled=false;mesh.castShadow=false;mesh.receiveShadow=false;scene.add(mesh);return mesh}
+// Run 9: generated textures are local, zero network requests, low memory.
+function proceduralTexture(kind){
+ const c=document.createElement('canvas');c.width=c.height=256;const ctx=c.getContext('2d');
+ let state=kind==='road'?1945:kind==='wall'?311:705;
+ function random(){state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296}
+ ctx.fillStyle=kind==='road'?'#283039':kind==='wall'?'#687176':'#4b575a';ctx.fillRect(0,0,256,256);
+ for(let i=0;i<5000;i++){let v=Math.floor(random()*75),a=.015+random()*.11;
+ ctx.fillStyle=`rgba(${v+60},${v+65},${v+68},${a})`;
+ const x=random()*256,y=random()*256,r=.3+random()*2;ctx.fillRect(x,y,r,r)}
+ if(kind==='wall'){ctx.strokeStyle='#25323866';ctx.lineWidth=2;
+ for(let y=0;y<256;y+=38){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(256,y);ctx.stroke()}
+ for(let y=0;y<256;y+=76)for(let x=(y%152?32:0);x<256;x+=64){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+38);ctx.stroke()}}
+ if(kind==='road'){ctx.strokeStyle='#d7d9db1b';ctx.lineWidth=1;
+ for(let i=0;i<85;i++){let x=random()*256,y=random()*256;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+random()*26,y+random()*8);ctx.stroke()}}
+ const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());return tex;
+}
+const roadTexture=proceduralTexture('road'),wallTexture=proceduralTexture('wall');
+roadTexture.repeat.set(2,2);wallTexture.repeat.set(1,1);
+asphalt.map=roadTexture;asphalt.needsUpdate=true;
+for(const material of wall){material.map=wallTexture;material.roughness=.88;material.needsUpdate=true}
+const litGlass=new THREE.MeshStandardMaterial({color:0x9da891,emissive:0x8a763b,emissiveIntensity:.75,roughness:.4});
+const storefront=new THREE.MeshStandardMaterial({color:0x1b303a,metalness:.3,roughness:.24});
+const signMaterial=new THREE.MeshBasicMaterial({color:0xf4bd67});
+const roadDashesNS=[],roadDashesEW=[],windowPositions=[];box(0,-.12,0,550,.2,550,grass,false);for(let i=-4;i<=4;i++){box(i*55,.015,0,13,.06,550,asphalt,false);box(0,.018,i*55,550,.06,13,asphalt,false);for(let k=-240;k<240;k+=12){roadDashesNS.push([i*55,.055,k]);roadDashesEW.push([k,.055,i*55])}}let obstacles=[];function collides(x,z,r=.55){return obstacles.some(o=>Math.abs(x-o.x)<o.w/2+r&&Math.abs(z-o.z)<o.d/2+r)}function slideMove(p,dx,dz,r=.55){const steps=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dz))/.45));for(let i=0;i<steps;i++){const nx=THREE.MathUtils.clamp(p.x+dx/steps,-260,260),nz=THREE.MathUtils.clamp(p.z+dz/steps,-260,260);if(!collides(nx,nz,r)){p.x=nx;p.z=nz;continue}if(!collides(nx,p.z,r))p.x=nx;if(!collides(p.x,nz,r))p.z=nz}}function safeSpawn(x,z){if(!collides(x,z,.7))return {x,z};for(let r=2;r<=34;r+=2)for(let a=0;a<16;a++){const theta=a*Math.PI/8,px=x+Math.cos(theta)*r,pz=z+Math.sin(theta)*r;if(!collides(px,pz,.7))return {x:px,z:pz}}return {x,z}}let seed=314159;function rnd(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}for(let ix=-4;ix<4;ix++)for(let iz=-4;iz<4;iz++){let cx=ix*55+27.5,cz=iz*55+27.5;for(let j=0;j<5;j++){let x=cx+(rnd()-.5)*28,z=cz+(rnd()-.5)*28,w=9+rnd()*8,d=9+rnd()*8,h=5+rnd()*19;if(Math.hypot(x,z)<32)continue;box(x,h/2,z,w,h,d,wall[Math.floor(rnd()*wall.length)]);box(x,h+.5,z,w+1,1,d+1,roof);obstacles.push({x,z,w,d});for(let f=3;f<h-1;f+=3)for(let t=-w/2+2;t<w/2-1;t+=3){windowPositions.push([x+t,f,z+d/2+.04])}}}instancedBoxes(roadDashesNS,.18,.012,5,concrete);instancedBoxes(roadDashesEW,5,.012,.18,concrete);const brightWindows=windowPositions.filter((_,i)=>i%7===0);
+instancedBoxes(windowPositions,1.3,1.5,.06,glass);
+instancedBoxes(brightWindows,1.1,1.25,.065,litGlass);
+for(let i=0;i<22;i++){
+ const x=(i-11)*18,z=i%2?34:-34;
+ if(collides(x,z,1.4))continue;
+ box(x,1.45,z,5,2.8,.14,storefront,false);
+ box(x,3.08,z,4.2,.28,.18,signMaterial,false);
+}for(let i=0;i<90;i++){let x=(rnd()-.5)*460,z=(rnd()-.5)*460;if(Math.abs(x%55)<10||Math.abs(z%55)<10)continue;box(x,1.7,z,.6,3.4,.6,mat(0x5c5142));let crown=new THREE.Mesh(new THREE.IcosahedronGeometry(2.6,1),mat(0x3c653b));crown.position.set(x,5,z);scene.add(crown)}
+
+// RUN 8: inexpensive wet-weather atmosphere. Deliberately not a claim of photorealism.
+const wetPavement=new THREE.MeshStandardMaterial({color:0x252e32,roughness:.14,metalness:.22,transparent:true,opacity:.84,depthWrite:false});
+const puddleGeometry=new THREE.CircleGeometry(1,24);
+const puddleCount=mobile?22:45;
+for(let i=0;i<puddleCount;i++){
+ const seed=i*127.1,xx=Math.sin(seed)*235,zz=Math.cos(seed*.67)*235;
+ if(!((Math.abs(xx%55)<6)||(Math.abs(zz%55)<6)))continue;
+ const puddle=new THREE.Mesh(puddleGeometry,wetPavement);puddle.rotation.x=-Math.PI/2;puddle.position.set(xx,.058,zz);puddle.scale.set(.9+(i%5)*.48,.35+(i%4)*.15,1);scene.add(puddle);
+}
+const rainCount=mobile?480:1250,rainCoords=new Float32Array(rainCount*3);
+for(let i=0;i<rainCount;i++){rainCoords[i*3]=(Math.sin(i*13.17)*.5)*100;rainCoords[i*3+1]=Math.random()*36;rainCoords[i*3+2]=(Math.cos(i*9.91)*.5)*100;}
+const rainGeometry=new THREE.BufferGeometry();rainGeometry.setAttribute('position',new THREE.BufferAttribute(rainCoords,3));
+const rainMaterial=new THREE.PointsMaterial({color:0xa4b7c4,size:mobile?.075:.095,transparent:true,opacity:.35,depthWrite:false,sizeAttenuation:true});
+const rain=new THREE.Points(rainGeometry,rainMaterial);scene.add(rain);
+const atmosphericClock=new THREE.Clock();
+function updateWeather(dt){const a=rainGeometry.attributes.position;for(let i=0;i<rainCount;i++){let y=a.array[i*3+1]-dt*22;if(y<0)y+=36;a.array[i*3+1]=y;}a.needsUpdate=true;rain.position.set(camera.position.x,0,camera.position.z);}
+const factions=['Black Power','Mongrel Mob','Tribesmen','Head Hunters','Killer Beez','King Cobras','Comancheros MC','Bandidos MC','Hells Angels MC','Mongols MC','Rebels MC','Highway 61','New Zealand Nomads','Immortal Souls MC'];let chosen='Independent',rep=0,hp=100,chapter=0,defeated=0,started=false;const contacts=[],enemies=[];const colors=[0x3764d8,0xc33737,0x4b8e68,0x9c8d54,0xe4b82c,0x7e4b99,0x2e8692,0xa67639,0x9b9b9b,0x7b4444,0x67928b,0xb57e50,0x6b6a9d,0x8d6c80];function person(x,z,color,hostile=false){let root=new THREE.Group();root.position.set(x,0,z);const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.42,.85,4,8),mat(color));torso.position.y=1.25;root.add(torso);const head=new THREE.Mesh(new THREE.SphereGeometry(.28,10,8),mat(0x987257));head.position.y=2.15;root.add(head);for(let s of [-1,1]){let leg=new THREE.Mesh(new THREE.BoxGeometry(.25,.8,.28),mat(0x24282b));leg.position.set(s*.19,.42,0);root.add(leg)}scene.add(root);return root}factions.forEach((f,i)=>{let a=i*Math.PI*2/factions.length;let x=Math.sin(a)*25,z=Math.cos(a)*25;let p=person(x,z,colors[i]);let marker=new THREE.Mesh(new THREE.ConeGeometry(.7,1.3,6),new THREE.MeshBasicMaterial({color:colors[i]}));marker.position.y=3.5;p.add(marker);contacts.push({p,f})});for(let i=0;i<13;i++){let a=i*2.4,x=Math.sin(a)* (45+i*8),z=Math.cos(a)*(45+i*8);const spawn=safeSpawn(x,z);enemies.push({p:person(spawn.x,spawn.z,0x58534e,true),hp:3,alive:true})}
+camera.position.set(0,1.8,8);let yaw=0,pitch=0;const keys={},move={};addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='KeyE')talk()});addEventListener('keyup',e=>keys[e.code]=false);let lookTouchId=null,lastX=0,lastY=0;renderer.domElement.addEventListener('click',()=>{if(!mobile&&started){if(document.pointerLockElement!==renderer.domElement)renderer.domElement.requestPointerLock();else hit()}});document.addEventListener('mousemove',e=>{if(document.pointerLockElement===renderer.domElement){yaw-=e.movementX*.0025;pitch=Math.max(-1.3,Math.min(1.3,pitch-e.movementY*.0025))}});renderer.domElement.addEventListener('touchstart',e=>{let t=e.changedTouches[0];if(lookTouchId===null&&t.clientX>innerWidth*.35){lookTouchId=t.identifier;lastX=t.clientX;lastY=t.clientY}},{passive:true});renderer.domElement.addEventListener('touchmove',e=>{if(lookTouchId===null)return;let t=Array.from(e.changedTouches).find(t=>t.identifier===lookTouchId);if(!t)return; e.preventDefault();yaw-=(t.clientX-lastX)*.006;pitch=Math.max(-1.3,Math.min(1.3,pitch-(t.clientY-lastY)*.006));lastX=t.clientX;lastY=t.clientY},{passive:false});const releaseLook=e=>{if(Array.from(e.changedTouches).some(t=>t.identifier===lookTouchId))lookTouchId=null};renderer.domElement.addEventListener('touchend',releaseLook);renderer.domElement.addEventListener('touchcancel',releaseLook);document.querySelectorAll('[data-m]').forEach(b=>{b.addEventListener('pointerdown',e=>{e.preventDefault();move[b.dataset.m]=true;b.setPointerCapture(e.pointerId)});b.addEventListener('pointerup',()=>move[b.dataset.m]=false);b.addEventListener('pointercancel',()=>move[b.dataset.m]=false);b.addEventListener('lostpointercapture',()=>move[b.dataset.m]=false)});
+// Input controller is initialized before either 3D renderer, shared through window.AUControls.
+document.querySelector('#attack').onclick=hit;document.querySelector('#interact').onclick=talk;const notice=document.querySelector('#notice');function say(s){notice.textContent=s}function updateHUD(){document.querySelector('#status').textContent=`HEALTH ${hp} | REP ${rep} | ${chosen.toUpperCase()}`;document.querySelector('#quest').textContent=chapter===0?'Choose a crew or remain independent':chapter===1?`Chapter 1: Clear out 3 hostile NPCs (${defeated}/3)`:'Chapter 1 complete: Explore the district'}function talk(){let nearest=contacts.map(c=>({...c,dist:c.p.position.distanceTo(new THREE.Vector3(camera.position.x,0,c.p.position.z))})).sort((a,b)=>a.dist-b.dist)[0];if(nearest.dist>5){say('Move closer to a glowing crew contact.');return}chosen=nearest.f;chapter=1;defeated=0;rep+=10;say(`${chosen}: Your fictional crew contact gives you a street-level initiation job. Find 3 hostile NPCs.`);updateHUD()}function hit(){if(!started)return;let forward=new THREE.Vector3(0,0,-1).applyEuler(camera.rotation);let target=null,score=99;for(let e of enemies){if(!e.alive)continue;let delta=e.p.position.clone().add(new THREE.Vector3(0,1.4,0)).sub(camera.position),distance=delta.length();let dot=delta.normalize().dot(forward);if(distance<4&&dot>.45&&distance<score){score=distance;target=e}}if(target){target.hp--;target.p.position.addScaledVector(forward,1);if(target.hp<=0){target.alive=false;scene.remove(target.p);rep+=5;defeated++;if(chapter===1&&defeated>=3){chapter=2;rep+=30;say('Chapter complete. Your reputation is spreading. More chapters are planned.')}else say('Opponent defeated. Reputation +5.')}else say('Hit landed.')}else say('No target in melee range.');updateHUD()}const origins={Northland:['Kaikohe','Kaitaia','Whangārei','Opononi'],Auckland:['South Auckland','West Auckland','Central Auckland','North Shore'],Waikato:['Hamilton','Huntly','Tokoroa'], 'Bay of Plenty':['Tauranga','Rotorua','Whakatāne'], 'East Coast':['Gisborne','Wairoa'], 'Hawke’s Bay':['Napier','Hastings'], 'Central North Island':['Taupō','New Plymouth','Whanganui','Palmerston North'],Wellington:['Wellington','Lower Hutt','Porirua'], 'Top of South':['Nelson','Blenheim'],Canterbury:['Christchurch','Ashburton','Timaru'], 'West Coast':['Greymouth','Hokitika'],Otago:['Dunedin','Queenstown','Wānaka'],Southland:['Invercargill','Bluff'],Islands:['Stewart Island / Rakiura','Chatham Islands']};let hometown='Kaikohe',originRegion='Northland';const select=document.querySelector('#hometown');select.innerHTML=Object.entries(origins).map(([region,towns])=>`<optgroup label="${region}">${towns.map(t=>`<option value="${t}" data-region="${region}">${t}</option>`).join('')}</optgroup>`).join('');function originUpdate(){hometown=select.value;originRegion=select.selectedOptions[0].dataset.region;document.querySelector('#originStory').textContent=`${hometown}: You start with no cash, a bruised reputation, and a contact who knows your past. Your origin will follow you into every faction storyline.`}select.onchange=originUpdate;originUpdate();
+document.querySelector('#factions').innerHTML=factions.map((f,i)=>`<button data-f="${i}">${f}</button>`).join('');document.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{chosen=factions[+b.dataset.f];document.querySelector('#start').textContent='START WITH '+chosen.toUpperCase()});document.querySelector('#start').onclick=()=>{started=true;document.querySelector('#panel').style.display='none';document.querySelector('#location').textContent=hometown.toUpperCase()+' • PROTOTYPE DISTRICT (NOT REAL GIS)';if(chosen!=='Independent'){chapter=1;rep=10;say(`${hometown} origin. You joined ${chosen}. Find 3 hostile NPCs to complete your first job.`)}else say(`${hometown} origin. Independent start: talk to a glowing crew contact.`);updateHUD()};
+// RUN 1: Hometown prologue, meaningful faction-route branching, local saves, waypoint, pause.
+const SAVE_KEY='aotearoa-underworld-v2';
+const $=id=>document.getElementById(id);
+const originTales={
+ 'Northland':['A cousin in '+ 'your hometown' +' swears the missing envelope was taken by a seagull with expensive taste.','sealed wharf envelope','The harbour contact says you kept your word.'],
+ 'Auckland':['An old mate has a missing pay packet and a very loud landlord.','pay packet','Your old mate finally pays the rent, and stops blaming the bus timetable.'],
+ 'Waikato':['The garage owner wants a parts invoice back before the boss discovers his creative bookkeeping.','garage invoice','The garage is saved, but the boss still suspects the photocopier.'],
+ 'Bay of Plenty':['A courier dropped a tour operator\'s booking ledger somewhere between two bad decisions.','booking ledger','The booking ledger returns, with an alarming number of karaoke bookings.'],
+ 'East Coast':['The community radio host needs a lost interview tape before tonight\'s show.','interview tape','The interview makes air. You are thanked between two extremely long weather reports.'],
+ 'Hawke’s Bay':['A fictional orchard foreman lost a delivery docket and needs it back.','orchard docket','The orchard crew get paid. Nobody mentions the forklift incident.'],
+ 'Central North Island':['A roadside mechanic needs the keys to a stranded ute recovered.','ute keys','The ute runs again, mostly. The mechanic says the rattling is a feature.'],
+ 'Wellington':['A film extra needs a missing prop briefcase before the director calls action.','prop briefcase','The film crew get their prop back. The director wants another seventeen takes.'],
+ 'Top of South':['A ferry worker has lost the passenger manifest for a fictional charter.','charter manifest','The manifest is found, and the ferry leaves only slightly late.'],
+ 'Canterbury':['A student flat has misplaced the last rent receipt. The landlord has opinions.','rent receipt','The flat survives another week. The fridge remains a crime scene.'],
+ 'West Coast':['A miner\'s family wants a keepsake notebook recovered from the roadside.','keepsake notebook','The notebook is home. The family buys you a pie and refuses to tell you what is in it.'],
+ 'Otago':['A fictional ski-lodge worker needs the guest book back before check-in.','guest book','The lodge reopens, with a new rule about keeping books away from kea.'],
+ 'Southland':['A fish-and-chip shop has lost its secret batter recipe.','recipe notebook','The recipe is safe. The cook insists the secret is just more salt.'],
+ 'Islands':['A supply boat worker needs a lost cargo tally recovered.','cargo tally','The tally is returned, and the supply boat sails before the weather changes.']
+};
+let stamina=100;const STAMINA_DRAIN=24,STAMINA_RECOVERY=17;let stage='origin-intro',cash=0,missionRoute='',pauseOpen=false,saveAllowed=true,lastSave=0,gameClock=0;
+let originText=originTales[originRegion]||originTales.Northland;
+const fixer=person(0,-8,0xe3b34e);const fixerMarker=new THREE.Mesh(new THREE.OctahedronGeometry(.7),new THREE.MeshBasicMaterial({color:0xffe067}));fixerMarker.position.y=3.5;fixer.add(fixerMarker);
+const pickup=person(13,-19,0x6ab7c0);pickup.scale.set(.65,.65,.65);
+const pickupMarker=new THREE.Mesh(new THREE.OctahedronGeometry(.65),new THREE.MeshBasicMaterial({color:0x77ffdb}));pickupMarker.position.y=4;pickup.add(pickupMarker);
+const stash=person(-18,-19,0x7bcb83);stash.scale.set(.65,.65,.65);
+const stashMarker=new THREE.Mesh(new THREE.OctahedronGeometry(.65),new THREE.MeshBasicMaterial({color:0xa9ff85}));stashMarker.position.y=4;stash.add(stashMarker);
+// A physical, repeatable hometown-specific recovery route, safe from buildings.
+function hometownHash(name){let h=2166136261;for(const c of name){h=Math.imul(h^c.codePointAt(0),16777619)>>>0}return h>>>0}
+function hometownPickup(name){const h=hometownHash(name);const a=((h%3600)/3600)*Math.PI*2;const radius=18+(Math.floor(h/3600)%9)*4;return safeSpawn(Math.cos(a)*radius,Math.sin(a)*radius)}
+function positionOriginPickup(){const p=hometownPickup(hometown);pickup.position.set(p.x,0,p.z)}
+const enemySpawns=enemies.map(e=>e.p.position.clone());const fx=new THREE.Group();scene.add(fx);const bloodMat=new THREE.MeshBasicMaterial({color:0x8e101b,transparent:true,opacity:.7,depthWrite:false});
+function bloodAt(p){const o=new THREE.Mesh(new THREE.CircleGeometry(.3+rnd()*.4,10),bloodMat);o.rotation.x=-Math.PI/2;o.position.set(p.x,.085,p.z);fx.add(o);if(fx.children.length>30)fx.remove(fx.children[0]);}
+function objective(){
+ if(stage==='origin-intro')return ['Find the local fixer. Hear your hometown story.',fixer.position];
+ if(stage==='origin-recover')return [`Recover the ${originText[1]} (TALK to the teal marker).`,pickup.position];
+ if(stage==='origin-return')return ['Return the item to the fixer.',fixer.position];
+ if(stage==='recruit')return ['Meet a faction contact (coloured markers).',contacts[0].p.position];
+ if(stage==='faction-choice')return [`Talk to ${chosen} to choose your initiation.`,contacts.find(c=>c.f===chosen)?.p.position||fixer.position];
+ if(stage==='mission-courier')return [`${chosen}: recover the package from the green marker.`,stash.position];
+ if(stage==='mission-brawl'){const living=enemies.filter(e=>e.alive).sort((a,b)=>dist(a.p.position)-dist(b.p.position));return [`${chosen}: defeat three hostile opponents (${defeated}/3).`,living[0]?.p.position||null];}
+ if(stage==='mission-return')return [`Return to the fixer for the ${missionRoute==='courier'?'quiet':'loud'} ending.`,fixer.position];
+ return [`Chapter complete: ${hometown} origin / ${chosen} / ${missionRoute} route.`,null];
+}
+updateHUD=function(){
+ $('status').textContent=`HP ${Math.ceil(hp)} | ENERGY ${Math.ceil(stamina)} | $${cash} | REP ${rep} | ${chosen.toUpperCase()}`;
+ const [goal,target]=objective();$('quest').textContent=goal;$('status').setAttribute('title',`${hometown} | ${originRegion}`);
+ if(target){const d=Math.hypot(camera.position.x-target.x,camera.position.z-target.z);$('missionDistance').textContent=`OBJECTIVE ${Math.round(d)}m away`;}
+ else $('missionDistance').textContent=stage==='mission-brawl'?'Find hostiles on the outskirts':'Story branch recorded';
+};
+function store(){if(!saveAllowed||!started)return;try{const data={version:2,stage,hometown,originRegion,chosen,rep,hp,cash,defeated,missionRoute,stamina,enemyHP:enemies.map(e=>e.hp),enemyAlive:enemies.map(e=>e.alive),enemyPositions:enemies.map(e=>({x:e.p.position.x,z:e.p.position.z})),x:camera.position.x,z:camera.position.z,yaw,pitch};localStorage.setItem(SAVE_KEY,JSON.stringify(data));$('saveState').textContent='Saved on this device';}catch(e){$('saveState').textContent='Local save unavailable in this browser';}}
+function readSave(){try{let s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');if(!s||s.version!==2||typeof s.hometown!=='string'||!Object.values(origins).some(ts=>ts.includes(s.hometown))||!['origin-intro','origin-recover','origin-return','recruit','faction-choice','mission-courier','mission-brawl','mission-return','complete'].includes(s.stage))return null;return s;}catch(e){return null}}
+// Portable save files: allow switching phones without a server or account.
+const SAVE_EXPORT_FORMAT='aotearoa-underworld-save';
+function exportSave(){
+ storePaused();
+ const saved=readSave();
+ if(!saved){$('transferStatus').textContent='No valid save to export yet.';return;}
+ const payload=JSON.stringify({format:SAVE_EXPORT_FORMAT,exportedAt:new Date().toISOString(),save:saved},null,2);
+ const blob=new Blob([payload],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='AOTEAROA-UNDERWORLD-'+saved.hometown.replace(/[^a-z0-9]+/gi,'-')+'-save.json';
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);
+ $('transferStatus').textContent='Save file exported. Keep it somewhere safe.';
+}
+function validateImportedSave(payload){
+ if(!payload||payload.format!==SAVE_EXPORT_FORMAT||!payload.save||payload.save.version!==2)throw Error('Not an AOTEAROA: UNDERWORLD v2 save file.');
+ const s=payload.save;
+ if(typeof s.hometown!=='string'||!Object.values(origins).some(towns=>towns.includes(s.hometown)))throw Error('Unknown hometown.');
+ if(!['Independent',...factions].includes(s.chosen))throw Error('Unknown faction.');
+ const allowedStages=['origin-intro','origin-recover','origin-return','recruit','faction-choice','mission-courier','mission-brawl','mission-return','complete'];
+ if(!allowedStages.includes(s.stage))throw Error('Unknown mission stage.');
+ if(JSON.stringify(payload).length>100000)throw Error('Save file is too large.');
+ return s;
+}
+async function importSaveFile(file){
+ if(!file)return;
+ try{
+  if(file.size>100000)throw Error('Save file is too large.');
+  const data=validateImportedSave(JSON.parse(await file.text()));
+  localStorage.setItem(SAVE_KEY,JSON.stringify(data));
+  refreshContinue();
+  $('transferStatus').textContent='Imported '+data.hometown+' save. Select CONTINUE SAVED GAME.';
+  $('pausePanel').style.display='none';pauseOpen=false;started=false;
+  $('panel').style.display='grid';
+ }catch(error){$('transferStatus').textContent='Import failed: '+error.message;}
+ finally{$('saveFile').value='';}
+}
+$('exportSave').onclick=exportSave;
+$('importSave').onclick=()=>$('saveFile').click();
+$('saveFile').onchange=e=>importSaveFile(e.target.files?.[0]);
+function refreshContinue(){let s=readSave();$('continue').style.display=s?'inline-block':'none';$('saveState').textContent=s?`Save: ${s.hometown} / ${s.chosen} / ${s.stage}`:'No previous save found';}
+function closeMenus(){ $('panel').style.display='none';$('choicePanel').style.display='none';$('pausePanel').style.display='none';pauseOpen=false;started=true;updateHUD(); }
+function beginNew(){saveAllowed=true;stage='origin-intro';hp=100;cash=0;rep=0;chapter=0;defeated=0;missionRoute='';originText=originTales[originRegion]||originTales.Northland;positionOriginPickup();camera.position.set(0,1.8,8);yaw=0;pitch=0;enemies.forEach((e,i)=>{e.alive=true;e.hp=3;e.p.position.set(enemySpawns[i].x,0,enemySpawns[i].z);if(!e.p.parent)scene.add(e.p)});while(fx.children.length)fx.remove(fx.children[0]);closeMenus();say(`${hometown}: ${originText[0]} Find the yellow fixer marker.`);store();}
+function restore(s){
+ hometown=s.hometown;originRegion=s.originRegion||Object.entries(origins).find(([,ts])=>ts.includes(s.hometown))?.[0]||'Northland';chosen=factions.includes(s.chosen)?s.chosen:'Independent';originText=originTales[originRegion]||originTales.Northland;positionOriginPickup();stage=s.stage;rep=Math.max(0,Number(s.rep)||0);hp=Math.min(100,Math.max(1,Number(s.hp)||100));cash=Math.max(0,Number(s.cash)||0);defeated=Math.max(0,Number(s.defeated)||0);missionRoute=s.missionRoute||'';stamina=Number.isFinite(s.stamina)?Math.max(0,Math.min(100,s.stamina)):100;camera.position.set(Number.isFinite(s.x)?s.x:0,1.8,Number.isFinite(s.z)?s.z:8);yaw=Number.isFinite(s.yaw)?s.yaw:0;pitch=Number.isFinite(s.pitch)?s.pitch:0;
+ enemies.forEach((e,i)=>{e.hp=Number.isFinite(s.enemyHP?.[i])?s.enemyHP[i]:3;e.alive=s.enemyAlive?.[i]!==false;const pos=s.enemyPositions?.[i];e.p.position.set(Number.isFinite(pos?.x)?pos.x:enemySpawns[i].x,0,Number.isFinite(pos?.z)?pos.z:enemySpawns[i].z);if(e.alive&&!e.p.parent)scene.add(e.p);if(!e.alive&&e.p.parent)scene.remove(e.p)});
+ select.value=hometown;closeMenus();say(`Welcome back to ${hometown}. Your ${chosen} story continues.`);
+}
+function dist(p){return Math.hypot(camera.position.x-p.x,camera.position.z-p.z)}
+function advance(next,message){stage=next;say(message);updateHUD();store()}
+talk=function(){if(!started||pauseOpen)return;
+ if(stage==='origin-intro'&&dist(fixer.position)<5){advance('origin-recover',`${hometown} origin: ${originText[0]} Find the ${originText[1]}.`);return;}
+ if(stage==='origin-recover'&&dist(pickup.position)<5){advance('origin-return',`Recovered the ${originText[1]}. Return it to your fixer.`);return;}
+ if(stage==='origin-return'&&dist(fixer.position)<5){cash+=40;rep+=15;advance(chosen==='Independent'?'recruit':'faction-choice',`${originText[2]} $40 and reputation +15. ${chosen==='Independent'?'Meet a crew contact.':'Talk to your selected faction.'}`);return;}
+ if(stage==='recruit'){
+ const c=contacts.filter(c=>dist(c.p.position)<5).sort((a,b)=>dist(a.p.position)-dist(b.p.position))[0];
+ if(c){chosen=c.f;rep+=10;advance('faction-choice',`${chosen} has offered you a chance. Talk again to choose a job.`);return;}
+ }
+ if(stage==='faction-choice'){
+ const c=contacts.find(c=>c.f===chosen);
+ if(c&&dist(c.p.position)<5){$('choiceTitle').textContent=`${chosen}: your first decision`;$('choiceText').textContent=`Your ${hometown} past matters. The ${originRegion} fixer vouched for you. Do you keep it quiet, or go loud? Your route changes the ending and rewards.`;$('choicePanel').style.display='flex';started=false;if(document.pointerLockElement)document.exitPointerLock();return;}
+ }
+ if(stage==='mission-courier'&&dist(stash.position)<5){cash+=20;advance('mission-return',`Package secured. Your ${originRegion} contacts gave you a clean exit. Return to the fixer.`);return;}
+ if(stage==='mission-return'&&dist(fixer.position)<5){cash+=missionRoute==='courier'?100:60;rep+=missionRoute==='courier'?15:35;advance('complete',`${hometown} ending: ${originText[2]} ${chosen} now knows your name. ${missionRoute==='courier'?'Quiet route: more cash, less heat.':'Loud route: more reputation, more enemies.'} CHAPTER COMPLETE.`);return;}
+ if(stage==='complete'){say(`Chapter complete. ${hometown} → ${chosen} → ${missionRoute}. Try a different origin and route for a different ending.`);return;}
+ say(`Follow your current objective. ${objective()[0]}`);
+};
+hit=function(){if(!started||pauseOpen)return;const forward=new THREE.Vector3(0,0,-1).applyEuler(camera.rotation);let target=null,score=99;for(let e of enemies){if(!e.alive)continue;let delta=e.p.position.clone().add(new THREE.Vector3(0,1.4,0)).sub(camera.position),d=delta.length();if(d<4&&delta.normalize().dot(forward)>.45&&d<score){target=e;score=d;}}if(!target){say('No opponent in melee range.');return;}target.hp--;bloodAt(target.p.position);target.p.position.addScaledVector(forward,.45);if(target.hp<=0){target.alive=false;scene.remove(target.p);rep+=5;if(stage==='mission-brawl'){defeated++;if(defeated>=3){advance('mission-return',`You won the fights. Your ${hometown} fixer wants to see you.`);return;}}say('Opponent defeated. Reputation +5.');}else say('Hit landed.');updateHUD();store();};
+$('attack').onclick=hit;$('interact').onclick=talk;
+$('routeCourier').onclick=()=>{missionRoute='courier';closeMenus();advance('mission-courier',`${chosen} chose the quiet route. Find the green package.`)};
+$('routeBrawl').onclick=()=>{missionRoute='brawl';defeated=0;let living=enemies.filter(e=>e.alive);if(living.length<3){enemies.slice(0,3).forEach((e,i)=>{e.alive=true;e.hp=3;e.p.position.set(enemySpawns[i].x,0,enemySpawns[i].z);if(!e.p.parent)scene.add(e.p)})}closeMenus();advance('mission-brawl',`${chosen} chose the loud route. Defeat 3 hostile opponents.`)};
+$('choiceBack').onclick=closeMenus;
+$('independent').onclick=()=>{chosen='Independent';document.querySelectorAll('[data-f]').forEach(x=>x.classList.remove('selected'));$('start').textContent='NEW GAME: INDEPENDENT'};$('start').onclick=beginNew;$('continue').onclick=()=>{const s=readSave();if(s)restore(s);else refreshContinue()};
+select.onchange=()=>{originUpdate();originText=originTales[originRegion]||originTales.Northland;$('originStory').textContent=`${hometown}: ${originText[0]}`;};select.onchange();
+document.querySelectorAll('[data-f]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-f]').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');$('start').textContent=`NEW GAME: ${chosen.toUpperCase()}`;}));
+function pauseGame(){if($('panel').style.display!=='none'||$('choicePanel').style.display==='flex')return;pauseOpen=!pauseOpen;started=!pauseOpen;$('pausePanel').style.display=pauseOpen?'flex':'none';if(pauseOpen){if(document.pointerLockElement)document.exitPointerLock();storePaused();}else{say('Back on the street.');}}
+function storePaused(){const was=started;started=true;store();started=was;}
+$('pauseButton').onclick=pauseGame;$('resume').onclick=pauseGame;$('saveNow').onclick=()=>{storePaused();say('Saved on this device.');};$('restart').onclick=()=>{if(document.pointerLockElement)document.exitPointerLock();started=false;pauseOpen=false;$('pausePanel').style.display='none';$('panel').style.display='grid';refreshContinue();};
+addEventListener('keydown',e=>{if(e.code==='Escape'&&$('panel').style.display==='none'&&$('choicePanel').style.display!=='flex'){pauseGame();e.preventDefault();}});
+addEventListener('visibilitychange',()=>{if(document.hidden&&started)pauseGame()});
+window.__auEngineReady=true;document.documentElement.dataset.engine='ready';$('start').disabled=false;$('continue').disabled=false;
+refreshContinue();
+setInterval(()=>{if(started)store()},12000);
+setInterval(()=>{if(!started)return;const [,target]=objective();if(!target||dist(target)<=6){$('waypoint').textContent='';return;}const dx=target.x-camera.position.x,dz=target.z-camera.position.z;let angle=Math.atan2(dx,-dz)-yaw;angle=Math.atan2(Math.sin(angle),Math.cos(angle));const arrow=Math.abs(angle)<.4?'↑':Math.abs(angle)>2.7?'↓':angle>0?'→':'←';$('waypoint').textContent=arrow+' '+Math.round(dist(target))+'m';},250);
+
+// A low-cost district radar: no map API or GPS required, and no per-frame allocations of 3D objects.
+const miniMap=document.getElementById('miniMap'),miniCtx=miniMap.getContext('2d');
+miniMap.addEventListener('click',()=>miniMap.classList.toggle('compact'));
+function drawMiniMap(){if(!miniCtx)return;const c=miniCtx,w=c.canvas.width,h=c.canvas.height;const scale=1.25;
+ c.clearRect(0,0,w,h);c.fillStyle='#092321';c.fillRect(0,0,w,h);
+ c.save();c.translate(w/2,h/2);c.rotate(-yaw);
+ c.strokeStyle='#668e85';c.lineWidth=2;
+ for(let v=-220;v<=220;v+=55){let x=(v-camera.position.x)*scale,z=(v-camera.position.z)*scale;c.beginPath();c.moveTo(x,-h);c.lineTo(x,h);c.stroke();c.beginPath();c.moveTo(-w,z);c.lineTo(w,z);c.stroke()}
+ function dot(x,z,color,r){const dx=(x-camera.position.x)*scale,dz=(z-camera.position.z)*scale;if(Math.abs(dx)>w||Math.abs(dz)>h)return;c.fillStyle=color;c.beginPath();c.arc(dx,dz,r,0,Math.PI*2);c.fill()}
+ for(const contact of contacts)dot(contact.p.position.x,contact.p.position.z,'#76b1fa',2.5);
+ for(const enemy of enemies)if(enemy.alive)dot(enemy.p.position.x,enemy.p.position.z,'#e96666',2.5);
+ const target=objective()[1];if(target)dot(target.x,target.z,'#f6d766',5);
+ c.restore();c.fillStyle='#fff';c.beginPath();c.moveTo(w/2,h/2-8);c.lineTo(w/2-6,h/2+7);c.lineTo(w/2+6,h/2+7);c.closePath();c.fill();
+ c.fillStyle='#b9d5c5';c.font='11px sans-serif';c.fillText('DISTRICT RADAR',7,15);
+}
+let prev=performance.now(),frameCount=0,frameMs=0,qualityCooldown=0,lastHud=0;function loop(now){requestAnimationFrame(loop);const elapsed=Math.max(0,Math.min(now-prev,250));const dt=Math.min(elapsed/1000,.04);prev=now;if(document.hidden)return;if(started){const joy=window.AUControls||{x:0,y:0};let wantsSprint=!!(keys.ShiftLeft||keys.ShiftRight||move.sprint);let moving=!!(keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD||move.forward||move.back||move.left||move.right||Math.abs(joy.x)>.05||Math.abs(joy.y)>.05);let sprinting=wantsSprint&&moving&&stamina>0;stamina=Math.max(0,Math.min(100,stamina+(sprinting?-STAMINA_DRAIN:STAMINA_RECOVERY)*dt));let speed=(sprinting?12:7)*dt;let dx=(Number(keys.KeyD||move.right)-Number(keys.KeyA||move.left)+joy.x),dz=(Number(keys.KeyS||move.back)-Number(keys.KeyW||move.forward)+joy.y);let len=Math.hypot(dx,dz)||1;dx/=len;dz/=len;let mx=(dx*Math.cos(yaw)-dz*Math.sin(yaw))*speed,mz=(dx*Math.sin(yaw)+dz*Math.cos(yaw))*speed;slideMove(camera.position,mx,mz);window.__auTelemetry={engine:'three',started,paused:pauseOpen,x:camera.position.x,z:camera.position.z,joyX:joy.x,joyY:joy.y};window.AUControls?.setPosition(camera.position.x,camera.position.z,'THREE');if(Math.absjoy.x+Math.absjoy.y>.1){joyReadout.textContent=`${Math.round(camera.position.x)},${Math.round(camera.position.z)}`;}camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);for(let e of enemies){if(!e.alive)continue;let distance=Math.hypot(camera.position.x-e.p.position.x,camera.position.z-e.p.position.z);if(distance<15&&distance>2){const vx=(camera.position.x-e.p.position.x)/distance,vz=(camera.position.z-e.p.position.z)/distance;slideMove(e.p.position,vx*dt*1.4,vz*dt*1.4,.4)}if(distance<1.6){hp=Math.max(0,hp-dt*5);if(hp===0){hp=100;camera.position.set(0,1.8,8);rep=Math.max(0,rep-10);say('You got knocked out. Respawned at the dairy. Reputation -10.')}}}if(now-lastHud>180){updateHUD();drawMiniMap();lastHud=now}}updateWeather(dt);renderer.render(scene,camera);if(elapsed>0&&elapsed<150){frameCount++;frameMs+=elapsed}if(frameCount>=90){const fps=1000*frameCount/frameMs;if(now>qualityCooldown){let target=qualityDpr;if(fps<27)target=Math.max(.75,qualityDpr-.15);else if(fps>54)target=Math.min(qualityMax,qualityDpr+.1);if(Math.abs(target-qualityDpr)>.01){qualityDpr=target;renderer.setPixelRatio(qualityDpr);renderer.setSize(innerWidth,innerHeight);qualityCooldown=now+7000}}frameCount=0;frameMs=0}}requestAnimationFrame(loop);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+}
+</script></html>
