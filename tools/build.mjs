@@ -20,8 +20,9 @@ if (engine.includes('</script')) throw new Error('engine source must not contain
 
 const shell = readFileSync(join(root, 'src', 'shell.html'), 'utf8');
 if (!shell.includes('<!--ENGINE-->')) throw new Error('shell.html is missing the <!--ENGINE--> marker');
+// Function replacer: a string replacement would expand "$'" and "$&" sequences found in the engine source.
 const html = shell.replace('<!--ENGINE-->',
-  `<script type="importmap">${JSON.stringify(importMap)}</script>\n<script type="module">\n${engine}\n</script>`);
+  () => `<script type="importmap">${JSON.stringify(importMap)}</script>\n<script type="module">\n${engine}\n</script>`);
 
 writeFileSync(join(root, 'index.html'), html);
 console.log(`index.html: ${(html.length / 1024).toFixed(1)} KB from ${parts.length} engine parts`);

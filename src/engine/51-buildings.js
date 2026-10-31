@@ -167,6 +167,7 @@ Object.assign(City.prototype, {
     // Verandah over the footpath.
     if (opts.verandah !== false) this.verandah(f, W, gH, trimTint, opts.sign);
     this.b.setTransform(null);
+    if (opts.sign != null) this.spots.push(this.spotFrom(m, W / 2, -1.4, SHOP_NAMES[opts.sign % 32], 'shop'));
     this.footprint(m, 0, 0, W, D, 'building');
     return m;
   },

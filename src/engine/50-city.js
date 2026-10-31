@@ -17,8 +17,15 @@ class City {
     this.poles = [];       // power pole placements (wires)
     this.instances = {};   // instanced prop placements by kind
     this.signs = [];       // shop signs
+    this.houses = [];      // residential sections (the cousin's house is picked from these)
+    this.spots = [];       // named hangouts for story characters
   }
   r(a = 0, b = 1) { return a + (b - a) * this.rng(); }
+  // World position + facing (rotation.y for a character that should face away from the frame's front).
+  spotFrom(m, x, z, name, kind) {
+    const p = new THREE.Vector3(x, 0, z).applyMatrix4(m), o = new THREE.Vector3(0, 0, 0).applyMatrix4(m), f = new THREE.Vector3(0, 0, -1).applyMatrix4(m).sub(o);
+    return { name, kind, pos: new THREE.Vector3(p.x, groundHeight(p.x, p.z), p.z), rot: Math.atan2(f.x, f.z) };
+  }
   pick(arr) { return arr[Math.floor(this.rng() * arr.length)]; }
 
   // Horizontal convex polygon at height y; winding fixed so the face points up.

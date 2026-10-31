@@ -4,31 +4,23 @@
 const FACTIONS = ['Black Tide', 'Stray Dogs', 'Clansmen', 'Bone Collectors', 'Southside Hornets', 'Royal Taipans', 'Conquistadors MC', 'Sundowners MC', 'Dark Seraphs MC', 'Iron Horde MC', 'Insurgents MC', 'Route 77', 'Southern Wanderers', 'Phantom Souls MC'];
 // Saves from Run 11 and earlier store the old crew names; map them so those saves keep their crew.
 const LEGACY_FACTIONS = Object.fromEntries(['Black Power', 'Mongrel Mob', 'Tribesmen', 'Head Hunters', 'Killer Beez', 'King Cobras', 'Comancheros MC', 'Bandidos MC', 'Hells Angels MC', 'Mongols MC', 'Rebels MC', 'Highway 61', 'New Zealand Nomads', 'Immortal Souls MC'].map((name, i) => [name, FACTIONS[i]]));
-const migrateSave = s => { if (s && LEGACY_FACTIONS[s.chosen]) s.chosen = LEGACY_FACTIONS[s.chosen]; return s; };
+// Run 12 replaced the hometown errand with the cousin prologue; old stages map onto the new chapter.
+const LEGACY_STAGES = { 'origin-intro': 'prologue', 'origin-recover': 'debt-find', 'origin-return': 'debt-return' };
+const migrateSave = s => {
+  if (!s) return s;
+  if (LEGACY_FACTIONS[s.chosen]) s.chosen = LEGACY_FACTIONS[s.chosen];
+  if (LEGACY_STAGES[s.stage]) { if (s.stage === 'origin-return') { s.debtRoute = 'smooth'; s.debtCash = 200; } s.stage = LEGACY_STAGES[s.stage]; }
+  return s;
+};
 const FACTION_COLORS = [0x3764d8, 0xc33737, 0x4b8e68, 0x9c8d54, 0xe4b82c, 0x7e4b99, 0x2e8692, 0xa67639, 0x9b9b9b, 0x7b4444, 0x67928b, 0xb57e50, 0x6b6a9d, 0x8d6c80];
 const ORIGINS = { Northland: ['Kaikohe', 'Kaitaia', 'Whangārei', 'Opononi'], Auckland: ['South Auckland', 'West Auckland', 'Central Auckland', 'North Shore'], Waikato: ['Hamilton', 'Huntly', 'Tokoroa'], 'Bay of Plenty': ['Tauranga', 'Rotorua', 'Whakatāne'], 'East Coast': ['Gisborne', 'Wairoa'], 'Hawke’s Bay': ['Napier', 'Hastings'], 'Central North Island': ['Taupō', 'New Plymouth', 'Whanganui', 'Palmerston North'], Wellington: ['Wellington', 'Lower Hutt', 'Porirua'], 'Top of South': ['Nelson', 'Blenheim'], Canterbury: ['Christchurch', 'Ashburton', 'Timaru'], 'West Coast': ['Greymouth', 'Hokitika'], Otago: ['Dunedin', 'Queenstown', 'Wānaka'], Southland: ['Invercargill', 'Bluff'], Islands: ['Stewart Island / Rakiura', 'Chatham Islands'] };
-const ORIGIN_TALES = {
-  'Northland': ['A cousin in your hometown swears the missing envelope was taken by a seagull with expensive taste.', 'sealed wharf envelope', 'The harbour contact says you kept your word.'],
-  'Auckland': ['An old mate has a missing pay packet and a very loud landlord.', 'pay packet', 'Your old mate finally pays the rent, and stops blaming the bus timetable.'],
-  'Waikato': ['The garage owner wants a parts invoice back before the boss discovers his creative bookkeeping.', 'garage invoice', 'The garage is saved, but the boss still suspects the photocopier.'],
-  'Bay of Plenty': ['A courier dropped a tour operator\'s booking ledger somewhere between two bad decisions.', 'booking ledger', 'The booking ledger returns, with an alarming number of karaoke bookings.'],
-  'East Coast': ['The community radio host needs a lost interview tape before tonight\'s show.', 'interview tape', 'The interview makes air. You are thanked between two extremely long weather reports.'],
-  'Hawke’s Bay': ['A fictional orchard foreman lost a delivery docket and needs it back.', 'orchard docket', 'The orchard crew get paid. Nobody mentions the forklift incident.'],
-  'Central North Island': ['A roadside mechanic needs the keys to a stranded ute recovered.', 'ute keys', 'The ute runs again, mostly. The mechanic says the rattling is a feature.'],
-  'Wellington': ['A film extra needs a missing prop briefcase before the director calls action.', 'prop briefcase', 'The film crew get their prop back. The director wants another seventeen takes.'],
-  'Top of South': ['A ferry worker has lost the passenger manifest for a fictional charter.', 'charter manifest', 'The manifest is found, and the ferry leaves only slightly late.'],
-  'Canterbury': ['A student flat has misplaced the last rent receipt. The landlord has opinions.', 'rent receipt', 'The flat survives another week. The fridge remains a crime scene.'],
-  'West Coast': ['A miner\'s family wants a keepsake notebook recovered from the roadside.', 'keepsake notebook', 'The notebook is home. The family buys you a pie and refuses to tell you what is in it.'],
-  'Otago': ['A fictional ski-lodge worker needs the guest book back before check-in.', 'guest book', 'The lodge reopens, with a new rule about keeping books away from kea.'],
-  'Southland': ['A fish-and-chip shop has lost its secret batter recipe.', 'recipe notebook', 'The recipe is safe. The cook insists the secret is just more salt.'],
-  'Islands': ['A supply boat worker needs a lost cargo tally recovered.', 'cargo tally', 'The tally is returned, and the supply boat sails before the weather changes.'],
-};
 const SAVE_KEY = 'aotearoa-underworld-v2', SAVE_EXPORT_FORMAT = 'aotearoa-underworld-save';
-const STAGES = ['origin-intro', 'origin-recover', 'origin-return', 'recruit', 'faction-choice', 'mission-courier', 'mission-brawl', 'mission-return', 'complete'];
+const STAGES = ['prologue', 'debt-find', 'debt-fight', 'debt-return', 'recruit', 'faction-choice', 'mission-courier', 'mission-brawl', 'mission-return', 'complete'];
+const VALID_STAGES = [...STAGES, ...Object.keys(LEGACY_STAGES)];
 const EYE = 1.62;
 
 function createGame(world) {
-  const { scene, camera, collision, charMaterial, fists, renderer } = world;
+  const { scene, camera, collision, charMaterial, fists, renderer, dialogue: dlg, prologue } = world;
   const mobile = matchMedia('(pointer:coarse)').matches;
   const collides = (x, z, r = 0.55) => collision.collides(x, z, r);
   function slideMove(p, dx, dz, r = 0.55) {
@@ -77,8 +69,14 @@ function createGame(world) {
   }
   const fixer = person(0, -8, { top: 0xc79a3e, topCell: ATLAS.canvas, pants: 0x4a4038, pantsCell: ATLAS.canvas, face: ATLAS.faceC, pose: 'relaxed', scale: 1.0 });
   const fixerMarker = new THREE.Mesh(new THREE.OctahedronGeometry(0.22), markerMat(0xffe067)); fixerMarker.position.y = 2.3; fixer.add(fixerMarker);
-  const pickup = itemProp('bag', 0x77ffdb); scene.add(pickup);
-  const pickupMarker = new THREE.Mesh(new THREE.OctahedronGeometry(0.2), markerMat(0x77ffdb)); pickupMarker.position.y = 1.0; pickup.add(pickupMarker);
+  // Manu waits outside his place for the money; Darren hangs out somewhere that depends on your hometown.
+  const home = world.cousinHome;
+  const manu = person(home.pos.x, home.pos.z, { seed: 4242, skin: 0x7a4b31, top: 0x2a2d33, topCell: ATLAS.cotton, pants: 0x3a3a3a, pantsCell: ATLAS.track, face: ATLAS.faceC, beanie: 0x1a1a1a, pose: 'crossed', scale: 1.02 });
+  manu.rotation.y = home.rot;
+  const manuMarker = new THREE.Mesh(new THREE.OctahedronGeometry(0.2), markerMat(0xffe067)); manuMarker.position.y = 2.3; manu.add(manuMarker);
+  const darren = person(0, 0, { seed: 777, skin: 0xc68e6a, top: 0x6a6656, topCell: ATLAS.cotton, pants: 0xffffff, pantsCell: ATLAS.denim, face: ATLAS.faceA, shoes: 0x777777, pose: 'relaxed', scale: 0.95 });
+  const darrenMarker = new THREE.Mesh(new THREE.OctahedronGeometry(0.2), markerMat(0xff9a7a)); darrenMarker.position.y = 2.2; darren.add(darrenMarker);
+  const darrenState = { hp: 3, hostile: false, down: false, attackT: 0 };
   const stash = itemProp('parcel', 0xa9ff85); stash.position.set(-18, ROAD.kerbH, -19); scene.add(stash);
   const stashMarker = new THREE.Mesh(new THREE.OctahedronGeometry(0.2), markerMat(0xa9ff85)); stashMarker.position.y = 1.0; stash.add(stashMarker);
   const enemySpawns = enemies.map(e => e.p.position.clone());
@@ -128,22 +126,38 @@ function createGame(world) {
   function originUpdate() { hometown = select.value; originRegion = select.selectedOptions[0].dataset.region; }
   $('factions').innerHTML = FACTIONS.map((f, i) => `<button data-f="${i}">${f}</button>`).join('');
   let stamina = 100; const STAMINA_DRAIN = 24, STAMINA_RECOVERY = 17;
-  let stage = 'origin-intro', cash = 0, missionRoute = '', pauseOpen = false, saveAllowed = true;
-  let originText = ORIGIN_TALES[originRegion];
+  let stage = 'prologue', cash = 0, missionRoute = '', pauseOpen = false, saveAllowed = true, debtRoute = '', debtCash = 0, inPrologue = false;
   function hometownHash(name) { let h = 2166136261; for (const c of name) h = Math.imul(h ^ c.codePointAt(0), 16777619) >>> 0; return h >>> 0; }
-  function hometownPickup(name) { const h = hometownHash(name); const a = ((h % 3600) / 3600) * TAU; const radius = 18 + (Math.floor(h / 3600) % 9) * 4; return safeSpawn(Math.cos(a) * radius, Math.sin(a) * radius); }
-  function positionOriginPickup() { const p = hometownPickup(hometown); pickup.position.set(p.x, groundHeight(p.x, p.z), p.z); }
+  // Darren's hangout depends on your hometown, so different origins send you to different corners of the district.
+  const titleCase = n => n.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/'S\b/g, "'s");
+  const hangouts = (() => {
+    const named = ['THE LUCKY HORSE', 'SUNRISE DAIRY', 'KAI TIME TAKEAWAYS', 'PAWN & LOAN', 'HOKI FISH & CHIPS', 'NIGHT OWL BURGERS'];
+    const shops = world.spots.filter(sp => sp.kind === 'shop' && named.includes(sp.name) && Math.hypot(sp.pos.x, sp.pos.z) < 130);
+    // label completes "Find Darren ___"; place completes "he's always hanging round ___".
+    const unique = []; for (const sp of shops) if (!unique.some(u => u.name === sp.name)) unique.push({ ...sp, label: 'outside ' + titleCase(sp.name), place: titleCase(sp.name) });
+    const extra = world.spots.filter(sp => (sp.kind === 'park' || sp.kind === 'carpark') && Math.hypot(sp.pos.x, sp.pos.z) < 140).slice(0, 2).map(sp => ({ ...sp, label: 'at ' + sp.name, place: sp.name }));
+    return unique.concat(extra).length ? unique.concat(extra) : [{ pos: new THREE.Vector3(20, ROAD.kerbH, 44), rot: Math.PI, label: 'at the town square', place: 'the town square' }];
+  })();
+  let hangout = hangouts[0];
+  function placeDarren() {
+    hangout = hangouts[hometownHash(hometown) % hangouts.length];
+    const p = safeSpawn(hangout.pos.x, hangout.pos.z);
+    darren.position.set(p.x, groundHeight(p.x, p.z), p.z); darren.rotation.y = hangout.rot;
+    darrenState.hp = 3; darrenState.hostile = false; darrenState.down = false; darren.userData.human.reset();
+  }
+  const storyVars = () => ({ spot: hangout.place, hometown });
   const dist = p => Math.hypot(camera.position.x - p.x, camera.position.z - p.z);
   function objective() {
-    if (stage === 'origin-intro') return ['Find the local fixer. Hear your hometown story.', fixer.position];
-    if (stage === 'origin-recover') return [`Recover the ${originText[1]} (TALK to the teal marker).`, pickup.position];
-    if (stage === 'origin-return') return ['Return the item to the fixer.', fixer.position];
+    if (stage === 'prologue') return ['Finish your game with Manu.', null];
+    if (stage === 'debt-find') return [`Find Darren ${hangout.label} and collect Manu's $400.`, darren.position];
+    if (stage === 'debt-fight') return ['Darren wants to scrap. Knock him down.', darren.position];
+    if (stage === 'debt-return') return [`Take the $${debtCash} back to Manu at his place.`, manu.position];
     if (stage === 'recruit') return ['Meet a faction contact (coloured markers).', contacts[0].p.position];
     if (stage === 'faction-choice') return [`Talk to ${chosen} to choose your initiation.`, contacts.find(c => c.f === chosen)?.p.position || fixer.position];
     if (stage === 'mission-courier') return [`${chosen}: recover the package from the green marker.`, stash.position];
     if (stage === 'mission-brawl') { const living = enemies.filter(e => e.alive).sort((a, b) => dist(a.p.position) - dist(b.p.position)); return [`${chosen}: defeat three hostile opponents (${defeated}/3).`, living[0]?.p.position || null]; }
     if (stage === 'mission-return') return [`Return to the fixer for the ${missionRoute === 'courier' ? 'quiet' : 'loud'} ending.`, fixer.position];
-    return [`Chapter complete: ${hometown} origin / ${chosen} / ${missionRoute} route.`, null];
+    return [`Chapter complete: ${hometown} / ${chosen} / ${missionRoute} route.`, null];
   }
   function updateHUD() {
     $('status').textContent = `HP ${Math.ceil(hp)} | ENERGY ${Math.ceil(stamina)} | $${cash} | REP ${rep} | ${chosen.toUpperCase()}`;
@@ -154,14 +168,14 @@ function createGame(world) {
   function store() {
     if (!saveAllowed || !started) return;
     try {
-      const data = { version: 2, stage, hometown, originRegion, chosen, rep, hp, cash, defeated, missionRoute, stamina, enemyHP: enemies.map(e => e.hp), enemyAlive: enemies.map(e => e.alive), enemyPositions: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z })), x: camera.position.x, z: camera.position.z, yaw, pitch };
+      const data = { version: 2, stage, hometown, originRegion, chosen, rep, hp, cash, defeated, missionRoute, stamina, debtRoute, debtCash, enemyHP: enemies.map(e => e.hp), enemyAlive: enemies.map(e => e.alive), enemyPositions: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z })), x: camera.position.x, z: camera.position.z, yaw, pitch };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data)); $('saveState').textContent = 'Saved on this device';
     } catch (e) { $('saveState').textContent = 'Local save unavailable in this browser'; }
   }
   function readSave() {
     try {
       const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
-      if (!s || s.version !== 2 || typeof s.hometown !== 'string' || !Object.values(ORIGINS).some(ts => ts.includes(s.hometown)) || !STAGES.includes(s.stage)) return null;
+      if (!s || s.version !== 2 || typeof s.hometown !== 'string' || !Object.values(ORIGINS).some(ts => ts.includes(s.hometown)) || !VALID_STAGES.includes(s.stage)) return null;
       return migrateSave(s);
     } catch (e) { return null; }
   }
@@ -193,6 +207,7 @@ function createGame(world) {
       refreshContinue();
       $('transferStatus').textContent = 'Imported ' + data.hometown + ' save. Select CONTINUE SAVED GAME.';
       $('pausePanel').style.display = 'none'; pauseOpen = false; started = false;
+      if (inPrologue) { prologue.abort(); inPrologue = false; }
       $('panel').style.display = 'grid';
     } catch (error) { $('transferStatus').textContent = 'Import failed: ' + error.message; }
     finally { $('saveFile').value = ''; }
@@ -204,17 +219,31 @@ function createGame(world) {
   function closeMenus() { $('panel').style.display = 'none'; $('choicePanel').style.display = 'none'; $('pausePanel').style.display = 'none'; pauseOpen = false; started = true; updateHUD(); }
   function resetEnemy(e, i) { e.alive = true; e.hp = 3; e.dyingT = 0; e.p.userData.human.reset(); e.p.position.set(enemySpawns[i].x, groundHeight(enemySpawns[i].x, enemySpawns[i].z), enemySpawns[i].z); if (!e.p.parent) scene.add(e.p); }
   function beginNew() {
-    saveAllowed = true; stage = 'origin-intro'; hp = 100; cash = 0; rep = 0; chapter = 0; defeated = 0; missionRoute = ''; stamina = 100;
-    originText = ORIGIN_TALES[originRegion] || ORIGIN_TALES.Northland; positionOriginPickup();
-    camera.position.set(0, ROAD.kerbH + EYE, 8); yaw = 0; pitch = 0;
+    saveAllowed = true; stage = 'prologue'; hp = 100; cash = 0; rep = 0; chapter = 0; defeated = 0; missionRoute = ''; stamina = 100; debtRoute = ''; debtCash = 0;
+    placeDarren();
     enemies.forEach(resetEnemy);
     while (fx.children.length) fx.remove(fx.children[0]);
-    closeMenus(); say(`${hometown}: ${originText[0]} Find the yellow fixer marker.`); store();
+    startPrologue();
+    storePaused();
+  }
+  // Friday night at Manu's: the couch, the console and the conversation, then out onto the street.
+  function startPrologue() {
+    $('panel').style.display = 'none'; $('choicePanel').style.display = 'none'; $('pausePanel').style.display = 'none';
+    pauseOpen = false; started = false; inPrologue = true;
+    CHIP.ensure();
+    prologue.start(storyVars(), () => {
+      inPrologue = false; stage = 'debt-find';
+      const sp = home.spawn;
+      camera.position.set(sp.pos.x, groundHeight(sp.pos.x, sp.pos.z) + EYE, sp.pos.z); yaw = sp.rot + Math.PI; pitch = 0;
+      closeMenus(); say(`Darren owes Manu $400. Find him ${hangout.label}.`); store();
+    });
   }
   function restore(s) {
     hometown = s.hometown; originRegion = s.originRegion || Object.entries(ORIGINS).find(([, ts]) => ts.includes(s.hometown))?.[0] || 'Northland';
-    chosen = FACTIONS.includes(s.chosen) ? s.chosen : 'Independent'; originText = ORIGIN_TALES[originRegion] || ORIGIN_TALES.Northland; positionOriginPickup();
-    stage = s.stage; rep = Math.max(0, Number(s.rep) || 0); hp = Math.min(100, Math.max(1, Number(s.hp) || 100)); cash = Math.max(0, Number(s.cash) || 0);
+    chosen = FACTIONS.includes(s.chosen) ? s.chosen : 'Independent';
+    stage = s.stage; placeDarren();
+    debtRoute = ['smooth', 'hard'].includes(s.debtRoute) ? s.debtRoute : ''; debtCash = [200, 400].includes(s.debtCash) ? s.debtCash : 0;
+    if (stage === 'debt-fight') darrenState.hostile = true; rep = Math.max(0, Number(s.rep) || 0); hp = Math.min(100, Math.max(1, Number(s.hp) || 100)); cash = Math.max(0, Number(s.cash) || 0);
     defeated = Math.max(0, Number(s.defeated) || 0); missionRoute = s.missionRoute || '';
     stamina = Number.isFinite(s.stamina) ? Math.max(0, Math.min(100, s.stamina)) : 100;
     const p = safeSpawn(Number.isFinite(s.x) ? clamp(s.x, -260, 260) : 0, Number.isFinite(s.z) ? clamp(s.z, -260, 260) : 8); // Run 11 saves may sit inside the new buildings
@@ -227,14 +256,33 @@ function createGame(world) {
       e.p.position.set(q.x, groundHeight(q.x, q.z), q.z);
       if (e.alive && !e.p.parent) scene.add(e.p); if (!e.alive && e.p.parent) scene.remove(e.p);
     });
-    select.value = hometown; closeMenus(); say(`Welcome back to ${hometown}. Your ${chosen} story continues.`);
+    select.value = hometown;
+    if (stage === 'prologue') { startPrologue(); return; }
+    closeMenus(); say(`Welcome back to ${hometown}. Your ${chosen} story continues.`);
   }
   function advance(next, message) { stage = next; say(message); updateHUD(); store(); }
+  const faceEachOther = p => { p.rotation.y = Math.atan2(camera.position.x - p.position.x, camera.position.z - p.position.z); };
   function talk() {
+    if (dlg.active) { dlg.advance(); return; }
     if (!started || pauseOpen) return;
-    if (stage === 'origin-intro' && dist(fixer.position) < 5) { advance('origin-recover', `${hometown} origin: ${originText[0]} Find the ${originText[1]}.`); return; }
-    if (stage === 'origin-recover' && dist(pickup.position) < 5) { advance('origin-return', `Recovered the ${originText[1]}. Return it to your fixer.`); return; }
-    if (stage === 'origin-return' && dist(fixer.position) < 5) { cash += 40; rep += 15; advance(chosen === 'Independent' ? 'recruit' : 'faction-choice', `${originText[2]} $40 and reputation +15. ${chosen === 'Independent' ? 'Meet a crew contact.' : 'Talk to your selected faction.'}`); return; }
+    if (stage === 'debt-find' && dist(darren.position) < 4.5) {
+      faceEachOther(darren);
+      dlg.run('darrenMeet', storyVars(), r => {
+        if (r === 'smooth') { debtRoute = 'smooth'; debtCash = 200; advance('debt-return', 'Darren paid $200 and swears the rest is coming Friday. Take it to Manu.'); }
+        else if (r === 'fight') { debtRoute = 'hard'; darrenState.hostile = true; advance('debt-fight', 'Darren wants to scrap. Knock him down. HIT when he is in front of you.'); }
+      });
+      return;
+    }
+    if (stage === 'debt-return' && dist(manu.position) < 4.5) {
+      faceEachOther(manu);
+      dlg.run(debtRoute === 'hard' ? 'returnHard' : 'returnSmooth', storyVars(), () => {
+        const cut = debtRoute === 'hard' ? 100 : 50; cash += cut; rep += debtRoute === 'hard' ? 30 : 15;
+        advance(chosen === 'Independent' ? 'recruit' : 'faction-choice', `Manu gave you $${cut}. ${chosen === 'Independent' ? 'The crews at the square want to meet you.' : `Go talk to ${chosen} at the square.`}`);
+      });
+      return;
+    }
+    if (dist(manu.position) < 4.5 && (stage === 'debt-find' || stage === 'debt-fight')) { faceEachOther(manu); dlg.run('manuWaiting', storyVars(), null); return; }
+    if (debtRoute && stage !== 'debt-fight' && dist(darren.position) < 4.5 && !darrenState.down) { faceEachOther(darren); dlg.run('darrenAgain', storyVars(), null); return; }
     if (stage === 'recruit') {
       const c = contacts.filter(c => dist(c.p.position) < 5).sort((a, b) => dist(a.p.position) - dist(b.p.position))[0];
       if (c) { chosen = c.f; rep += 10; advance('faction-choice', `${chosen} has offered you a chance. Talk again to choose a job.`); return; }
@@ -248,14 +296,30 @@ function createGame(world) {
       }
     }
     if (stage === 'mission-courier' && dist(stash.position) < 5) { cash += 20; advance('mission-return', `Package secured. Your ${originRegion} contacts gave you a clean exit. Return to the fixer.`); return; }
-    if (stage === 'mission-return' && dist(fixer.position) < 5) { cash += missionRoute === 'courier' ? 100 : 60; rep += missionRoute === 'courier' ? 15 : 35; advance('complete', `${hometown} ending: ${originText[2]} ${chosen} now knows your name. ${missionRoute === 'courier' ? 'Quiet route: more cash, less heat.' : 'Loud route: more reputation, more enemies.'} CHAPTER COMPLETE.`); return; }
+    if (stage === 'mission-return' && dist(fixer.position) < 5) { cash += missionRoute === 'courier' ? 100 : 60; rep += missionRoute === 'courier' ? 15 : 35; advance('complete', `${hometown} ending: ${chosen} now knows your name. ${missionRoute === 'courier' ? 'Quiet route: more cash, less heat.' : 'Loud route: more reputation, more enemies.'} CHAPTER COMPLETE.`); return; }
     if (stage === 'complete') { say(`Chapter complete. ${hometown} → ${chosen} → ${missionRoute}. Try a different origin and route for a different ending.`); return; }
     say(`Follow your current objective. ${objective()[0]}`);
   }
   function hit() {
-    if (!started || pauseOpen) return;
+    if (!started || pauseOpen || dlg.active) return;
     fists.swing();
     const forward = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
+    if (stage === 'debt-fight' && !darrenState.down) {
+      const delta = darren.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position), d = delta.length();
+      if (d < 4 && delta.normalize().dot(forward) > 0.45) {
+        darrenState.hp--; bloodAt(darren.position); slideMove(darren.position, forward.x * 0.45, forward.z * 0.45, 0.4);
+        world.shake = 0.18; darren.userData.human.hit();
+        if (darrenState.hp <= 0) {
+          darrenState.down = true; darrenState.hostile = false; darren.userData.human.knockDown(); rep += 5;
+          say('Darren is down.');
+          setTimeout(() => dlg.run('darrenBeaten', storyVars(), () => {
+            debtCash = 400; darren.userData.human.reset(); darrenState.down = false;
+            advance('debt-return', 'Darren handed over the full $400. Take it to Manu.');
+          }), 1400);
+        } else say('Hit landed.');
+        updateHUD(); return;
+      }
+    }
     let target = null, score = 99;
     for (const e of enemies) {
       if (!e.alive) continue;
@@ -283,7 +347,7 @@ function createGame(world) {
   $('independent').onclick = () => { chosen = 'Independent'; document.querySelectorAll('[data-f]').forEach(x => x.classList.remove('selected')); $('start').textContent = 'NEW GAME: INDEPENDENT'; };
   $('start').onclick = beginNew;
   $('continue').onclick = () => { const s = readSave(); if (s) restore(s); else refreshContinue(); };
-  select.onchange = () => { originUpdate(); originText = ORIGIN_TALES[originRegion] || ORIGIN_TALES.Northland; $('originStory').textContent = `${hometown}: ${originText[0]}`; };
+  select.onchange = () => { originUpdate(); placeDarren(); $('originStory').textContent = `${hometown}, ${originRegion}. You and your cousin Manu grew up here.`; };
   select.onchange();
   document.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => {
     chosen = FACTIONS[+b.dataset.f];
@@ -298,7 +362,7 @@ function createGame(world) {
   function storePaused() { const was = started; started = true; store(); started = was; }
   $('pauseButton').onclick = pauseGame; $('resume').onclick = pauseGame;
   $('saveNow').onclick = () => { storePaused(); say('Saved on this device.'); };
-  $('restart').onclick = () => { if (document.pointerLockElement) document.exitPointerLock(); started = false; pauseOpen = false; $('pausePanel').style.display = 'none'; $('panel').style.display = 'grid'; refreshContinue(); };
+  $('restart').onclick = () => { if (document.pointerLockElement) document.exitPointerLock(); if (inPrologue) { prologue.abort(); inPrologue = false; } started = false; pauseOpen = false; $('pausePanel').style.display = 'none'; $('panel').style.display = 'grid'; refreshContinue(); };
   addEventListener('keydown', e => { if (e.code === 'Escape' && $('panel').style.display === 'none' && $('choicePanel').style.display !== 'flex') { pauseGame(); e.preventDefault(); } });
   addEventListener('visibilitychange', () => { if (document.hidden && started) pauseGame(); });
   refreshContinue();
@@ -345,16 +409,17 @@ function createGame(world) {
   const forward = new THREE.Vector3();
   function update(dt, now, t) {
     if (started) {
-      const joy = window.AUControls || { x: 0, y: 0 };
+      const talking = dlg.active;
+      const joy = talking ? { x: 0, y: 0 } : (window.AUControls || { x: 0, y: 0 });
       const k = c => !!keys[c];
       const right = (k('KeyD') || k('ArrowRight') || move.right ? 1 : 0) - (k('KeyA') || k('ArrowLeft') || move.left ? 1 : 0) + (Number(joy.x) || 0);
       const back = (k('KeyS') || k('ArrowDown') || move.back ? 1 : 0) - (k('KeyW') || k('ArrowUp') || move.forward ? 1 : 0) + (Number(joy.y) || 0);
       const wantsSprint = !!(keys.ShiftLeft || keys.ShiftRight || move.sprint);
-      const moving = Math.abs(right) > 0.05 || Math.abs(back) > 0.05;
+      const moving = !talking && (Math.abs(right) > 0.05 || Math.abs(back) > 0.05);
       const sprinting = wantsSprint && moving && stamina > 0;
       stamina = clamp(stamina + (sprinting ? -STAMINA_DRAIN : STAMINA_RECOVERY) * dt, 0, 100);
       const speed = (sprinting ? 12 : 7) * dt;
-      let dx = right, dz = back; const len = Math.hypot(dx, dz);
+      let dx = talking ? 0 : right, dz = talking ? 0 : back; const len = Math.hypot(dx, dz);
       if (len > 1) { dx /= len; dz /= len; }
       const mx = (dx * Math.cos(yaw) + dz * Math.sin(yaw)) * speed, mz = (-dx * Math.sin(yaw) + dz * Math.cos(yaw)) * speed;
       slideMove(camera.position, mx, mz);
@@ -385,12 +450,31 @@ function createGame(world) {
           if (hp === 0) { hp = 100; camera.position.set(0, ROAD.kerbH + EYE, 8); rep = Math.max(0, rep - 10); say('You got knocked out. Respawned at the dairy. Reputation -10.'); }
         }
       }
+      // Darren squares up when the debt talk goes bad.
+      {
+        const h = darren.userData.human, d = dist(darren.position);
+        if (darrenState.hostile && !darrenState.down) {
+          let sp = 0;
+          if (d < 20 && d > 1.9) {
+            const before = darren.position.clone();
+            slideMove(darren.position, (camera.position.x - darren.position.x) / d * dt * 1.7, (camera.position.z - darren.position.z) / d * dt * 1.7, 0.4);
+            sp = before.distanceTo(darren.position) / Math.max(dt, 1e-4);
+          }
+          faceEachOther(darren); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle';
+          darren.position.y = groundHeight(darren.position.x, darren.position.z);
+          if (d < 1.7 && !talking) {
+            hp = Math.max(0, hp - dt * 6);
+            darrenState.attackT -= dt; if (darrenState.attackT <= 0) { darrenState.attackT = 0.8 + rnd() * 0.4; h.punch(); world.hurt = 1; world.shake = 0.12; }
+            if (hp === 0) { hp = 100; const sp2 = home.spawn.pos; camera.position.set(sp2.x, groundHeight(sp2.x, sp2.z) + EYE, sp2.z); say('Darren dropped you. You came to outside Manu\'s place.'); }
+          }
+        } else { h.mode = 'idle'; h.speed = 0; }
+      }
       if (now - lastHud > 180) { updateHUD(); drawMiniMap(); lastHud = now; }
     }
     // Dying enemies stay down for a few seconds, then leave the scene.
     for (const e of enemies) if (!e.alive && e.dyingT > 0) { e.dyingT += dt; if (e.dyingT > 4.5 && e.p.parent) { scene.remove(e.p); e.dyingT = 0; } }
     // Crew contacts and the fixer turn their heads to watch the player.
-    for (const c of [...contacts.map(c => c.p), fixer]) {
+    for (const c of [...contacts.map(c => c.p), fixer, manu, ...(darrenState.hostile ? [] : [darren])]) {
       const h = c.userData.human, dx = camera.position.x - c.position.x, dz = camera.position.z - c.position.z, d = Math.hypot(dx, dz);
       const want = d < 9 ? Math.atan2(dx, dz) - c.rotation.y : 0;
       h.lookYaw = lerp(h.lookYaw, Math.atan2(Math.sin(want), Math.cos(want)), 1 - Math.exp(-dt * 4));
@@ -398,13 +482,15 @@ function createGame(world) {
     }
     fixerMarker.rotation.y += dt; fixerMarker.position.y = 2.3 + Math.sin(t * 2) * 0.06;
     fixerMarker.material.opacity = clamp((dist(fixer.position) - 1.5) / 5, 0.12, 0.9);
-    pickupMarker.rotation.y += dt; stashMarker.rotation.y += dt;
-    pickupMarker.position.y = 1.0 + Math.sin(t * 2.2) * 0.08; stashMarker.position.y = 1.0 + Math.sin(t * 2.2 + 1) * 0.08;
+    stashMarker.rotation.y += dt; stashMarker.position.y = 1.0 + Math.sin(t * 2.2 + 1) * 0.08;
+    const storyMarker = (m, show, base) => { m.visible = show; if (show) { m.rotation.y += dt; m.position.y = base + Math.sin(t * 2) * 0.06; } };
+    storyMarker(manuMarker, stage === 'debt-return', 2.3); storyMarker(darrenMarker, stage === 'debt-find', 2.2);
+    fixerMarker.visible = !['debt-find', 'debt-fight', 'debt-return', 'prologue'].includes(stage);
     camera.rotation.order = 'YXZ';
     const sh = world.shake || 0; world.shake = Math.max(0, sh - dt);
     camera.rotation.set(pitch + (Math.random() - 0.5) * sh * 0.12, yaw + (Math.random() - 0.5) * sh * 0.12, 0);
     // Animate characters near the camera every frame, distant ones at a lower rate.
-    for (const p of [...contacts.map(c => c.p), fixer, ...enemies.map(e => e.p)]) {
+    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, ...enemies.map(e => e.p)]) {
       if (!p.parent) continue;
       const d = p.position.distanceTo(camera.position);
       const h = p.userData.human;
@@ -421,7 +507,7 @@ function createGame(world) {
     state: () => ({ stage, hp, rep, cash, chosen, defeated, started, x: camera.position.x, z: camera.position.z, yaw, objective: objective()[0] }),
     teleport(x, z) { camera.position.set(x, groundHeight(x, z) + EYE, z); },
     face(y) { yaw = y; }, talk, hit, collides,
-    targets: () => ({ fixer: fixer.position.clone(), pickup: pickup.position.clone(), stash: stash.position.clone(), contacts: contacts.map(c => ({ f: c.f, x: c.p.position.x, z: c.p.position.z })), enemies: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z, alive: e.alive })) }),
+    targets: () => ({ fixer: fixer.position.clone(), manu: manu.position.clone(), darren: darren.position.clone(), stash: stash.position.clone(), contacts: contacts.map(c => ({ f: c.f, x: c.p.position.x, z: c.p.position.z })), enemies: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z, alive: e.alive })) }),
   };
-  return { update, isStarted: () => started };
+  return { update, isStarted: () => started, isPaused: () => pauseOpen, inPrologue: () => inPrologue };
 }

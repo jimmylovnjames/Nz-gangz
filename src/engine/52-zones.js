@@ -74,6 +74,7 @@ Object.assign(City.prototype, {
   },
   carPark(x0, z0, x1, z1, fill) {
     this.flat('patch', [[x0, z0], [x1, z0], [x1, z1], [x0, z1]], ROAD.kerbH + 0.002);
+    this.spots.push({ name: 'the car park behind the shops', kind: 'carpark', pos: new THREE.Vector3((x0 + x1) / 2, ROAD.kerbH, (z0 + z1) / 2), rot: 0 });
     const white = [0.95, 0.94, 0.9], horiz = (x1 - x0) > (z1 - z0);
     const len = horiz ? x1 - x0 : z1 - z0, depth = horiz ? z1 - z0 : x1 - x0;
     if (depth < 10) return;
@@ -186,6 +187,7 @@ Object.assign(City.prototype.zoneGen, {
         this.b.box('timber', lbx, 0, -0.25, 0.08, 1.0, 0.08, { faces: 'XxZz' });
         this.b.box('trim', lbx, 1.0, -0.25, 0.32, 0.26, 0.42, { tint: col(this.pick([0xc8302a, 0x2a4a7a, 0xe8e2d0, 0x333333])) });
         this.b.setTransform(null);
+        this.houses.push({ ring: s.ring, ...this.spotFrom(m, h.x + h.W / 2, h.setback - 1.8, 'house', 'house'), spawn: this.spotFrom(m, (dx0 + dx1) / 2, -1.0, 'drive', 'drive') });
         if (this.rng() < 0.35) {
           const c = this.local(m, (dx0 + dx1) / 2, h.setback + 1.2 + this.rng() * 1.5);
           const rot = { s: 0, n: Math.PI, w: Math.PI / 2, e: -Math.PI / 2 }[side] + (this.rng() < 0.6 ? 0 : Math.PI);
@@ -229,6 +231,7 @@ Object.assign(City.prototype.zoneGen, {
       this.collision.add(x, z, 0.5, 0.5, 'tree');
     }
     for (let i = 0; i < 4; i++) this.bench(cx - 12 + i * 8, cz - 2.2, Math.PI);
+    this.spots.push({ name: 'the park by the rugby posts', kind: 'park', pos: new THREE.Vector3(cx - 4, ROAD.kerbH, cz - 3.4), rot: 0 });
     for (const side of ['s', 'n', 'w', 'e']) this.streetside(s, side, { cars: 0.2, lights: 32, offset: 8 });
   },
   industrial(s) {

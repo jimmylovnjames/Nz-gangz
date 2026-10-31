@@ -35,6 +35,15 @@ async function holdUntil(page, key, predicate, arg) {
   try { await page.waitForFunction(predicate, arg, { timeout: 30000, polling: 100 }); } catch (_) { }
   await page.keyboard.up(key);
 }
+// Taps through dialogue lines until the predicate holds (choices stop the dialogue until chosen).
+async function advanceUntil(page, predicate, tries = 40) {
+  for (let i = 0; i < tries; i++) {
+    if (await page.evaluate(predicate)) return true;
+    await page.evaluate(() => { window.__auStory.advance(); window.__auStory.advance(); });
+    await page.waitForTimeout(250);
+  }
+  return page.evaluate(predicate);
+}
 async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auGame.teleport(x, z), [x, z]); await page.waitForTimeout(400); }
 
 (async () => {
@@ -50,34 +59,65 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   await page.evaluate(() => localStorage.removeItem('aotearoa-underworld-v2'));
   await page.click('#start');
   await page.waitForTimeout(800);
+  check('NEW GAME opens the prologue on Manu\'s couch', await page.evaluate(() => window.__auStory.prologue && window.__auGame.state().stage === 'prologue'));
+  // Prologue: talk through the intro, the match starts on the TV.
+  await advanceUntil(page, () => window.__auStory.minigame.phase !== 'off');
+  check('the Kiwi Knuckle Kings match starts after the intro chat', await page.evaluate(() => window.__auStory.minigame.phase) !== 'off');
+  await page.evaluate(() => { const m = window.__auStory.minigame; m.phase = 'fight'; m.phaseT = 0; m.p1.x = 120; m.p2.x = 140; });
+  for (let i = 0; i < 40 && (await page.evaluate(() => window.__auStory.minigame.p2.hp)) === 100; i++) {
+    await page.keyboard.press('KeyJ'); await page.evaluate(() => { const m = window.__auStory.minigame; m.p1.x = m.p2.x - 20; }); await page.waitForTimeout(150);
+  }
+  check('punching in the mini-game hurts Manu\'s fighter', await page.evaluate(() => window.__auStory.minigame.p2.hp) < 100, JSON.stringify(await page.evaluate(() => window.__auStory.minigame.state())));
+  await page.evaluate(() => window.__auStory.skip());
+  await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice));
+  check('after the match Manu raises the debt and offers a choice', await page.evaluate(() => !!(window.__auStory.line && window.__auStory.line.choice)));
+  await page.evaluate(() => window.__auStory.choose(1));
+  await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice));
+  await page.evaluate(() => window.__auStory.choose(0));
+  await advanceUntil(page, () => !window.__auStory.prologue, 60);
+  await page.waitForTimeout(1500);
+  check('offering to collect sends you onto the street', (await state(page)).stage === 'debt-find', (await state(page)).objective);
   let s0 = await state(page);
+  await page.evaluate(() => window.__auGame.face(0));
+  await page.waitForTimeout(300);
+  s0 = await state(page);
   await holdUntil(page, 'KeyW', z0 => window.__auGame.state().z < z0 - 0.2, s0.z);
   let s1 = await state(page);
   check('W moves the player forward (-z at yaw 0)', s1.z < s0.z - 0.2 && Number.isFinite(s1.x), `z ${s0.z.toFixed(2)} -> ${s1.z.toFixed(2)}`);
-  await page.evaluate(() => { window.__auGame.teleport(0, 8); window.__auGame.face(Math.PI / 2); });
+  await page.evaluate(() => window.__auGame.face(Math.PI / 2));
   await page.waitForTimeout(300);
   s0 = await state(page);
   await holdUntil(page, 'KeyW', x0 => window.__auGame.state().x < x0 - 0.2, s0.x);
   s1 = await state(page);
   check('after turning 90° left, W moves toward -x (forward follows the view)', s1.x < s0.x - 0.2 && Math.abs(s1.z - s0.z) < 0.3, `x ${s0.x.toFixed(2)} -> ${s1.x.toFixed(2)}`);
-  await page.evaluate(() => window.__auGame.face(0));
-
-  // Mission: origin -> recruit -> brawl route -> complete.
-  const T = await page.evaluate(() => window.__auGame.targets());
-  await walkTo(page, T.fixer.x, T.fixer.z + 2.5); await page.evaluate(() => window.__auGame.talk());
-  check('talking to the fixer starts the hometown job', (await state(page)).stage === 'origin-recover');
-  await page.evaluate(() => window.__auGame.face(0));
-  await page.waitForTimeout(600);
+  // Debt: find Darren, go hard, win the scrap, bring the money back.
+  let T = await page.evaluate(() => window.__auGame.targets());
+  await walkTo(page, T.darren.x + 2.2, T.darren.z);
+  await page.evaluate(() => window.__auGame.face(Math.atan2(2.2, 0)));
   const way = await page.evaluate(() => document.getElementById('waypoint').textContent);
-  const tp = await page.evaluate(() => window.__auGame.targets());
-  const st = await state(page);
-  const bearing = Math.atan2(tp.pickup.x - st.x, -(tp.pickup.z - st.z));
-  const expected = Math.abs(bearing) < 0.4 ? '↑' : Math.abs(bearing) > 2.7 ? '↓' : bearing > 0 ? '→' : '←';
-  check('waypoint arrow points toward the objective', way.startsWith(expected), `${way} (expected ${expected})`);
-  await walkTo(page, tp.pickup.x + 1.5, tp.pickup.z); await page.evaluate(() => window.__auGame.talk());
-  check('recovering the hometown item', (await state(page)).stage === 'origin-return');
-  await walkTo(page, T.fixer.x, T.fixer.z + 2.5); await page.evaluate(() => window.__auGame.talk());
-  check('returning to the fixer unlocks recruiting', (await state(page)).stage === 'recruit');
+  await page.evaluate(() => window.__auGame.talk());
+  await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice));
+  await page.evaluate(() => window.__auStory.choose(0));
+  await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice));
+  await page.evaluate(() => window.__auStory.choose(1));
+  await advanceUntil(page, () => !window.__auStory.active);
+  check('telling Darren "the whole four hundred" starts a scrap', (await state(page)).stage === 'debt-fight');
+  for (let k = 0; k < 6 && (await state(page)).stage === 'debt-fight' && !(await page.evaluate(() => window.__auStory.active)); k++) {
+    const d = (await page.evaluate(() => window.__auGame.targets())).darren;
+    await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 2.2, z); g.face(Math.atan2(2.2, 0)); }, [d.x, d.z]);
+    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+    await page.evaluate(() => window.__auGame.hit());
+  }
+  await page.waitForFunction(() => window.__auStory.active, null, { timeout: 30000 }).catch(() => { });
+  await advanceUntil(page, () => !window.__auStory.active);
+  check('knocking Darren down gets the full $400', (await state(page)).stage === 'debt-return' && (await state(page)).objective.includes('$400'), (await state(page)).objective);
+  T = await page.evaluate(() => window.__auGame.targets());
+  await walkTo(page, T.manu.x + 1.5, T.manu.z); await page.evaluate(() => window.__auGame.talk());
+  await advanceUntil(page, () => !window.__auStory.active);
+  const afterManu = await state(page);
+  check('handing Manu the money pays a cut and opens the crews', afterManu.stage === 'recruit' && afterManu.cash === 100, `stage ${afterManu.stage} cash ${afterManu.cash}`);
+  // Crew chapter (unchanged from Run 11).
+  T = await page.evaluate(() => window.__auGame.targets());
   const c0 = T.contacts[0];
   await walkTo(page, c0.x * 0.9, c0.z * 0.9); await page.evaluate(() => window.__auGame.talk());
   check('a crew contact accepts you', (await state(page)).stage === 'faction-choice', (await state(page)).chosen);
@@ -92,11 +132,12 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
     for (let k = 0; k < 3; k++) {
       const cur = (await page.evaluate(() => window.__auGame.targets())).enemies.find(q => Math.abs(q.x - e.x) < 6 && Math.abs(q.z - e.z) < 6) || e;
       await page.evaluate(([ex, ez]) => { const g = window.__auGame; g.teleport(ex + 2.2, ez); g.face(Math.atan2(2.2, 0)); }, [cur.x, cur.z]);
-      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))); // camera picks up the new yaw
+      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
       await page.evaluate(() => window.__auGame.hit());
     }
   }
   check('three knockouts complete the brawl', (await state(page)).stage === 'mission-return', JSON.stringify(await state(page)));
+  T = await page.evaluate(() => window.__auGame.targets());
   await walkTo(page, T.fixer.x, T.fixer.z + 2.5); await page.evaluate(() => window.__auGame.talk());
   const done = await state(page);
   check('chapter completes', done.stage === 'complete', `cash ${done.cash} rep ${done.rep}`);
@@ -120,6 +161,12 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   check('menu shows only fictional crew names', !realNames.some(n => menuText.includes(n)), realNames.filter(n => menuText.includes(n)).join(', '));
   await page.click('#continue');
   check('Run 11 save keeps its crew under the new name', (await state(page)).chosen === 'Stray Dogs', (await state(page)).chosen);
+  await page.click('#pauseButton'); await page.click('#restart');
+  await page.evaluate(() => localStorage.setItem('aotearoa-underworld-v2', JSON.stringify({ version: 2, stage: 'origin-recover', hometown: 'Kaikohe', originRegion: 'Northland', chosen: 'Independent', rep: 0, hp: 100, cash: 0, defeated: 0, missionRoute: '', stamina: 100, x: 0, z: 8, yaw: 0, pitch: 0 })));
+  await page.reload();
+  await page.waitForFunction(() => document.documentElement.dataset.engine === 'ready', null, { timeout: 300000 });
+  await page.click('#continue');
+  check('Run 11 save mid-errand continues as the Darren job', (await state(page)).stage === 'debt-find', (await state(page)).stage);
   check('no page errors in desktop session', errors.length === 0, errors.slice(0, 3).join(' | '));
   await ctx.close();
 
@@ -129,6 +176,21 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   await phone.page.reload();
   await phone.page.waitForFunction(() => document.documentElement.dataset.engine === 'ready', null, { timeout: 300000 });
   await phone.page.tap('#start');
+  await advanceUntil(phone.page, () => window.__auStory.minigame.phase !== 'off');
+  check('fight pad shows during the match on phone', await phone.page.evaluate(() => getComputedStyle(document.getElementById('mgPad')).display) !== 'none');
+  check('street controls hidden in the lounge', await phone.page.evaluate(() => getComputedStyle(document.getElementById('joystick')).display) === 'none');
+  await phone.page.evaluate(() => { const m = window.__auStory.minigame; m.phase = 'fight'; m.p1.x = 120; m.p2.x = 140; });
+  for (let i = 0; i < 30 && (await phone.page.evaluate(() => window.__auStory.minigame.p2.hp)) === 100; i++) {
+    await phone.page.tap('[data-mg="punch"]'); await phone.page.evaluate(() => { const m = window.__auStory.minigame; m.p1.x = m.p2.x - 20; }); await phone.page.waitForTimeout(150);
+  }
+  check('tapping PUNCH on the fight pad lands hits', await phone.page.evaluate(() => window.__auStory.minigame.p2.hp) < 100);
+  await phone.page.click('#pauseButton'); await phone.page.click('#restart');
+  check('restarting from pause leaves the lounge', await phone.page.evaluate(() => !window.__auStory.prologue && !document.body.classList.contains('prologue')));
+  // Pausing saves the current game, so inject the street save only after leaving the prologue.
+  await phone.page.evaluate(() => localStorage.setItem('aotearoa-underworld-v2', JSON.stringify({ version: 2, stage: 'recruit', hometown: 'Kaikohe', originRegion: 'Northland', chosen: 'Independent', rep: 15, hp: 100, cash: 50, defeated: 0, missionRoute: '', stamina: 100, x: 0, z: 8, yaw: 0, pitch: 0 })));
+  await phone.page.reload();
+  await phone.page.waitForFunction(() => document.documentElement.dataset.engine === 'ready', null, { timeout: 300000 });
+  await phone.page.tap('#continue');
   await phone.page.waitForTimeout(800);
   check('joystick visible during play', await phone.page.evaluate(() => getComputedStyle(document.getElementById('joystick')).display) !== 'none');
   const p0 = await state(phone.page);

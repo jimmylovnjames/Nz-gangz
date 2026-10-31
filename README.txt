@@ -1,16 +1,16 @@
-AOTEAROA: UNDERWORLD | RUN 12 (GRAPHICS OVERHAUL)
+AOTEAROA: UNDERWORLD | RUN 13 (COUSIN PROLOGUE)
 
-Extract this ZIP, then open index.html on your OnePlus 12 with internet on (the 3D engine loads from jsDelivr).
-First load builds the district on your phone: give it a few seconds on the progress bar, then tap NEW GAME or CONTINUE.
+Extract this ZIP and keep the voice folder next to index.html. Open index.html on your phone with internet on.
+Give the progress bar a few seconds on first load, then tap NEW GAME.
 
-Movement now works: hold the bottom-left circle and slide your thumb to walk, swipe the right side to look.
-The street moves with you; the label under the joystick shows THREE X/Z coordinates.
+You start on Manu's couch playing Kiwi Knuckle Kings 2 on his old TV.
+Fight pad: arrows to move, BLOCK, SPECIAL, KICK, PUNCH. SKIP ends the match early.
+Tap the subtitle box to skip ahead in a conversation; tap a reply to choose it.
+After the match Manu tells you about Darren and the $400. Offer to collect it, find Darren, then take the money back to Manu.
 
-PAUSE (top right) has graphics settings:
-  GRAPHICS  LOW / MEDIUM / HIGH / ULTRA (auto-picks HIGH on a Snapdragon 8 Gen 3)
-  TIME      GOLDEN HOUR / OVERCAST / NIGHT
-  WEATHER   DRY / DRIZZLE / RAIN
-  SHOW FPS  frames per second, render scale, draw calls, triangles
+Voice work: VOICE_SCRIPT.md lists every line with its id. Record each line as its own file,
+drop the files in the voice folder and list them in voice/manifest.js, e.g.
+  window.AU_VOICE = { pro_01: 'pro_01.m4a', pro_02: 'pro_02.m4a' };
+Or just send me the recordings named by id and I'll wire them in.
 
-Please report the FPS numbers on HIGH, and whether it gets slower after 10-15 minutes.
-If HIGH stutters, use MEDIUM. Run 11 saves still work.
+PAUSE (top right) has GRAPHICS / TIME / WEATHER and SHOW FPS. Run 11 and Run 12 saves still work.

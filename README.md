@@ -1,10 +1,21 @@
-# AOTEAROA: UNDERWORLD, Run 12 (graphics overhaul)
+# AOTEAROA: UNDERWORLD, Run 13 (cousin prologue + graphics overhaul)
 
 Open `index.html` in a modern browser with internet access (Three.js loads from jsDelivr). On the phone: extract the ZIP and open `index.html`. For best results on a computer, serve the folder with `python -m http.server 8000` and visit `http://localhost:8000`.
 
 Desktop: WASD or arrow keys to move, mouse to look (click to lock), click or HIT to attack, Shift to sprint, E to talk, Escape to pause. Phone: touch the lower-left circle and slide to walk, swipe the right side to look, TAP TALK/HIT, HOLD RUN. Tap the radar to collapse it. Saves stay in the device's browser storage; PAUSE has EXPORT/IMPORT SAVE FILE for moving between phones.
 
 This is a playable *fictional district* vertical slice, not a geographically accurate map. All crews, characters and events are invented. Run 12 replaced the real gang names used in earlier runs with fictional crews; old saves are converted automatically.
+
+## Story: Chapter Zero (Run 13)
+
+1. **Friday night at Manu's.** You start on your cousin's couch playing *Kiwi Knuckle Kings 2 Turbo Edition*, a budget console fighter, best of three against him on an old CRT. Fight pad on phone: ◀ ▶ BLOCK SPECIAL KICK PUNCH. Desktop: A/D or arrows, J punch, K kick, L block, I or Space special. SKIP jumps to the end of the match.
+2. **The debt.** Mid-match Manu brings up Darren, who owes him $400 and has been dodging him. After the match you can offer to go collect it.
+3. **Darren.** He hangs out somewhere different depending on your hometown (outside a main-street shop, the park or the car park). Go soft (take $200, rest by Friday) or go hard (demand all $400, he squares up, knock him down).
+4. **Back to Manu** at his house in the suburbs for your cut, then the crews at the square want to meet you (the faction chapter from Run 11 continues from there).
+
+Dialogue appears as subtitles with the speaker's name; tap the box to skip ahead. Every line has a voice slot: see **VOICE_SCRIPT.md** for all 55 lines with their ids. Put recordings in `voice/` next to `index.html` and list them in `voice/manifest.js` (`window.AU_VOICE = { pro_01: 'pro_01.m4a', ... }`). Lines without a recording stay as subtitles.
+
+Saves from Run 11 that were partway through the old hometown errand continue as the Darren job.
 
 ## Run 12: what changed
 
@@ -45,7 +56,8 @@ The playable `index.html` is generated. Edit the sources in `src/` and rebuild:
 
 ```
 node tools/build.mjs          # src/shell.html + src/engine/*.js -> index.html
-node tests/smoke.cjs          # headless Chromium: boots, moves, plays a chapter, saves/continues, touch joystick
+node tests/smoke.cjs          # headless Chromium: prologue + mini-game, Darren job, crew chapter, saves, touch controls
+node tools/voice-script.mjs    # regenerate VOICE_SCRIPT.md after editing lines in src/engine/58-story.js
 ```
 
 The game must stay a single HTML file because browsers block module scripts from `file://` pages. If Three.js cannot load, the native WebGL exploration mode (no missions) starts after about twelve seconds.

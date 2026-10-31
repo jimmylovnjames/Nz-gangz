@@ -62,8 +62,20 @@ async function boot() {
     near.forEach(([v], i) => pool[i].position.copy(v).add(new THREE.Vector3(0, -0.4, 0)));
   };
 
-  const world = { scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0 };
-  window.__auDebug = { scene, renderer, camera, post, sky, city };
+  // Prologue set and story systems.
+  setLoad(0.86, 'Setting up the lounge…'); await nextTick();
+  const knuckle = new KnuckleKings();
+  const lounge = new Lounge(lib, charMaterial, knuckle, renderer);
+  const dialogue = new Dialogue();
+  const prologue = new Prologue(lounge, knuckle, dialogue);
+  const homes = city.houses.filter(h => h.ring === 2);
+  const cousinHome = (homes.length ? homes : city.houses).reduce((best, h) => !best || Math.hypot(h.pos.x + 130, h.pos.z - 70) < Math.hypot(best.pos.x + 130, best.pos.z - 70) ? h : best, null);
+  const world = { scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0, dialogue, prologue, cousinHome, spots: city.spots };
+  window.__auDebug = { scene, renderer, camera, post, sky, city, lounge };
+  window.__auStory = {
+    get active() { return dialogue.active; }, get line() { return dialogue.line; }, get prologue() { return prologue.active; },
+    advance: () => dialogue.advance(), choose: i => dialogue.choose(i), skip: () => prologue.skip(), minigame: knuckle,
+  };
   setLoad(0.9, 'Compiling shaders…'); await nextTick();
   const game = createGame(world);
   try { await renderer.compileAsync(scene, camera); } catch (_) { /* compileAsync is an optimisation only */ }
@@ -85,7 +97,7 @@ async function boot() {
     $('gfxNote').textContent = q.tex !== startTex ? 'Texture detail for this setting applies after you reload the page.' : `Graphics: ${tierName.toUpperCase()}. GPU: ${detected.gpu}`;
     persist();
   }));
-  document.querySelectorAll('[data-time]').forEach(b => b.addEventListener('click', () => { timeName = b.dataset.time; sky.apply(timeName, post); applyNight(); rain.set(rainLevel, q, sky.preset.night); persist(); }));
+  document.querySelectorAll('[data-time]').forEach(b => b.addEventListener('click', () => { timeName = b.dataset.time; const wasIndoor = indoor; setLook(false); sky.apply(timeName, post); if (wasIndoor) setLook(true); applyNight(); rain.set(rainLevel, q, sky.preset.night); persist(); }));
   document.querySelectorAll('[data-rain]').forEach(b => b.addEventListener('click', () => { rainLevel = +b.dataset.rain; rain.set(rainLevel, q, sky.preset.night); persist(); }));
   $('fpsToggle').addEventListener('click', () => { settings.fps = !settings.fps; persist(); });
   $('gfxNote').textContent = `Auto-detected: ${detected.tier.toUpperCase()} (${detected.gpu})`;
@@ -93,12 +105,26 @@ async function boot() {
 
   function resize() {
     camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+    lounge.camera.aspect = camera.aspect; lounge.camera.updateProjectionMatrix();
     renderer.setPixelRatio(dpr); renderer.setSize(innerWidth, innerHeight, false);
     const s = bufferSize(); post.setSize(s.x, s.y);
   }
   addEventListener('resize', resize);
 
   // ---- frame loop ---------------------------------------------------------------------------
+  // Indoor exposure/bloom for the lounge; the street look is restored when the prologue ends.
+  let indoor = false, outdoorLook = null;
+  function setLook(inside) {
+    if (inside === indoor) return;
+    const f = post.finalMat.uniforms;
+    if (inside) {
+      outdoorLook = { exp: f.toneMappingExposure.value, rexp: renderer.toneMappingExposure, th: post.bloom.threshold, st: post.bloom.strength, sat: f.uSat.value };
+      f.toneMappingExposure.value = 1.55; renderer.toneMappingExposure = 1.55; post.bloom.threshold = 0.85; post.bloom.strength = 0.5; f.uSat.value = 1.05;
+    } else if (outdoorLook) {
+      f.toneMappingExposure.value = outdoorLook.exp; renderer.toneMappingExposure = outdoorLook.rexp; post.bloom.threshold = outdoorLook.th; post.bloom.strength = outdoorLook.st; f.uSat.value = outdoorLook.sat;
+    }
+    indoor = inside;
+  }
   let prev = performance.now(), frames = 0, frameMs = 0, cooldown = 0, fpsShown = 0, fpsTimer = 0;
   const hitFlash = $('hitFlash');
   function loop(now) {
@@ -106,13 +132,21 @@ async function boot() {
     const elapsed = clamp(now - prev, 0, 250), dt = Math.min(elapsed / 1000, 0.05); prev = now;
     if (document.hidden) return;
     G.uTime.value += dt;
-    const forward = game.update(dt, now, G.uTime.value);
-    sky.update(camera, forward);
-    rain.update(camera);
-    updatePool(dt);
-    world.hurt = Math.max(0, world.hurt - dt * 2.5); hitFlash.style.opacity = (world.hurt * 0.8).toFixed(2);
     renderer.info.reset();
-    post.render(scene, camera, dt);
+    if (prologue.active) {
+      setLook(true);
+      prologue.update(dt, game.isPaused());
+      post.render(lounge.scene, lounge.camera, dt);
+    } else {
+      setLook(false);
+      dialogue.setPaused(game.isPaused()); dialogue.update(dt);
+      const forward = game.update(dt, now, G.uTime.value);
+      sky.update(camera, forward);
+      rain.update(camera);
+      updatePool(dt);
+      world.hurt = Math.max(0, world.hurt - dt * 2.5); hitFlash.style.opacity = (world.hurt * 0.8).toFixed(2);
+      post.render(scene, camera, dt);
+    }
     // Adaptive resolution keeps the frame rate up as the phone heats up.
     if (elapsed > 0 && elapsed < 150) { frames++; frameMs += elapsed; }
     if (frames >= 90) {

@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const AU_SKIP = !!window.__auOfflineWebGL;
 if (!AU_SKIP) window.__auThreeBooting = true;

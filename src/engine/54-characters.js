@@ -231,6 +231,7 @@ class Human {
     if (sp < 0.1) { b('hips').rotation.z = Math.sin(t * 0.45 + this.idleSeed) * 0.03; b('thighL').rotation.z = -b('hips').rotation.z; b('thighR').rotation.z = -b('hips').rotation.z; }
     b('head').rotation.y = clamp(this.lookYaw, -1.1, 1.1) * 0.75; b('neck').rotation.y = clamp(this.lookYaw, -1.1, 1.1) * 0.25;
     b('head').rotation.x = Math.sin(t * 0.7 + this.idleSeed) * 0.04;
+    if (this.pose === 'seated') this.seated(dt, t, b);
     if (this.hitT > 0) {
       this.hitT = Math.max(0, this.hitT - dt);
       const h = Math.sin(this.hitT / 0.35 * Math.PI);
@@ -238,6 +239,22 @@ class Human {
     }
   }
 }
+
+// Couch pose with a controller: thumbs mash while playing; react > 0 cheers, < 0 slumps (decays).
+Human.prototype.seated = function (dt, t, b) {
+  this.react = (this.react || 0) * Math.pow(0.35, dt);
+  const cheer = Math.max(0, this.react), slump = Math.max(0, -this.react);
+  b('hips').position.y = 0.53;
+  b('thighL').rotation.set(-1.5, 0, 0.08); b('thighR').rotation.set(-1.5, 0, -0.08);
+  b('shinL').rotation.set(1.42, 0, 0); b('shinR').rotation.set(1.42, 0, 0);
+  b('footL').rotation.x = 0.1; b('footR').rotation.x = 0.1;
+  const lean = this.playing ? 0.18 + Math.sin(t * 1.3) * 0.03 : -0.1;
+  b('spine').rotation.set(lean + slump * 0.35, 0, 0); b('chest').rotation.set(0.04, Math.sin(t * 0.8) * 0.04, 0);
+  const mash = this.playing ? Math.sin(t * 23) * 0.05 : 0;
+  b('armL').rotation.set(-0.55 - cheer * 2.3, 0, 0.18 + cheer * 0.3); b('armR').rotation.set(-0.55 - cheer * 2.3, 0, -0.18 - cheer * 0.3);
+  b('foreL').rotation.set(-1.1 + mash + cheer * 0.9, 0, -0.55 * (1 - cheer)); b('foreR').rotation.set(-1.1 - mash + cheer * 0.9, 0, 0.55 * (1 - cheer));
+  b('head').rotation.x += slump * 0.4 - cheer * 0.25;
+};
 
 // First-person fists attached to the camera, held low in a guard; jab alternates hands.
 // Local frame per hand: knuckles toward -y, forearm running back along +y, back of the hand toward -z.
