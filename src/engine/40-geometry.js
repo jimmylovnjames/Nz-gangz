@@ -210,7 +210,7 @@ class CollisionGrid {
     for (let i = Math.floor((x - r) / c); i <= Math.floor((x + r) / c); i++)
       for (let j = Math.floor((z - r) / c); j <= Math.floor((z + r) / c); j++) {
         const a = this.cells.get(this.key(i, j)); if (!a) continue;
-        for (const o of a) { if (o.mark === st) continue; o.mark = st; if (this.hit(o, x, z, r)) return true; }
+        for (const o of a) { if (o.mark === st) continue; o.mark = st; if (!o.off && this.hit(o, x, z, r)) return true; }
       }
     return false;
   }

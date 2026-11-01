@@ -113,7 +113,7 @@ function instanced(scene, geometry, material, placements, matrixFn, opts = {}) {
   const mesh = new THREE.InstancedMesh(geometry, material, placements.length);
   mesh.userData.cull = CULL_DIST[opts.cullClass || 'props'];
   const m = new THREE.Matrix4();
-  placements.forEach((p, i) => { matrixFn(m, p); mesh.setMatrixAt(i, m); if (opts.color) mesh.setColorAt(i, opts.color(p)); });
+  placements.forEach((p, i) => { matrixFn(m, p); mesh.setMatrixAt(i, m); if (opts.color) mesh.setColorAt(i, opts.color(p)); if (opts.track) (p._inst = p._inst || []).push([mesh, i]); });
   mesh.instanceMatrix.needsUpdate = true;
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   mesh.castShadow = opts.cast ?? true; mesh.receiveShadow = true;
@@ -351,16 +351,19 @@ class PropBuilder {
     const plastic = new THREE.MeshStandardMaterial({ color: 0x1b1c1d, roughness: 0.7 });
     const lights = new THREE.MeshStandardMaterial({ color: 0xe8e4dc, metalness: 0.2, roughness: 0.15, vertexColors: false });
     const tail = new THREE.MeshStandardMaterial({ color: 0x8a0f0f, roughness: 0.2 });
+    // Car kit shared with driving and traffic: per-type body + merged rest geometry, paint, palette.
+    const kit = this.city.carKit = { protos: [], paint, rest: this.carRest || (this.carRest = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.35, metalness: 0.35 })), paints };
     for (let type = 0; type < 4; type++) {
-      const list = this.city.cars.filter(c => c.type === type).map(c => ({ ...c, y: c.y || 0 }));
-      if (!list.length) continue;
+      const list = this.city.cars.filter(c => c.type === type);
+      for (const c of list) c.y = c.y || 0;
       const p = this.carProto(type);
-      const C = { cullClass: 'cars', cell: 300 };
-      instanced(this.scene, p.body, paint, list, placeMatrix, { ...C, color: c => new THREE.Color(paints[Math.floor(c.color * paints.length)]) });
+      const C = { cullClass: 'cars', cell: 300, track: true };
+      if (list.length) instanced(this.scene, p.body, paint, list, placeMatrix, { ...C, color: c => new THREE.Color(paints[Math.floor(c.color * paints.length)]) });
       // Glass, tyres, rims, lamps and trim share one vertex-coloured material: two draw calls per car type.
       const colored = (g, hex) => { const c = new THREE.Color(hex), n = g.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; } g.setAttribute('color', new THREE.BufferAttribute(a, 3)); if (g.attributes.uv) g.deleteAttribute('uv'); return g; };
       const rest = mergeNonIndexedColored([colored(p.glass, 0x0a0d10), colored(p.tires, 0x141414), colored(p.rims, 0xb4b9bc), colored(p.lights, 0xe8e4dc), colored(p.tails, 0x8a0f0f), colored(p.trim, 0x1b1c1d)]);
-      instanced(this.scene, rest, this.carRest || (this.carRest = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.35, metalness: 0.35 })), list, placeMatrix, C);
+      kit.protos[type] = { body: p.body, rest };
+      if (list.length) instanced(this.scene, rest, kit.rest, list, placeMatrix, C);
     }
   }
 

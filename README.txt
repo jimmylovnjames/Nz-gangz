@@ -1,4 +1,4 @@
-AOTEAROA: UNDERWORLD | RUN 16 (REAL MANUREWA + CLENDON, REALISTIC PEOPLE)
+AOTEAROA: UNDERWORLD | RUN 17 (DRIVING, TRAFFIC, SHOPS, FIGHTING, HUSTLES)
 
 Extract this ZIP and keep the voice folder next to index.html. Open index.html on your phone with internet on.
 Give the progress bar a few seconds on first load, then tap NEW GAME.
@@ -8,7 +8,16 @@ Use wifi for the first run. Without internet it falls back to the generated look
 The map is real Manurewa and Clendon Park (OpenStreetMap): real streets and names, every house on its real outline,
 Southmall with the Norfolk pine, the station, the Clendon shops and Clendon skate park. The HUD shows the street you're on.
 
-RUN is now a toggle: tap it once (it lights up) and steer with your other thumb; it switches off when you stop.
+RUN is a toggle: tap it once (it lights up) and steer with your other thumb; it switches off when you stop.
+
+NEW IN RUN 17
+- Cars: walk up to any parked car and tap TALK to get in. Joystick drives (up = go, down = brake/reverse,
+  left/right = steer). HIT is the horn. TALK again to get out. Traffic drives on the left and stops for you.
+- Shops: walk up to a dairy, takeaway, bakery, supermarket, pharmacy, barber or the gym and tap TALK.
+  Food heals, energy drinks give a full-sprint boost, the gym makes your punches hit harder.
+- Fighting: watch them wind up, then BLOCK (hold the button) or step back. Every third hit is a heavy.
+  Health creeps back to 60 on its own; eat for the rest. Get knocked out and you lose 10% of your cash.
+- After Shorty's chapter he keeps texting new jobs (name, amount, street). Sort them for a 25% cut.
 
 You start on Manu's couch in Clendon playing Kiwi Knuckle Kings 2 on his old TV.
 Fight pad: arrows to move, BLOCK, SPECIAL, KICK, PUNCH. SKIP ends the match early.

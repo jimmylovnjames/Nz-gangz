@@ -6,6 +6,11 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const src = readFileSync(join(root, 'src', 'engine', '58-story.js'), 'utf8');
 const a = src.indexOf('const SCRIPT = {'), b = src.indexOf('\n};', a);
 const SCRIPT = new Function(`return ${src.slice(a + 'const SCRIPT = '.length, b + 2)}`)();
+// Later additions (Object.assign(SCRIPT, {...})) such as Shorty's hustles.
+for (let i = src.indexOf('Object.assign(SCRIPT, {'); i >= 0; i = src.indexOf('Object.assign(SCRIPT, {', i + 1)) {
+  const s0 = i + 'Object.assign(SCRIPT, '.length, e = src.indexOf('\n});', s0);
+  Object.assign(SCRIPT, new Function(`return ${src.slice(s0, e + 2)}`)());
+}
 const SCENES = {
   proIntro: ['On the couch at Manu\'s, before the match', 'Relaxed, cans open, Friday night.'],
   barkYouHit: ['Manu reacting when you land a hit (random, during the match)', 'Short, loud, half-laughing.'],
@@ -34,8 +39,10 @@ const SCENES = {
   pitaTake: ['Player takes Pita\'s money', 'Quiet.'], pitaCover: ['Player lets Pita keep it', 'Warm.'], pitaAgain: ['Pita after it\'s sorted', ''],
   shortyBackAll: ['Back at Shorty\'s with every cent', 'Impressed.'], shortyBackCovered: ['Back at Shorty\'s, you paid Pita\'s share yourself', 'Shorty sees right through it.'],
   shortyBackShort: ['Back at Shorty\'s, you let Pita off', 'Unimpressed.'], shortyBackEnd: ['Shorty pays your cut and points you to the crews', ''],
+  hustleMeet: ['Shorty\'s side jobs: you turn up at the debtor\'s place (DEBTOR = whoever owes, name changes each job)', '{amount} is the dollar amount, e.g. "three hundred". Record a general version.'],
+  hustlePays: ['Debtor pays when asked', ''], hustleScared: ['Debtor pays after you lean on him', 'Rattled.'], hustleRefuses: ['Debtor refuses and squares up', ''], hustleBeaten: ['Debtor after you knock him down', 'Winded.'], hustleAgain: ['Talking to a debtor who already paid', ''],
 };
-const name = { manu: 'MANU', you: 'YOU', darren: 'DARREN', shorty: 'SHORTY', kev: 'KEV', mikey: 'MIKEY', pita: 'UNCLE PITA' };
+const name = { manu: 'MANU', you: 'YOU', darren: 'DARREN', shorty: 'SHORTY', kev: 'KEV', mikey: 'MIKEY', pita: 'UNCLE PITA', debtor: 'DEBTOR' };
 let md = `# Voice script\n\nEvery spoken line has an id. Record each line as its own file, put the files in the \`voice/\` folder next to \`index.html\`, and list them in \`voice/manifest.js\`:\n\n\`\`\`js\nwindow.AU_VOICE = { pro_01: 'pro_01.m4a', pro_02: 'pro_02.m4a' };\n\`\`\`\n\nAny format the phone plays works (m4a from the recorder app is fine). Lines without a recording show as subtitles only, so you can add them a few at a time. \`{spot}\` is filled in with where Darren hangs out (it changes with your hometown), so record it as a general "round the shops" or send me the variants.\n\nThe game runs from \`src/engine/58-story.js\` (SCRIPT); change the wording there and run \`node tools/voice-script.mjs\` to refresh this file.\n`;
 let count = 0;
 for (const [key, lines] of Object.entries(SCRIPT)) {

@@ -9,6 +9,7 @@ const CAST = {
   kev: { name: 'KEV', color: '#ffb04a' },
   mikey: { name: 'MIKEY', color: '#7ac8ff' },
   pita: { name: 'UNCLE PITA', color: '#e0c8ff' },
+  debtor: { name: 'DEBTOR', color: '#ffd0a0' }, // renamed per hustle
 };
 const SCRIPT = {
   proIntro: [
@@ -178,7 +179,29 @@ const SCRIPT = {
 };
 
 // Phone texts (not voiced). {vars} are filled in by the game.
+// Shorty's ongoing hustles (repeatable side jobs after his chapter).
+Object.assign(SCRIPT, {
+  hustleMeet: [
+    { who: 'debtor', id: 'hus_01', text: 'Yeah? Who\'s asking?' },
+    { who: 'you', id: 'hus_02', text: 'Shorty. You owe him {amount}.' },
+    { choice: [
+      { text: 'Sort it now and we\'re sweet.', id: 'hus_c1', result: 'ask' },
+      { text: 'Pay up or I take it off you.', id: 'hus_c2', result: 'threat' },
+    ] },
+  ],
+  hustlePays: [{ who: 'debtor', id: 'hus_03', text: 'Alright, alright. Here. Tell him we\'re square.' }],
+  hustleScared: [{ who: 'debtor', id: 'hus_04', text: 'Easy, easy! Take it. Just go, eh.' }],
+  hustleRefuses: [{ who: 'debtor', id: 'hus_05', text: 'Shorty can come get it himself. You wanna go, bro?' }],
+  hustleBeaten: [{ who: 'debtor', id: 'hus_06', text: 'Okay! Okay. It\'s in my pocket. Take it.' }],
+  hustleAgain: [{ who: 'debtor', id: 'hus_07', text: 'I already paid, bro. Leave me alone.' }],
+});
 const TEXTS = {
+  hustleNew: [
+    { from: 'shorty', text: 'got another one for u' },
+    { from: 'shorty', text: '{name} owes {amount}. {street}' },
+    { from: 'shorty', text: 'sort it n ill flick u a cut' },
+  ],
+  hustlePaid: [{ from: 'shorty', text: 'sweet as. sent u {cut} 💸' }],
   shortyHello: [
     { from: 'shorty', text: 'yo its shorty. manus cuz?' },
     { from: 'shorty', text: 'heard u sorted daz out 😂' },

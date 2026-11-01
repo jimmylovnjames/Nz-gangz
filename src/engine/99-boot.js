@@ -82,7 +82,7 @@ async function boot() {
   const shortyHome = nearestHome(1180, -300, [cousinHome]);
   const pitaHome = nearestHome(1560, -260, [cousinHome, shortyHome]);
   const phone = new Phone();
-  const world = { scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0, dialogue, prologue, phone, cousinHome, shortyHome, pitaHome, spots: city.spots, places: city.places, city, realDt: 0 };
+  const world = { scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0, dialogue, prologue, phone, cousinHome, shortyHome, pitaHome, spots: city.spots, places: city.places, city, realDt: 0, trafficCount: tierName === 'low' ? 4 : tierName === 'medium' ? 8 : 12 };
   window.__auDebug = { scene, renderer, camera, post, sky, city, lounge, updateCull, THREE };
   window.__auStory = {
     get active() { return dialogue.active; }, get line() { return dialogue.line; }, get prologue() { return prologue.active; },

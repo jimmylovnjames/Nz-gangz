@@ -110,6 +110,9 @@ function createGame(world) {
   addEventListener('keyup', e => { keys[e.code] = false; });
   let lookTouchId = null, lastX = 0, lastY = 0;
   const canvas = renderer.domElement;
+  canvas.addEventListener('mousedown', e => { if (e.button === 2) rmb = true; });
+  addEventListener('mouseup', e => { if (e.button === 2) rmb = false; });
+  canvas.addEventListener('contextmenu', e => e.preventDefault());
   canvas.addEventListener('click', () => { if (!mobile && started) { if (document.pointerLockElement !== canvas) canvas.requestPointerLock?.(); else hit(); } });
   document.addEventListener('mousemove', e => { if (document.pointerLockElement === canvas) { yaw -= e.movementX * 0.0025; pitch = clamp(pitch - e.movementY * 0.0025, -1.3, 1.3); } });
   canvas.addEventListener('touchstart', e => { const t = e.changedTouches[0]; if (lookTouchId === null && t.clientX > innerWidth * 0.35) { lookTouchId = t.identifier; lastX = t.clientX; lastY = t.clientY; } }, { passive: true });
@@ -139,6 +142,10 @@ function createGame(world) {
   function originUpdate() { hometown = select.value; originRegion = select.selectedOptions[0].dataset.region; }
   $('factions').innerHTML = FACTIONS.map((f, i) => `<button data-f="${i}">${f}</button>`).join('');
   let stamina = 100; const STAMINA_DRAIN = 24, STAMINA_RECOVERY = 17;
+  // Run 17 mechanics: punch power from the gym, energy-drink sprint, regen, combos, driving, shops, hustles.
+  let strength = 0, boostT = 0, lastHurt = -1e9, lastPunch = -1e9, combo = 0, rmb = false;
+  const drive = new PlayerCars(world), traffic = new Traffic(world, world.trafficCount || 0), shops = new Shops(world.city);
+  const blocking = () => !drive.car && !!(keys.KeyQ || keys.KeyF || rmb || move.block);
   let stage = 'prologue', cash = 0, missionRoute = '', pauseOpen = false, saveAllowed = true, debtRoute = '', debtCash = 0, inPrologue = false;
   function hometownHash(name) { let h = 2166136261; for (const c of name) h = Math.imul(h ^ c.codePointAt(0), 16777619) >>> 0; return h >>> 0; }
   // Darren's hangout depends on your hometown, so different origins send you to different corners of the district.
@@ -193,7 +200,9 @@ function createGame(world) {
   const collected = () => (jobState.kev === 'paid' ? 600 : 0) + (jobState.mikey === 'paid' ? 300 : 0) + (jobState.pita === 'take' || jobState.pita === 'cover' ? 150 : 0);
   function refreshJobs() {
     const st = { open: 'OPEN', fight: 'SCRAPPING', paid: 'PAID', take: 'PAID', cover: 'YOU COVERED IT', short: 'LET OFF' };
-    phone.setJobs(['shorty-jobs', 'shorty-return'].includes(stage) ? Object.entries(JOBS).map(([k, j]) => ({ name: j.name, amount: j.amount, where: k === 'mikey' ? JOBS.mikey.spot.place + ' (he runs)' : j.spot.place, status: st[jobState[k]], done: jobDone(k) })) : []);
+    const list = ['shorty-jobs', 'shorty-return'].includes(stage) ? Object.entries(JOBS).map(([k, j]) => ({ name: j.name, amount: j.amount, where: k === 'mikey' ? JOBS.mikey.spot.place + ' (he runs)' : j.spot.place, status: st[jobState[k]], done: jobDone(k) })) : [];
+    if (hustle) list.push({ name: hustle.name, amount: hustle.amount, where: hustle.street, status: hustle.state === 'done' ? 'PAID' : hustle.state === 'fight' ? 'SCRAPPING' : 'OPEN', done: hustle.state === 'done' });
+    phone.setJobs(list);
   }
   function checkJobs() {
     refreshJobs();
@@ -223,15 +232,16 @@ function createGame(world) {
     return [`Chapter complete: ${hometown} / ${chosen} / ${missionRoute} route.`, null];
   }
   function updateHUD() {
-    $('status').textContent = `HP ${Math.ceil(hp)} | ENERGY ${Math.ceil(stamina)} | $${cash} | REP ${rep} | ${chosen.toUpperCase()}`;
+    $('status').textContent = `HP ${Math.ceil(hp)} | ENERGY ${Math.ceil(stamina)}${boostT > 0 ? '⚡' : ''} | $${cash} | REP ${rep}${strength ? ' | PWR ' + strength : ''} | ${chosen.toUpperCase()}`;
     const [goal, target] = objective(); $('quest').textContent = goal; $('status').setAttribute('title', `${hometown} | ${originRegion}`);
-    if (target) $('missionDistance').textContent = `OBJECTIVE ${Math.round(dist(target))}m away`;
-    else $('missionDistance').textContent = stage === 'mission-brawl' ? 'Find hostiles on the outskirts' : 'Story branch recorded';
+    const side = hustle && hustle.state !== 'done' ? ` · HUSTLE ${hustle.name} ${Math.round(dist(hustle.npc.position))}m` : '';
+    if (target) $('missionDistance').textContent = `OBJECTIVE ${Math.round(dist(target))}m away${side}`;
+    else $('missionDistance').textContent = (stage === 'mission-brawl' ? 'Find hostiles on the outskirts' : 'Story branch recorded') + side;
   }
   function store() {
     if (!saveAllowed || !started) return;
     try {
-      const data = { version: 2, map: MAP_VERSION, stage, hometown, originRegion, chosen, rep, hp, cash, defeated, missionRoute, stamina, debtRoute, debtCash, jobs: jobState, phone: phone.log.slice(-40), enemyHP: enemies.map(e => e.hp), enemyAlive: enemies.map(e => e.alive), enemyPositions: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z })), x: camera.position.x, z: camera.position.z, yaw, pitch };
+      const data = { version: 2, map: MAP_VERSION, strength, stage, hometown, originRegion, chosen, rep, hp, cash, defeated, missionRoute, stamina, debtRoute, debtCash, jobs: jobState, phone: phone.log.slice(-40), enemyHP: enemies.map(e => e.hp), enemyAlive: enemies.map(e => e.alive), enemyPositions: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z })), x: drive.car ? drive.car.x : camera.position.x, z: drive.car ? drive.car.z : camera.position.z, yaw, pitch };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data)); $('saveState').textContent = 'Saved on this device';
     } catch (e) { $('saveState').textContent = 'Local save unavailable in this browser'; }
   }
@@ -282,7 +292,8 @@ function createGame(world) {
   function closeMenus() { $('panel').style.display = 'none'; $('choicePanel').style.display = 'none'; $('pausePanel').style.display = 'none'; pauseOpen = false; started = true; updateHUD(); }
   function resetEnemy(e, i) { e.alive = true; e.hp = 3; e.dyingT = 0; e.p.userData.human.reset(); e.p.position.set(enemySpawns[i].x, groundHeight(enemySpawns[i].x, enemySpawns[i].z), enemySpawns[i].z); if (!e.p.parent) scene.add(e.p); }
   function beginNew() {
-    saveAllowed = true; stage = 'prologue'; hp = 100; cash = 0; rep = 0; chapter = 0; defeated = 0; missionRoute = ''; stamina = 100; debtRoute = ''; debtCash = 0;
+    saveAllowed = true; stage = 'prologue'; hp = 100; cash = 0; rep = 0; chapter = 0; defeated = 0; missionRoute = ''; stamina = 100; debtRoute = ''; debtCash = 0; strength = 0; endHustle(true);
+    if (drive.car) exitCar();
     jobState = { kev: 'open', mikey: 'open', pita: 'open' }; phone.clear();
     placeDarren();
     enemies.forEach(resetEnemy);
@@ -305,6 +316,7 @@ function createGame(world) {
   function restore(s) {
     hometown = s.hometown; originRegion = s.originRegion || Object.entries(ORIGINS).find(([, ts]) => ts.includes(s.hometown))?.[0] || 'Northland';
     chosen = FACTIONS.includes(s.chosen) ? s.chosen : 'Independent';
+    if (drive.car) exitCar();
     stage = s.stage; placeDarren();
     debtRoute = ['smooth', 'hard'].includes(s.debtRoute) ? s.debtRoute : ''; debtCash = [200, 400].includes(s.debtCash) ? s.debtCash : 0;
     if (stage === 'debt-fight') darrenState.hostile = true;
@@ -314,6 +326,7 @@ function createGame(world) {
     phone.load(Array.isArray(s.phone) ? s.phone.slice(-40) : []); shortyTimer = 6; refreshJobs(); rep = Math.max(0, Number(s.rep) || 0); hp = Math.min(100, Math.max(1, Number(s.hp) || 100)); cash = Math.max(0, Number(s.cash) || 0);
     defeated = Math.max(0, Number(s.defeated) || 0); missionRoute = s.missionRoute || '';
     stamina = Number.isFinite(s.stamina) ? Math.max(0, Math.min(100, s.stamina)) : 100;
+    strength = clamp(Math.floor(Number(s.strength) || 0), 0, 3);
     // Saves from before the real map (Run 15 and earlier) used the fictional grid: put the player outside Manu's.
     const sameMap = s.map === MAP_VERSION, hs = home.spawn.pos;
     const p = sameMap && Number.isFinite(s.x) && Number.isFinite(s.z) ? safeSpawn(clamp(s.x, MAP_BOUNDS.x0, MAP_BOUNDS.x1), clamp(s.z, MAP_BOUNDS.z0, MAP_BOUNDS.z1)) : { x: hs.x, z: hs.z };
@@ -335,6 +348,7 @@ function createGame(world) {
   function talk() {
     if (dlg.active) { dlg.advance(); return; }
     if (!started || pauseOpen) return;
+    if (drive.car) { exitCar(); return; }
     if (stage === 'debt-find' && dist(darren.position) < 4.5) {
       faceEachOther(darren);
       dlg.run('darrenMeet', storyVars(), r => {
@@ -407,22 +421,88 @@ function createGame(world) {
     }
     if (stage === 'mission-courier' && dist(stash.position) < 5) { cash += 20; advance('mission-return', `Package secured. Your ${originRegion} contacts gave you a clean exit. Return to the fixer.`); return; }
     if (stage === 'mission-return' && dist(fixer.position) < 5) { cash += missionRoute === 'courier' ? 100 : 60; rep += missionRoute === 'courier' ? 15 : 35; advance('complete', `${hometown} ending: ${chosen} now knows your name. ${missionRoute === 'courier' ? 'Quiet route: more cash, less heat.' : 'Loud route: more reputation, more enemies.'} CHAPTER COMPLETE.`); return; }
+    if (hustle && dist(hustle.npc.position) < 4.5 && hustle.npc.visible) { talkHustle(); return; }
+    const shop = shops.nearest(camera.position); if (shop) { openShop(shop); return; }
+    const car = drive.nearest(camera.position); if (car) { enterCar(car); return; }
     if (stage === 'complete') { say(`Chapter complete. ${hometown} → ${chosen} → ${missionRoute}. Try a different origin and route for a different ending.`); return; }
     say(`Follow your current objective. ${objective()[0]}`);
+  }
+  // ---- driving -------------------------------------------------------------------------
+  let orbit = 0, lastDriveYaw = 0;
+  function enterCar(c) {
+    const car = drive.enter(c); orbit = 0; yaw = car.h + Math.PI; lastDriveYaw = yaw; pitch = -0.14;
+    document.body.classList.add('driving'); setRun(false); say('Joystick or W/S to drive, steer left/right. TALK (E) to get out. HIT honks.');
+  }
+  function exitCar() {
+    const p = drive.exit(); if (!p) return;
+    camera.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z); pitch = 0;
+    document.body.classList.remove('driving'); $('speedo').style.display = 'none'; store();
+  }
+  // ---- shops ---------------------------------------------------------------------------
+  function openShop(shop) {
+    started = false; if (document.pointerLockElement) document.exitPointerLock();
+    shops.open(shop, {
+      cash: () => cash, spend: n => { cash -= n; }, heal: n => { hp = Math.min(100, hp + n); }, energy: (n, b) => { stamina = Math.min(100, stamina + n); boostT = Math.max(boostT, b); },
+      rep: n => { rep += n; }, strength: () => strength, train: () => { strength = Math.min(3, strength + 1); }, say,
+      close: () => { started = true; updateHUD(); store(); },
+    });
+  }
+  $('shopClose').onclick = () => shops.close();
+  // ---- Shorty's ongoing hustles ------------------------------------------------------------
+  const HUSTLE_NAMES = ['BIG T', 'JOJO', 'SIONE', 'TANE', 'LOGAN', 'MOSES', 'JAYDEN', 'KANE', 'TYSON', 'RAWIRI', 'MALAKAI', 'BRAYDEN', 'TAVITA', 'HEMI', 'NIKO', 'ZANE'];
+  const debtors = ['crewA', 'crewB', 'crewC'].map((look, i) => { const p = person(0, 0, { look, seed: 500 + i * 37, top: 0x2a2a2a, pants: 0x333333, pantsCell: ATLAS.track, face: ATLAS.faceB, pose: 'relaxed' }); p.visible = false; return p; });
+  let hustle = null, hustleTimer = 90;
+  function startHustle() {
+    const near = world.city.houses.filter(h => { const d = dist(h.pos); return d > 250 && d < 1400; });
+    if (!near.length) return;
+    const house = near[Math.floor(rnd() * near.length)], amount = [120, 150, 200, 250, 300, 400, 500][Math.floor(rnd() * 7)];
+    const npc = debtors[Math.floor(rnd() * debtors.length)]; debtors.forEach(d => { d.visible = false; });
+    const p = safeSpawn(house.pos.x, house.pos.z); npc.position.set(p.x, groundHeight(p.x, p.z), p.z); npc.rotation.y = house.rot; npc.visible = true; npc.userData.human.reset();
+    hustle = { name: HUSTLE_NAMES[Math.floor(rnd() * HUSTLE_NAMES.length)], amount, street: house.address, npc, type: rnd() < (amount >= 300 ? 0.6 : 0.3) ? 'fights' : 'pays', state: 'open', hp: 3 + amount / 200, attackT: 1, windup: 0 };
+    phone.receive(TEXTS.hustleNew, { name: hustle.name, amount: '$' + amount, street: hustle.street }, () => refreshJobs());
+    refreshJobs();
+  }
+  function endHustle(reset) { if (hustle && reset) hustle.npc.visible = false; if (reset) hustle = null; hustleTimer = reset ? 90 : 150 + rnd() * 90; refreshJobs?.(); }
+  function hustlePaid(extraRep = 0) {
+    const cut = Math.round(hustle.amount * 0.25); cash += cut; rep += 4 + extraRep; hustle.state = 'done';
+    phone.receive(TEXTS.hustlePaid, { cut: '$' + cut }); say(`${hustle.name} paid up. Shorty's flicking you $${cut}.`);
+    endHustle(false); updateHUD(); store(); refreshJobs();
+  }
+  function talkHustle() {
+    const hz = hustle, v = { amount: '$' + hz.amount }; faceEachOther(hz.npc); CAST.debtor.name = hz.name;
+    if (hz.state === 'done') { dlg.run('hustleAgain', v, null); return; }
+    if (hz.state === 'fight') return;
+    dlg.run('hustleMeet', v, r => {
+      if (hz.type === 'pays' || (r === 'threat' && rnd() < 0.5)) dlg.run(r === 'threat' ? 'hustleScared' : 'hustlePays', v, () => hustlePaid(r === 'threat' ? 1 : 0));
+      else dlg.run('hustleRefuses', v, () => { hz.state = 'fight'; refreshJobs(); say(`${hz.name} wants to scrap. Block his punches (BLOCK / Q) and hit back.`); });
+    });
   }
   function catchMikey() {
     mikeyRun.fleeing = false; faceEachOther(JOBS.mikey.npc);
     dlg.run('mikeyCaught', storyVars(), () => { jobState.mikey = 'paid'; say('Mikey paid $300.'); updateHUD(); store(); checkJobs(); });
   }
   function hit() {
-    if (!started || pauseOpen || dlg.active) return;
+    if (drive.car) { drive.audio.horn(); return; }
+    if (!started || pauseOpen || dlg.active || blocking()) return;
+    const now = performance.now(); if (now - lastPunch < 300) return;
+    combo = now - lastPunch < 900 ? combo + 1 : 1; lastPunch = now;
+    const heavy = combo % 3 === 0, dmg = (heavy ? 2 : 1) * (1 + strength * 0.25), push = heavy ? 0.9 : 0.45, cone = mobile ? 0.3 : 0.45;
     fists.swing();
     const forward = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
+    const landed = () => { world.shake = heavy ? 0.32 : 0.18; if (heavy) say('Heavy hit!'); };
+    if (hustle && hustle.state === 'fight') {
+      const n = hustle.npc, delta = n.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position), d = delta.length();
+      if (d < 4 && delta.normalize().dot(forward) > cone) {
+        hustle.hp -= dmg; bloodAt(n.position); slideMove(n.position, forward.x * push, forward.z * push, 0.4); n.userData.human.hit(); landed();
+        if (hustle.hp <= 0) { hustle.state = 'down'; n.userData.human.knockDown(); setTimeout(() => { CAST.debtor.name = hustle.name; dlg.run('hustleBeaten', {}, () => { n.userData.human.reset(); hustlePaid(3); }); }, 1300); }
+        return;
+      }
+    }
     if (stage === 'debt-fight' && !darrenState.down) {
       const delta = darren.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position), d = delta.length();
-      if (d < 4 && delta.normalize().dot(forward) > 0.45) {
-        darrenState.hp--; bloodAt(darren.position); slideMove(darren.position, forward.x * 0.45, forward.z * 0.45, 0.4);
-        world.shake = 0.18; darren.userData.human.hit();
+      if (d < 4 && delta.normalize().dot(forward) > cone) {
+        darrenState.hp -= dmg; bloodAt(darren.position); slideMove(darren.position, forward.x * push, forward.z * push, 0.4);
+        landed(); darren.userData.human.hit();
         if (darrenState.hp <= 0) {
           darrenState.down = true; darrenState.hostile = false; darren.userData.human.knockDown(); rep += 5;
           say('Darren is down.');
@@ -436,9 +516,9 @@ function createGame(world) {
     }
     if (jobState.kev === 'fight' && !kevRun.down) {
       const kev = JOBS.kev.npc, delta = kev.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position), d = delta.length();
-      if (d < 4 && delta.normalize().dot(forward) > 0.45) {
-        kevRun.hp--; bloodAt(kev.position); slideMove(kev.position, forward.x * 0.35, forward.z * 0.35, 0.4);
-        world.shake = 0.18; kev.userData.human.hit();
+      if (d < 4 && delta.normalize().dot(forward) > cone) {
+        kevRun.hp -= dmg; bloodAt(kev.position); slideMove(kev.position, forward.x * push * 0.8, forward.z * push * 0.8, 0.4);
+        landed(); kev.userData.human.hit();
         if (kevRun.hp <= 0) {
           kevRun.down = true; kev.userData.human.knockDown(); rep += 8; say('Kev is down.');
           setTimeout(() => dlg.run('kevBeaten', storyVars(), () => { kev.userData.human.reset(); kevRun.down = false; jobState.kev = 'paid'; say('Kev paid $600.'); updateHUD(); store(); checkJobs(); }), 1400);
@@ -450,11 +530,11 @@ function createGame(world) {
     for (const e of enemies) {
       if (!e.alive) continue;
       const delta = e.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position), d = delta.length();
-      if (d < 4 && delta.normalize().dot(forward) > 0.45 && d < score) { target = e; score = d; }
+      if (d < 4 && delta.normalize().dot(forward) > cone && d < score) { target = e; score = d; }
     }
-    if (!target) { say('No opponent in melee range.'); return; }
-    target.hp--; bloodAt(target.p.position); slideMove(target.p.position, forward.x * 0.45, forward.z * 0.45, 0.4);
-    world.shake = 0.18; target.p.userData.human.hit();
+    if (!target) return;
+    target.hp -= dmg; bloodAt(target.p.position); slideMove(target.p.position, forward.x * push, forward.z * push, 0.4);
+    landed(); target.p.userData.human.hit();
     if (target.hp <= 0) {
       target.alive = false; target.dyingT = 0.0001; target.p.userData.human.knockDown(); rep += 5;
       if (stage === 'mission-brawl') { defeated++; if (defeated >= 3) { advance('mission-return', `You won the fights. Your ${hometown} fixer wants to see you.`); return; } }
@@ -537,8 +617,56 @@ function createGame(world) {
     for (const contact of contacts) dot(contact.p.position.x, contact.p.position.z, '#76b1fa', 2.5);
     for (const enemy of enemies) if (enemy.alive) dot(enemy.p.position.x, enemy.p.position.z, '#e96666', 2.5);
     const target = objective()[1]; if (target) dot(target.x, target.z, '#f6d766', 5);
+    if (hustle && hustle.state !== 'done') dot(hustle.npc.position.x, hustle.npc.position.z, '#ff9a3c', 4.5);
+    if (drive.car) dot(drive.car.x, drive.car.z, '#ffffff', 2);
     c.restore(); c.fillStyle = '#fff'; c.beginPath(); c.moveTo(w / 2, h / 2 - 8); c.lineTo(w / 2 - 6, h / 2 + 7); c.lineTo(w / 2 + 6, h / 2 + 7); c.closePath(); c.fill();
     c.fillStyle = '#b9d5c5'; c.font = '11px sans-serif'; c.fillText(here.suburb.toUpperCase(), 7, 15);
+  }
+
+  // ---- fighting ------------------------------------------------------------------------------
+  // Opponents telegraph each punch (wind-up, then impact), so you can block or step out of range.
+  const KO_HOME = { at: () => home.spawn.pos, msg: 'You got knocked out. You came to outside Manu\'s.', rep: 10 };
+  const KO_ENEMY = KO_HOME, KO_DARREN = { at: () => home.spawn.pos, msg: 'Darren dropped you. You came to outside Manu\'s place.', rep: 0 };
+  const KO_KEV = { at: () => sHome.spawn.pos, msg: 'Kev dropped you. You came to outside Shorty\'s.', rep: 0 };
+  function hurtPlayer(dmg, ko) {
+    if (blocking() && stamina > 5) { dmg *= 0.15; stamina = Math.max(0, stamina - 14); world.shake = Math.max(world.shake, 0.06); }
+    else { world.hurt = 1; world.shake = Math.max(world.shake, 0.15); }
+    hp = Math.max(0, hp - dmg); lastHurt = performance.now();
+    if (hp <= 0) {
+      const lost = Math.round(cash * 0.1); cash -= lost; hp = 100; rep = Math.max(0, rep - (ko.rep || 0));
+      if (drive.car) exitCar();
+      const p = ko.at(); camera.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z);
+      say(`${ko.msg}${lost ? ` You got rolled for $${lost} while you were out.` : ''}${ko.rep ? ` Reputation -${ko.rep}.` : ''}`);
+      updateHUD(); store();
+    }
+  }
+  function meleeAI(st, h, d, dmg, ko, dt) {
+    if (st.windup > 0) { st.windup -= dt; if (st.windup <= 0) { st.attackT = 0.8 + rnd() * 0.7; if (d < 2.1) hurtPlayer(dmg, ko); } return; }
+    st.attackT = (st.attackT ?? 0.6) - dt;
+    if (d < 1.95 && st.attackT <= 0) { st.windup = 0.42; h.punch(); }
+  }
+  // ---- driving frame: arcade car + chase camera ----------------------------------------------
+  function driveFrame(dt, throttle, steer) {
+    const near = [];
+    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.filter(e => e.alive).map(e => e.p), ...debtors.filter(d => d.visible)]) if (p.parent && Math.abs(p.position.x - drive.car.x) < 30 && Math.abs(p.position.z - drive.car.z) < 30) near.push({ x: p.position.x, z: p.position.z, r: 0.45 });
+    drive.update(dt, throttle, steer, !!keys.Space, [...traffic.obstacles(), ...near]);
+    const car = drive.car;
+    const dy = Math.atan2(Math.sin(yaw - lastDriveYaw), Math.cos(yaw - lastDriveYaw)); orbit += dy;
+    if (lookTouchId === null && !document.pointerLockElement) orbit *= Math.exp(-dt * 1.4); else orbit *= Math.exp(-dt * 0.3);
+    yaw = car.h + Math.PI + orbit; lastDriveYaw = yaw; pitch = lerp(pitch, -0.14, 1 - Math.exp(-dt * 2));
+    const fx = Math.sin(car.h + orbit), fz = Math.cos(car.h + orbit), k = 1 - Math.exp(-dt * 7);
+    camera.position.x = lerp(camera.position.x, car.x - fx * 7, k); camera.position.z = lerp(camera.position.z, car.z - fz * 7, k); camera.position.y = lerp(camera.position.y, car.y + 2.6, k);
+    $('speedo').style.display = 'block'; $('speedo').innerHTML = `${Math.round(Math.abs(car.v) * 3.6)}<small>km/h</small>`;
+  }
+  let hintT = 0;
+  function showHint(talking) {
+    const el = $('hint'); let t = '';
+    if (!talking && !dlg.active) {
+      if (drive.car) t = Math.abs(drive.car.v) < 1 ? 'TALK / E: get out' : '';
+      else if (hustle && hustle.state === 'open' && dist(hustle.npc.position) < 4.5) t = `TALK: ${hustle.name}`;
+      else { const sh = shops.nearest(camera.position); if (sh) t = `TALK: ${sh.name}`; else if (drive.nearest(camera.position)) t = 'TALK / E: get in'; }
+    }
+    el.textContent = t; el.style.display = t ? 'block' : 'none';
   }
 
   // ---- per-frame simulation ---------------------------------------------------------------
@@ -551,25 +679,47 @@ function createGame(world) {
       const k = c => !!keys[c];
       const right = (k('KeyD') || k('ArrowRight') || move.right ? 1 : 0) - (k('KeyA') || k('ArrowLeft') || move.left ? 1 : 0) + (Number(joy.x) || 0);
       const back = (k('KeyS') || k('ArrowDown') || move.back ? 1 : 0) - (k('KeyW') || k('ArrowUp') || move.forward ? 1 : 0) + (Number(joy.y) || 0);
-      const moving = !talking && (Math.abs(right) > 0.05 || Math.abs(back) > 0.05);
+      const moving = !drive.car && !talking && (Math.abs(right) > 0.05 || Math.abs(back) > 0.05);
+      const guarding = blocking();
       stillT = moving ? 0 : stillT + dt;
       if (runLatch && (stillT > 0.6 || talking)) setRun(false);
       const wantsSprint = !!(keys.ShiftLeft || keys.ShiftRight || runLatch);
-      const sprinting = wantsSprint && moving && stamina > 0;
-      stamina = clamp(stamina + (sprinting ? -STAMINA_DRAIN : STAMINA_RECOVERY) * dt, 0, 100);
-      const speed = (sprinting ? 12 : 7) * dt;
+      const sprinting = wantsSprint && moving && stamina > 0 && !guarding;
+      if (boostT > 0) { boostT -= dt; stamina = 100; }
+      stamina = clamp(stamina + (sprinting ? -STAMINA_DRAIN : STAMINA_RECOVERY * (guarding ? 0.3 : 1)) * dt, 0, 100);
+      if (now - lastHurt > 6000 && hp < 60) hp = Math.min(60, hp + 2.5 * dt);
+      const speed = (sprinting ? 12 : guarding ? 3.2 : 7) * dt;
       let dx = talking ? 0 : right, dz = talking ? 0 : back; const len = Math.hypot(dx, dz);
       if (len > 1) { dx /= len; dz /= len; }
       const mx = (dx * Math.cos(yaw) + dz * Math.sin(yaw)) * speed, mz = (-dx * Math.sin(yaw) + dz * Math.cos(yaw)) * speed;
-      slideMove(camera.position, mx, mz);
-      bobT += dt * (moving ? (sprinting ? 13 : 9) * Math.min(1, len) : 0);
-      const ground = groundHeight(camera.position.x, camera.position.z) + EYE + (moving ? Math.sin(bobT) * 0.035 : 0);
-      camera.position.y = lerp(camera.position.y, ground, 1 - Math.exp(-dt * 12));
+      if (drive.car) driveFrame(dt, talking ? 0 : clamp(-back, -1, 1), talking ? 0 : clamp(right, -1, 1));
+      else {
+        slideMove(camera.position, mx, mz);
+        bobT += dt * (moving ? (sprinting ? 13 : 9) * Math.min(1, len) : 0);
+        const ground = groundHeight(camera.position.x, camera.position.z) + EYE + (moving ? Math.sin(bobT) * 0.035 : 0);
+        camera.position.y = lerp(camera.position.y, ground, 1 - Math.exp(-dt * 12));
+      }
+      traffic.update(dt, drive.car ? { x: drive.car.x, z: drive.car.z } : camera.position, drive.car);
+      // Traffic that reaches you on foot clips you (they normally stop in time).
+      if (!drive.car) for (const o of traffic.obstacles()) if (o.car.v > 4 && Math.hypot(o.x - camera.position.x, o.z - camera.position.z) < 1.3) { hurtPlayer(12, KO_HOME); o.car.v = 0; say('Watch the road, egg.'); }
       window.__auTelemetry = { engine: 'three', started, paused: pauseOpen, x: camera.position.x, z: camera.position.z, joyX: joy.x, joyY: joy.y };
       window.AUControls?.setPosition?.(camera.position.x, camera.position.z, 'THREE');
       if (Math.abs(joy.x) + Math.abs(joy.y) > 0.1) $('joyReadout').textContent = `${Math.round(camera.position.x)},${Math.round(camera.position.z)}`;
       const guardUp = enemies.some(e => e.alive && dist(e.p.position) < 8) || (darrenState.hostile && dist(darren.position) < 8) || (jobState.kev === 'fight' && dist(JOBS.kev.npc.position) < 8);
-      fists.update(dt, moving, sprinting, guardUp);
+      fists.update(dt, moving, sprinting, (guardUp || guarding) && !drive.car);
+      if (drive.car) fists.group.visible = false;
+      // Interaction hints.
+      if ((hintT -= dt) <= 0) { hintT = 0.25; showHint(talking); }
+      // Hustles: Shorty texts a new job every few minutes once his chapter is done.
+      if (STAGES.indexOf(stage) >= STAGES.indexOf('recruit') && (!hustle || hustle.state === 'done') && (hustleTimer -= world.realDt || dt) <= 0) startHustle();
+      if (hustle && hustle.state === 'done' && hustle.npc.visible && dist(hustle.npc.position) > 120) hustle.npc.visible = false;
+      if (hustle && hustle.state === 'fight') {
+        const n = hustle.npc, h = n.userData.human, d = dist(n.position);
+        let sp = 0;
+        if (d < 25 && d > 1.9) { const b0 = n.position.clone(); slideMove(n.position, (camera.position.x - n.position.x) / d * dt * 1.6, (camera.position.z - n.position.z) / d * dt * 1.6, 0.4); sp = b0.distanceTo(n.position) / Math.max(dt, 1e-4); }
+        faceEachOther(n); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle'; n.position.y = groundHeight(n.position.x, n.position.z);
+        if (!talking && !drive.car) meleeAI(hustle, h, d, 9, KO_HOME, dt);
+      }
       for (const e of enemies) {
         if (!e.alive) continue;
         const h = e.p.userData.human;
@@ -584,11 +734,7 @@ function createGame(world) {
         if (d < 15) e.p.rotation.y = Math.atan2(camera.position.x - e.p.position.x, camera.position.z - e.p.position.z);
         h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle';
         e.p.position.y = groundHeight(e.p.position.x, e.p.position.z);
-        if (d < 1.6) {
-          hp = Math.max(0, hp - dt * 5);
-          e.attackT -= dt; if (e.attackT <= 0) { e.attackT = 0.9 + rnd() * 0.4; h.punch(); world.hurt = 1; world.shake = 0.12; }
-          if (hp === 0) { hp = 100; const sp3 = home.spawn.pos; camera.position.set(sp3.x, groundHeight(sp3.x, sp3.z) + EYE, sp3.z); rep = Math.max(0, rep - 10); say('You got knocked out. You came to outside Manu\'s. Reputation -10.'); }
-        }
+        if (!drive.car) meleeAI(e, h, d, 8, KO_ENEMY, dt);
       }
       // Darren squares up when the debt talk goes bad.
       {
@@ -602,11 +748,7 @@ function createGame(world) {
           }
           faceEachOther(darren); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle';
           darren.position.y = groundHeight(darren.position.x, darren.position.z);
-          if (d < 1.7 && !talking) {
-            hp = Math.max(0, hp - dt * 6);
-            darrenState.attackT -= dt; if (darrenState.attackT <= 0) { darrenState.attackT = 0.8 + rnd() * 0.4; h.punch(); world.hurt = 1; world.shake = 0.12; }
-            if (hp === 0) { hp = 100; const sp2 = home.spawn.pos; camera.position.set(sp2.x, groundHeight(sp2.x, sp2.z) + EYE, sp2.z); say('Darren dropped you. You came to outside Manu\'s place.'); }
-          }
+          if (!talking && !drive.car) meleeAI(darrenState, h, d, 10, KO_DARREN, dt);
         } else { h.mode = 'idle'; h.speed = 0; }
       }
       // Shorty texts a little while after Manu passes your number on.
@@ -619,11 +761,7 @@ function createGame(world) {
         let sp = 0;
         if (d < 22 && d > 1.9) { const b0 = kev.position.clone(); slideMove(kev.position, (camera.position.x - kev.position.x) / d * dt * 1.5, (camera.position.z - kev.position.z) / d * dt * 1.5, 0.45); sp = b0.distanceTo(kev.position) / Math.max(dt, 1e-4); }
         faceEachOther(kev); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle'; kev.position.y = groundHeight(kev.position.x, kev.position.z);
-        if (d < 1.8 && !talking) {
-          hp = Math.max(0, hp - dt * 8);
-          kevRun.attackT -= dt; if (kevRun.attackT <= 0) { kevRun.attackT = 1.0 + rnd() * 0.4; h.punch(); world.hurt = 1; world.shake = 0.16; }
-          if (hp === 0) { hp = 100; const sp2 = sHome.spawn.pos; camera.position.set(sp2.x, groundHeight(sp2.x, sp2.z) + EYE, sp2.z); say('Kev dropped you. You came to outside Shorty\'s.'); }
-        }
+        if (!talking && !drive.car) meleeAI(kevRun, h, d, 14, KO_KEV, dt);
       }
       // Mikey bolts when you get close: sprint bursts, then he blows out and you can catch him.
       if (stage === 'shorty-jobs' && jobState.mikey === 'open' && !talking) {
@@ -667,8 +805,8 @@ function createGame(world) {
     const sh = world.shake || 0; world.shake = Math.max(0, sh - dt);
     camera.rotation.set(pitch + (Math.random() - 0.5) * sh * 0.12, yaw + (Math.random() - 0.5) * sh * 0.12, 0);
     // Animate characters near the camera every frame, distant ones at a lower rate.
-    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.map(e => e.p)]) {
-      if (!p.parent) continue;
+    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.map(e => e.p), ...debtors]) {
+      if (!p.parent || !p.visible) continue;
       const d = p.position.distanceTo(camera.position);
       const h = p.userData.human;
       if (d < 45 || (h.skip = (h.skip || 0) + 1) % 4 === 0) h.update(d < 45 ? dt : dt * 4, t);
@@ -684,6 +822,13 @@ function createGame(world) {
     state: () => ({ stage, hp, rep, cash, chosen, defeated, started, x: camera.position.x, z: camera.position.z, yaw, objective: objective()[0] }),
     teleport(x, z) { camera.position.set(x, groundHeight(x, z) + EYE, z); },
     face(y) { yaw = y; }, talk, hit, collides,
+    drive: () => drive.car ? { x: drive.car.x, z: drive.car.z, v: drive.car.v, h: drive.car.h } : null,
+    nearestCar: () => { let b = null, bd = 1e9; for (const c of world.city.cars) { if (c.taken) continue; const d = Math.hypot(c.x - camera.position.x, c.z - camera.position.z); if (d < bd) { bd = d; b = c; } } return b && { x: b.x, z: b.z }; },
+    shopsList: () => shops.list.map(s => ({ kind: s.kind, name: s.name, x: s.x, z: s.z })),
+    buy: i => { const b = document.querySelectorAll('#shopItems button')[i]; b?.click(); return !!b; }, closeShop: () => shops.close(),
+    setHp: v => { hp = v; }, setCash: v => { cash = v; }, strength: () => strength, traffic: () => traffic.cars.length,
+    hustle: () => hustle && { name: hustle.name, amount: hustle.amount, state: hustle.state, type: hustle.type, x: hustle.npc.position.x, z: hustle.npc.position.z },
+    startHustle: type => { hustleTimer = 0; startHustle(); if (hustle && type) hustle.type = type; return !!hustle; },
     jobs: () => ({ ...jobState }),
     targets: () => ({ fixer: fixer.position.clone(), manu: manu.position.clone(), darren: darren.position.clone(), shorty: shorty.position.clone(), kev: JOBS.kev.npc.position.clone(), mikey: JOBS.mikey.npc.position.clone(), pita: JOBS.pita.npc.position.clone(), stash: stash.position.clone(), contacts: contacts.map(c => ({ f: c.f, x: c.p.position.x, z: c.p.position.z })), enemies: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z, alive: e.alive })) }),
   };

@@ -1,10 +1,21 @@
-# AOTEAROA: UNDERWORLD, Run 16 (real Manurewa and Clendon, realistic people)
+# AOTEAROA: UNDERWORLD, Run 17 (driving, traffic, shops, fighting, hustles)
 
 Open `index.html` in a modern browser with internet access (Three.js loads from jsDelivr). On the phone: extract the ZIP and open `index.html`. For best results on a computer, serve the folder with `python -m http.server 8000` and visit `http://localhost:8000`.
 
-Desktop: WASD or arrow keys to move, mouse to look (click to lock), click or HIT to attack, Shift (hold) to sprint, E to talk, Escape to pause. Phone: touch the lower-left circle and slide to walk, swipe the right side to look, tap TALK/HIT, tap RUN to toggle running (it lights up, and switches off when you stop). Tap the radar to collapse it. Saves stay in the device's browser storage; PAUSE has EXPORT/IMPORT SAVE FILE for moving between phones.
+Desktop: WASD or arrow keys to move, mouse to look (click to lock), click or HIT to punch, hold Q or right mouse to block, Shift (hold) to sprint, E to talk / shop / get in or out of a car, Space handbrake, Escape to pause. Phone: touch the lower-left circle and slide to walk, swipe the right side to look, tap TALK/HIT, hold BLOCK, tap RUN to toggle running (it lights up, and switches off when you stop). Tap the radar to collapse it. Saves stay in the device's browser storage; PAUSE has EXPORT/IMPORT SAVE FILE for moving between phones.
 
 The streets are real; the crews, characters and events are invented. Run 12 replaced the real gang names used in earlier runs with fictional crews; old saves are converted automatically.
+
+## Run 17: things to do
+
+- **Drive any parked car.** Walk up to one and TALK (E). Joystick or W/S for throttle and brake/reverse, left/right to steer, Space for the handbrake, HIT honks, TALK gets you out (on the right, NZ-style). Chase camera; drag the right side to look around. Kerbs bump the car, fences, walls, poles and parked cars stop it. Whatever car you leave stays where you parked it.
+- **Traffic** drives the real streets on the left at 40–50 km/h, slows at intersections, queues behind other cars and stops (and toots) if you're in the way. If you stand in the road it can still clip you.
+- **Shops do something.** The real dairies, takeaways, fish and chip shops, bakeries, supermarkets, pharmacies, barbers and the gym on the map: walk up and TALK.
+  - Food heals (pie, fish 'n' chips, hot chips…); energy drinks and coffee give you a full-sprint boost (⚡ on the HUD).
+  - The barber gets you a bit of rep; the supermarket's big shop for the whānau heals fully and earns rep.
+  - The gym raises your **punch power** (3 levels, $30/$60/$120), which is saved.
+- **Fighting has timing now.** Opponents wind up each punch before it lands, so you can step back or **BLOCK** (phone button, or hold Q / right mouse) to take 85% less (it costs energy). Punches have a short cooldown; every third hit in a combo is a **heavy** that knocks them back further. Health slowly comes back to 60 after a few seconds out of a fight; above that you need food. Getting knocked out costs 10% of your cash ("rolled while you were out").
+- **Shorty keeps the work coming.** After his chapter he texts a new job every few minutes: a name, an amount and a real street. Some pay when you ask; some want to scrap (or pay if you lean on them). He flicks you 25% when it's sorted. It shows in JOBS, on the HUD line and as an orange dot on the radar.
 
 ## Run 16: the real South Auckland
 

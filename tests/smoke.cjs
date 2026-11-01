@@ -195,6 +195,55 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   await walkTo(page, T.fixer.x, T.fixer.z + 2.5); await page.evaluate(() => window.__auGame.talk());
   const done = await state(page);
   check('chapter completes', done.stage === 'complete', `cash ${done.cash} rep ${done.rep}`);
+  // Run 17 mechanics: shops, driving, hustles.
+  const shopsList = await page.evaluate(() => window.__auGame.shopsList());
+  const food = shopsList.find(sh => ['dairy', 'takeaway', 'bakery'].includes(sh.kind));
+  check('real shops are interactive', shopsList.length > 10 && !!food, `${shopsList.length} shops, e.g. ${food && food.name}`);
+  await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x, z); g.setHp(40); g.setCash(100); }, [food.x, food.z]);
+  await page.waitForTimeout(400);
+  await page.evaluate(() => window.__auGame.talk());
+  await page.waitForTimeout(300);
+  check('TALK at a shop opens its menu', await page.evaluate(() => getComputedStyle(document.getElementById('shopPanel')).display) === 'flex');
+  await page.evaluate(() => window.__auGame.buy(0));
+  const fed = await state(page);
+  check('buying food heals and costs money', fed.hp >= 60 && fed.cash < 100, `hp ${Math.round(fed.hp)} cash ${fed.cash}`);
+  await page.evaluate(() => window.__auGame.closeShop());
+  const car = await page.evaluate(() => window.__auGame.nearestCar());
+  await page.evaluate(([x, z]) => window.__auGame.teleport(x + 2.2, z), [car.x, car.z]);
+  await page.waitForTimeout(300);
+  await page.evaluate(() => window.__auGame.talk());
+  const inCar = await page.evaluate(() => window.__auGame.drive());
+  check('TALK next to a parked car gets you in', !!inCar);
+  let moved = 0;
+  for (const key of ['KeyW', 'KeyS']) {
+    await holdUntil(page, key, ([x0, z0]) => { const d = window.__auGame.drive(); return d && Math.hypot(d.x - x0, d.z - z0) > 0.6; }, [inCar.x, inCar.z]);
+    const d = await page.evaluate(() => window.__auGame.drive()); moved = Math.max(moved, Math.hypot(d.x - inCar.x, d.z - inCar.z)); if (moved > 0.6) break;
+  }
+  check('the car drives', moved > 0.6, `moved ${moved.toFixed(2)}m`);
+  await page.evaluate(() => window.__auGame.talk());
+  check('TALK gets you back out', !(await page.evaluate(() => window.__auGame.drive())));
+  check('traffic is on the roads', (await page.evaluate(() => window.__auGame.traffic())) > 0);
+  for (const [type, pick, label] of [['pays', 0, 'a paying hustle'], ['fights', 0, 'a fighting hustle']]) {
+    const cash0 = (await state(page)).cash;
+    await page.evaluate(t => window.__auGame.startHustle(t), type);
+    const hz = await page.evaluate(() => window.__auGame.hustle());
+    await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 1.5, z); g.face(Math.atan2(1.5, 0)); }, [hz.x, hz.z]);
+    await page.waitForTimeout(300);
+    await page.evaluate(() => window.__auGame.talk());
+    await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice));
+    await page.evaluate(i => window.__auStory.choose(i), pick);
+    await advanceUntil(page, () => !window.__auStory.active);
+    for (let k = 0; k < 14 && (await page.evaluate(() => window.__auGame.hustle().state)) === 'fight'; k++) {
+      const d = await page.evaluate(() => window.__auGame.hustle());
+      await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 2.2, z); g.face(Math.atan2(2.2, 0)); g.setHp(100); }, [d.x, d.z]);
+      await page.waitForTimeout(350);
+      await page.evaluate(() => window.__auGame.hit());
+    }
+    await page.waitForFunction(() => window.__auStory.active || window.__auGame.hustle().state === 'done', null, { timeout: 30000 }).catch(() => { });
+    await advanceUntil(page, () => !window.__auStory.active);
+    const after = await state(page), h2 = await page.evaluate(() => window.__auGame.hustle());
+    check(`${label} pays Shorty's cut`, h2.state === 'done' && after.cash === cash0 + Math.round(hz.amount * 0.25), `${hz.name} $${hz.amount}: cash ${cash0} -> ${after.cash}`);
+  }
   await page.click('#pauseButton'); await page.click('#saveNow');
   for (const sel of ['[data-time="night"]', '[data-rain="2"]', '[data-gfx="medium"]', '[data-time="golden"]', '[data-gfx="low"]']) { await page.click(sel); await page.waitForTimeout(400); }
   check('graphics settings switch without errors', errors.length === 0, errors.slice(0, 3).join(' | '));
@@ -247,6 +296,9 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   await phone.page.tap('#continue');
   await phone.page.waitForTimeout(800);
   check('joystick visible during play', await phone.page.evaluate(() => getComputedStyle(document.getElementById('joystick')).display) !== 'none');
+  await phone.page.tap('#sprint');
+  check('RUN toggles on with one tap', await phone.page.evaluate(() => document.getElementById('sprint').classList.contains('on')));
+  await phone.page.tap('#sprint');
   const p0 = await state(phone.page);
   const box = await phone.page.locator('#joystick').boundingBox();
   const cx = box.x + box.width / 2, cy = box.y + box.height / 2;

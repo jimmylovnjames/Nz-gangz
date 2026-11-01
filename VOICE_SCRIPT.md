@@ -363,3 +363,48 @@ _Unimpressed._
 | `sh_back_6` | SHORTY | Here. That's your quarter. |
 | `sh_back_7` | SHORTY | Listen. People are talking about you. The crews down at Clendon skate park want to see you. |
 | `sh_back_8` | SHORTY | That's a big deal, bro. Don't muck it up. |
+
+## Shorty's side jobs: you turn up at the debtor's place (DEBTOR = whoever owes, name changes each job)
+
+_{amount} is the dollar amount, e.g. "three hundred". Record a general version._
+
+| id | who | line |
+|---|---|---|
+| `hus_01` | DEBTOR | Yeah? Who's asking? |
+| `hus_02` | YOU | Shorty. You owe him {amount}. |
+| `hus_c1` | YOU | (choice) Sort it now and we're sweet. |
+| `hus_c2` | YOU | (choice) Pay up or I take it off you. |
+
+## Debtor pays when asked
+
+| id | who | line |
+|---|---|---|
+| `hus_03` | DEBTOR | Alright, alright. Here. Tell him we're square. |
+
+## Debtor pays after you lean on him
+
+_Rattled._
+
+| id | who | line |
+|---|---|---|
+| `hus_04` | DEBTOR | Easy, easy! Take it. Just go, eh. |
+
+## Debtor refuses and squares up
+
+| id | who | line |
+|---|---|---|
+| `hus_05` | DEBTOR | Shorty can come get it himself. You wanna go, bro? |
+
+## Debtor after you knock him down
+
+_Winded._
+
+| id | who | line |
+|---|---|---|
+| `hus_06` | DEBTOR | Okay! Okay. It's in my pocket. Take it. |
+
+## Talking to a debtor who already paid
+
+| id | who | line |
+|---|---|---|
+| `hus_07` | DEBTOR | I already paid, bro. Leave me alone. |

@@ -563,8 +563,9 @@ class City {
   }
   parkCar(x, z, rot, y) {
     const r = this.hash(Math.round(x * 10), Math.round(z * 10));
-    this.cars.push({ x, z, y, rot, type: Math.floor(r * 4), color: this.hash(Math.round(z * 7), 9) });
-    this.collision.addOBB(x, z, 0.95, 2.3, -rot, 'car');
+    const car = { x, z, y, rot, type: Math.floor(r * 4), color: this.hash(Math.round(z * 7), 9) };
+    car.col = this.collision.addOBB(x, z, 0.95, [2.0, 2.3, 2.6, 2.35][car.type], -rot, 'car');
+    this.cars.push(car);
   }
   platforms() {
     const kh = ROAD.kerbH, top = GROUND.platform;
