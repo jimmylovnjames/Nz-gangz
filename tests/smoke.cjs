@@ -244,6 +244,78 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
     const after = await state(page), h2 = await page.evaluate(() => window.__auGame.hustle());
     check(`${label} pays Shorty's cut`, h2.state === 'done' && after.cash === cash0 + Math.round(hz.amount * 0.25), `${hz.name} $${hz.amount}: cash ${cash0} -> ${after.cash}`);
   }
+  // Run 18: pedestrians, police heat and a bust, then Chapter One end to end.
+  await page.waitForFunction(() => window.__auGame.peds() > 0, null, { timeout: 90000 }).catch(() => { });
+  check('people walk the footpaths', (await page.evaluate(() => window.__auGame.peds())) > 0);
+  const cashBefore = (await state(page)).cash;
+  await page.evaluate(() => window.__auGame.addHeat(2));
+  await page.waitForFunction(() => window.__auGame.police().length > 0, null, { timeout: 60000 }).catch(() => { });
+  check('heat brings police cars', (await page.evaluate(() => window.__auGame.police().length)) > 0);
+  for (let k = 0; k < 60 && (await page.evaluate(() => window.__auGame.heat())) > 0; k++) {
+    const cop = (await page.evaluate(() => window.__auGame.police()))[0]; if (!cop) break;
+    await page.evaluate(([x, z]) => window.__auGame.teleport(x + 3, z), [cop.x, cop.z]);
+    await page.waitForTimeout(800);
+  }
+  const bustedState = await state(page);
+  check('the cops catch you: fine and a night at Manurewa station', bustedState.cash < cashBefore && (await page.evaluate(() => window.__auGame.heat())) === 0, `cash ${cashBefore} -> ${bustedState.cash}`);
+  // Chapter One.
+  await page.evaluate(() => window.__auGame.skipTimers());
+  await page.waitForFunction(() => window.__auGame.state().stage === 'c1-car', null, { timeout: 90000 }).catch(() => { });
+  check('Tipene texts the first Chapter One job', (await state(page)).stage === 'c1-car', (await state(page)).objective);
+  let C1 = await page.evaluate(() => window.__auGame.c1());
+  const carNearManu = await page.evaluate(([x, z]) => { window.__auGame.teleport(x, z); return window.__auGame.nearestCar(); }, [C1.home.x, C1.home.z]);
+  await page.evaluate(([x, z]) => { window.__auGame.teleport(x + 2.2, z); window.__auGame.talk(); }, [carNearManu.x, carNearManu.z]);
+  const T2 = await page.evaluate(() => window.__auGame.targets());
+  await page.evaluate(([x, z]) => window.__auGame.carTo(x + 4, z), [T2.manu.x, T2.manu.z]);
+  await page.waitForFunction(() => window.__auGame.state().stage === 'c1-pickup', null, { timeout: 30000 }).catch(() => { });
+  check('driving up to Manu picks him up', (await state(page)).stage === 'c1-pickup' && (await page.evaluate(() => window.__auGame.c1().manuInCar)));
+  C1 = await page.evaluate(() => window.__auGame.c1());
+  await page.evaluate(([x, z]) => { const g = window.__auGame; g.carTo(x + 6, z); g.talk(); g.teleport(x + 1.5, z); g.clearHeat(); }, [C1.rawiri.x, C1.rawiri.z]);
+  await page.waitForTimeout(300); await page.evaluate(() => window.__auGame.talk());
+  await advanceUntil(page, () => !window.__auStory.active);
+  check('Rawiri hands over the parcel', (await state(page)).stage === 'c1-deliver');
+  const T3 = await page.evaluate(() => window.__auGame.targets());
+  await page.evaluate(([x, z]) => { const g = window.__auGame; g.clearHeat(); g.teleport(x, z + 2.5); g.talk(); }, [T3.fixer.x, T3.fixer.z]);
+  await advanceUntil(page, () => !window.__auStory.active);
+  check('Tipene takes the parcel and sends you to Aunty Lani', (await state(page)).stage === 'c1-dairy');
+  C1 = await page.evaluate(() => window.__auGame.c1());
+  await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 1.5, z); g.talk(); }, [C1.lani.x, C1.lani.z]);
+  await advanceUntil(page, () => !window.__auStory.active);
+  check('Aunty Lani points you at the rival crew', (await state(page)).stage === 'c1-rivals');
+  C1 = await page.evaluate(() => window.__auGame.c1());
+  await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 1.5, z); g.talk(); }, [C1.rivals[0].x, C1.rivals[0].z]);
+  await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice));
+  await page.evaluate(() => window.__auStory.choose(1));
+  await advanceUntil(page, () => !window.__auStory.active);
+  const brawl = async () => {
+    for (let k = 0; k < 40; k++) {
+      const alive = (await page.evaluate(() => window.__auGame.c1().rivals)).filter(r => r.alive);
+      if (!alive.length) break;
+      await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 2.2, z); g.face(Math.atan2(2.2, 0)); g.setHp(100); }, [alive[0].x, alive[0].z]);
+      await page.waitForTimeout(350); await page.evaluate(() => window.__auGame.hit());
+    }
+  };
+  await brawl();
+  await page.waitForFunction(() => window.__auGame.state().stage === 'c1-wait', null, { timeout: 20000 }).catch(() => { });
+  check('beating the rival boys clears the dairy', (await state(page)).stage === 'c1-wait');
+  await page.evaluate(() => window.__auGame.skipTimers());
+  await page.waitForFunction(() => window.__auGame.state().stage === 'c1-manu', null, { timeout: 90000 }).catch(() => { });
+  check('Manu texts that he got jumped at the station', (await state(page)).stage === 'c1-manu');
+  await brawl();
+  const T4 = await page.evaluate(() => window.__auGame.targets());
+  await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 1.5, z); g.talk(); }, [T4.manu.x, T4.manu.z]);
+  await advanceUntil(page, () => !window.__auStory.active);
+  check('you pick Manu up off the ground', (await state(page)).stage === 'c1-home');
+  const car2 = await page.evaluate(() => window.__auGame.nearestCar());
+  await page.evaluate(([x, z]) => { window.__auGame.teleport(x + 2.2, z); window.__auGame.talk(); }, [car2.x, car2.z]);
+  await page.evaluate(([x, z]) => window.__auGame.carTo(x + 4, z), [T4.manu.x, T4.manu.z]);
+  await page.waitForFunction(() => window.__auGame.c1().manuInCar, null, { timeout: 30000 }).catch(() => { });
+  C1 = await page.evaluate(() => window.__auGame.c1());
+  await page.evaluate(([x, z]) => window.__auGame.carTo(x + 5, z), [C1.home.x, C1.home.z]);
+  await page.waitForFunction(() => window.__auStory.active || window.__auGame.state().stage === 'c1-done', null, { timeout: 30000 }).catch(() => { });
+  await advanceUntil(page, () => !window.__auStory.active);
+  check('driving Manu home completes Chapter One', (await state(page)).stage === 'c1-done', (await state(page)).objective);
+  if (await page.evaluate(() => !!window.__auGame.drive())) await page.evaluate(() => window.__auGame.talk());
   await page.click('#pauseButton'); await page.click('#saveNow');
   for (const sel of ['[data-time="night"]', '[data-rain="2"]', '[data-gfx="medium"]', '[data-time="golden"]', '[data-gfx="low"]']) { await page.click(sel); await page.waitForTimeout(400); }
   check('graphics settings switch without errors', errors.length === 0, errors.slice(0, 3).join(' | '));
@@ -252,7 +324,7 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   await page.waitForFunction(() => document.documentElement.dataset.engine === 'ready', null, { timeout: 300000 });
   check('continue button offered after reload', await page.evaluate(() => getComputedStyle(document.getElementById('continue')).display) !== 'none');
   await page.click('#continue');
-  check('saved chapter restores', (await state(page)).stage === 'complete');
+  check('saved chapter restores', (await state(page)).stage === 'c1-done');
   // A Run 11 save with a real gang name loads under the renamed fictional crew.
   // Back to the menu first: an active session saves itself when the page hides on reload.
   await page.click('#pauseButton'); await page.click('#restart');

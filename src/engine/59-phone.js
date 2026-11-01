@@ -1,5 +1,5 @@
 // In-game phone: texts arrive one by one with a buzz; JOBS lists who still owes what.
-const CONTACTS = { shorty: 'SHORTY', manu: 'MANU', you: 'YOU' };
+const CONTACTS = { shorty: 'SHORTY', manu: 'MANU', you: 'YOU', tipene: 'TIPENE' };
 class Phone {
   constructor() {
     this.el = $('phone'); this.msgsEl = $('phMsgs'); this.jobsEl = $('phJobs'); this.btn = $('phoneBtn'); this.toast = $('toast');

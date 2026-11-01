@@ -364,6 +364,90 @@ _Unimpressed._
 | `sh_back_7` | SHORTY | Listen. People are talking about you. The crews down at Clendon skate park want to see you. |
 | `sh_back_8` | SHORTY | That's a big deal, bro. Don't muck it up. |
 
+## Chapter One: the Southmall car park, Rawiri hands over the parcel
+
+_Manu is riding with you._
+
+| id | who | line |
+|---|---|---|
+| `c1_01` | RAWIRI | You Tipene's new boy? Took your time. |
+| `c1_02` | MANU | Traffic, uce. You know Great South Road. |
+| `c1_03` | RAWIRI | Here. Don't open it, don't lose it, don't get pulled over with it. |
+| `c1_04` | YOU | Sweet. Straight to Tipene. |
+
+## Back at the skate park: Tipene (the crew fixer) takes the parcel
+
+_Calm, in charge._
+
+| id | who | line |
+|---|---|---|
+| `c1_05` | TIPENE | There he is. No cops on your tail? Good. |
+| `c1_06` | TIPENE | Two hundred. And there's something else. |
+| `c1_07` | TIPENE | Aunty Lani at the Clendon dairy. She looks after us, we look after her. Go see her. |
+
+## Tipene if the cops followed you
+
+_Sharp._
+
+| id | who | line |
+|---|---|---|
+| `c1_08` | TIPENE | You brought the cops here? Lose them first, then come back. |
+
+## Clendon Dairy: Aunty Lani, who runs it
+
+_Tired, worried for her grandkids. {rival} is the rival crew name._
+
+| id | who | line |
+|---|---|---|
+| `c1_09` | AUNTY LANI | Oh, you're the one Tipene sent. Thank God. |
+| `c1_10` | AUNTY LANI | Those {rival} boys keep coming in, filling their pockets, giving my mokos lip. |
+| `c1_11` | AUNTY LANI | They hang round the skate park after school. Please, love. Make it stop. |
+| `c1_12` | YOU | Leave it with me, Aunty. |
+
+## Clendon skate park: the rival crew boys
+
+_Cocky teenagers._
+
+| id | who | line |
+|---|---|---|
+| `c1_13` | RIVAL CREW | Oi. You lost? This is our park. |
+| `c1_14` | YOU | Aunty Lani's dairy. You're done going in there. |
+| `c1_15` | RIVAL CREW | Says who? |
+| `c1_c1` | YOU | (choice) Says Tipene. You want that problem? |
+| `c1_c2` | YOU | (choice) Says me. Come on then. |
+
+## Rivals back down
+
+| id | who | line |
+|---|---|---|
+| `c1_16` | RIVAL CREW | ...Whatever, bro. Plenty of other dairies. |
+
+## Rivals start a fight
+
+| id | who | line |
+|---|---|---|
+| `c1_17` | RIVAL CREW | Tipene's not here, egg. Get him, boys. |
+
+## Manurewa station: Manu after he got jumped
+
+_Hurt, trying to laugh it off._
+
+| id | who | line |
+|---|---|---|
+| `c1_18` | MANU | Cuz... took you long enough. |
+| `c1_19` | MANU | Those {rival} boys. Said it was for the park. My ribs, bro. |
+| `c1_20` | YOU | Can you walk? Car's over here. I'll get you home. |
+
+## Outside Manu's place, end of Chapter One
+
+_Grateful, then serious._
+
+| id | who | line |
+|---|---|---|
+| `c1_21` | MANU | Cheers, cuz. Don't tell Mum about this. |
+| `c1_22` | MANU | Tipene rang. He reckons you're the real deal now. |
+| `c1_23` | MANU | Just... watch yourself, eh. This doesn't stop now. |
+
 ## Shorty's side jobs: you turn up at the debtor's place (DEBTOR = whoever owes, name changes each job)
 
 _{amount} is the dollar amount, e.g. "three hundred". Record a general version._

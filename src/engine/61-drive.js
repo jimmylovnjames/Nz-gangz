@@ -1,6 +1,6 @@
 // Driving and traffic. Any parked car can be taken (TALK next to it): arcade handling, chase camera,
 // engine note and horn. Traffic drives the real road graph on the left, stops for you and each other.
-const CAR_DIM = [{ L: 4.0, wb: 2.56 }, { L: 4.6, wb: 2.75 }, { L: 5.2, wb: 3.15 }, { L: 4.7, wb: 2.9 }];
+const CAR_DIM = [{ L: 4.05, wb: 2.54 }, { L: 4.65, wb: 2.7 }, { L: 4.75, wb: 2.74 }, { L: 5.3, wb: 3.08 }, { L: 4.8, wb: 2.85 }, { L: 4.7, wb: 2.55 }];
 const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _v3 = new THREE.Vector3(), _s1 = new THREE.Vector3(1, 1, 1), _y = new THREE.Vector3(0, 1, 0);
 const ZERO_M = new THREE.Matrix4().makeScale(0, 0, 0);
 
@@ -84,7 +84,7 @@ class PlayerCars {
     for (const s of [-half, -half / 3, half / 3, half]) {
       const px = x + fx * s, pz = z + fz * s;
       if (this.world.collision.collides(px, pz, 0.9)) return true;
-      for (const o of others) if ((o.x - px) ** 2 + (o.z - pz) ** 2 < (0.9 + o.r) ** 2) return true;
+      for (const o of others) if ((o.x - px) ** 2 + (o.z - pz) ** 2 < (0.9 + o.r) ** 2) { this.hit = o; return true; }
     }
     return x < MAP_BOUNDS.x0 || x > MAP_BOUNDS.x1 || z < MAP_BOUNDS.z0 || z > MAP_BOUNDS.z1;
   }
@@ -144,7 +144,7 @@ class Traffic {
     for (let tries = 0; tries < 40; tries++) {
       const n = this.nodes[Math.floor(Math.random() * this.nodes.length)], d = Math.hypot(n.x - px, n.z - pz);
       if (d < 110 || d > 280 || !n.nb.length) continue;
-      const e = n.nb[Math.floor(Math.random() * n.nb.length)], type = Math.floor(Math.random() * 4), M = this.meshes[type]; if (!M.free.length) return;
+      const e = n.nb[Math.floor(Math.random() * n.nb.length)], type = Math.floor(Math.random() * 6), M = this.meshes[type]; if (!M.free.length) return;
       const slot = M.free.pop(), K = this.kit;
       M.body.setColorAt(slot, new THREE.Color(K.paints[Math.floor(Math.random() * K.paints.length)])); M.body.instanceColor.needsUpdate = true;
       const from = this.nodes.indexOf(n);

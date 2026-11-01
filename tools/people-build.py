@@ -338,6 +338,17 @@ CAST = {
     'crewB':  dict(gender=1, age=0.55, muscle=0.6, weight=0.65, height=0.55, race=POLY_RACE, skin=POLY_MID, cloth=C('male_casualsuit05'), shoes=C('shoes03'), hair=H('short01')),
     'crewC':  dict(gender=1, age=0.45, muscle=0.5, weight=0.55, height=0.5, race={'asian': 0.4, 'african': 0.3, 'caucasian': 0.3}, skin=POLY, cloth=C('male_casualsuit03'), shoes=C('shoes05'), hair=H('afro01'), hairTint=[0.5, 0.45, 0.42]),
 }
+# Passers-by on the footpaths (two women, an older Pākehā man, a young guy, an aunty).
+POLY_F = [('skins/young_african_female/young_darkskinned_female_diffuse.png', 0.55), ('skins/young_asian_female/young_lightskinned_female_diffuse3.png', 0.45)]
+CAST.update({
+    'pedF1': dict(gender=0, age=0.45, muscle=0.5, weight=0.7, height=0.5, race=POLY_RACE, skin=POLY_F, cloth=C('female_sportsuit01'), shoes=C('shoes05'), hair=H('ponytail01'), hairTint=[0.45, 0.4, 0.38], brow=os.path.join(SYS, 'eyebrows/eyebrow002/eyebrow002.mhclo')),
+    'pedF2': dict(gender=0, age=0.5, muscle=0.45, weight=0.45, height=0.45, race={'caucasian': 0.6, 'asian': 0.4}, skin=[('skins/young_caucasian_female/young_lightskinned_female_diffuse.png', 1.0)], cloth=C('female_casualsuit01'), shoes=C('shoes06'), hair=H('bob01'), browRGB=(60, 45, 35), brow=os.path.join(SYS, 'eyebrows/eyebrow002/eyebrow002.mhclo'), eyeColour='brownlight'),
+    'pedF3': dict(gender=0, age=0.66, muscle=0.4, weight=0.9, height=0.4, race=POLY_RACE, skin=[('skins/middleage_african_female/middleage_darkskinned_female_diffuse.png', 0.6), ('skins/middleage_asian_female/middleage_lightskinned_female_diffuse2.png', 0.4)], cloth=C('female_casualsuit02'), shoes=C('shoes04'), hair=H('bob01'), hairTint=[0.4, 0.38, 0.36], brow=os.path.join(SYS, 'eyebrows/eyebrow002/eyebrow002.mhclo')),
+    'pedM1': dict(gender=1, age=0.7, muscle=0.45, weight=0.62, height=0.5, race={'caucasian': 0.95, 'asian': 0.05}, skin=[('skins/middleage_caucasian_male/middleage_lightskinned_male_diffuse.png', 1.0)], cloth=C('male_casualsuit02'), shoes=C('shoes02'), hair=H('short03'), hairTint=[1.4, 1.35, 1.3], browRGB=(110, 100, 90), eyeColour='blue'),
+    'pedM2': dict(gender=1, age=0.38, muscle=0.55, weight=0.55, height=0.55, race=POLY_RACE, skin=POLY, cloth=C('male_casualsuit06'), clothColour={'to': [0.6, 0.09, 0.09]}, shoes=C('shoes06'), hair=H('short04')),
+})
+ONLY = [x for x in os.environ.get('PEOPLE_ONLY', '').split(',') if x]
 for nm, sp in CAST.items():
+    if ONLY and nm not in ONLY: continue
     sp.setdefault('brow', BROW); sp.setdefault('eyes', EYES)
     build(nm, sp)

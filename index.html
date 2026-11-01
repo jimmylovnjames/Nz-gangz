@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>AOTEAROA UNDERWORLD | RUN 17</title><style>body{margin:0;background:#080b0d;color:white;font:14px system-ui;overflow:hidden}canvas{display:block}#hud{position:absolute;top:12px;left:12px;text-shadow:0 2px 4px black;pointer-events:none}#panel{position:absolute;inset:0;background:#071014ed;display:grid;place-items:center;z-index:5}#menu{max-width:520px;padding:25px}h1{font-size:32px;margin:0;color:#e8ba55}button{background:#b88a35;color:#111;border:0;border-radius:8px;padding:12px;margin:5px;font-weight:bold}#notice{position:absolute;bottom:95px;left:50%;transform:translateX(-50%);background:#111c;padding:10px;border-radius:7px;text-align:center;max-width:85%}#cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:23px;pointer-events:none}#touch{position:absolute;bottom:15px;width:100%;display:flex;justify-content:space-between;pointer-events:none}#touch button{pointer-events:auto;opacity:.8;min-width:56px}#mapcredit{position:absolute;bottom:2px;right:5px;font-size:10px;color:#ddd}small{color:#bbb}
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>AOTEAROA UNDERWORLD | RUN 18</title><style>body{margin:0;background:#080b0d;color:white;font:14px system-ui;overflow:hidden}canvas{display:block}#hud{position:absolute;top:12px;left:12px;text-shadow:0 2px 4px black;pointer-events:none}#panel{position:absolute;inset:0;background:#071014ed;display:grid;place-items:center;z-index:5}#menu{max-width:520px;padding:25px}h1{font-size:32px;margin:0;color:#e8ba55}button{background:#b88a35;color:#111;border:0;border-radius:8px;padding:12px;margin:5px;font-weight:bold}#notice{position:absolute;bottom:95px;left:50%;transform:translateX(-50%);background:#111c;padding:10px;border-radius:7px;text-align:center;max-width:85%}#cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:23px;pointer-events:none}#touch{position:absolute;bottom:15px;width:100%;display:flex;justify-content:space-between;pointer-events:none}#touch button{pointer-events:auto;opacity:.8;min-width:56px}#mapcredit{position:absolute;bottom:2px;right:5px;font-size:10px;color:#ddd}small{color:#bbb}
 #panel{overflow-y:auto;align-items:start}#menu{width:min(560px,calc(100vw - 36px));margin:auto;box-sizing:border-box}#factions{max-height:180px;overflow:auto;padding:4px;background:#15201b}#factions button{font-size:11px;padding:8px;margin:3px}#factions button.selected{outline:2px solid #fff3a5}#hud{max-width:72%;line-height:1.45}#hud b{color:#f3d98c}#missionDistance{color:#b8f5e1}#notice{bottom:104px;min-width:180px;z-index:2}#pauseButton{position:absolute;right:8px;top:8px;z-index:3;background:#19231c;color:white;border:1px solid #829688}#choicePanel,#pausePanel{position:absolute;inset:0;z-index:8;background:#02080be8;display:none;align-items:center;justify-content:center;padding:18px;box-sizing:border-box}#choicePanel .dialog,#pausePanel .dialog{max-width:520px;width:100%;background:#17201f;border:1px solid #8c7650;border-radius:14px;padding:20px;box-sizing:border-box}#choicePanel button,#pausePanel button{display:block;width:100%;margin:9px 0;padding:15px;text-align:left}#saveState{font-size:12px;color:#b8f5e1}#continue{display:none;background:#52795f;color:white}#touch button{touch-action:none}#cross{color:#ffedac}#quest{color:#f6e2af}#waypoint{position:absolute;top:33%;left:50%;transform:translateX(-50%);font-weight:bold;text-shadow:0 2px 4px black;color:#f5da6c;pointer-events:none}#location{font-size:12px;color:#eee}@media(max-width:600px){#hud{top:8px;left:8px;font-size:12px;max-width:80%}#pauseButton{padding:8px;margin:3px}#notice{font-size:12px;bottom:115px}#touch button{min-width:50px;padding:11px;margin:2px}#mapcredit{display:none}}
 #miniMap{position:absolute;right:10px;bottom:143px;width:142px;height:142px;background:#081b19d9;border:1px solid #b7d2ae88;border-radius:10px;z-index:3;box-shadow:0 4px 18px #0009;touch-action:manipulation}#miniMap.compact{width:66px;height:66px;opacity:.8}@media(max-width:600px){#miniMap{right:7px;bottom:132px;width:112px;height:112px}}
 
@@ -67,7 +67,7 @@ body.prologue.mg #dialogue{bottom:auto;top:calc(10px + env(safe-area-inset-top))
 #toast.show{transform:translate(-50%,0)}
 body.prologue :is(#phoneBtn,#phone){display:none!important}
 #hitFlash{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,transparent 45%,#7a0a0a 120%);opacity:0;transition:opacity .35s}
-</style><canvas id="miniMap" class="compact" width="180" height="180" aria-label="District minimap, tap to collapse" title="Tap to collapse minimap"></canvas><div id="panel"><div id="menu"><h1>AOTEAROA: UNDERWORLD</h1><p>CHAPTER ZERO: NOBODY KNOWS YOUR NAME</p><p>Friday night on your cousin Manu's couch. A busted old console, a few cans, and a debt somebody needs to collect. Fourteen crews are watching who steps up. Your hometown and your choices change how it plays out.</p><label for="hometown">CHOOSE YOUR HOMETOWN</label><select id="hometown" style="display:block;width:100%;padding:12px;margin:10px 0;background:#152320;color:white;border:1px solid #879b83"></select><p id="originStory"></p><div id="factions"></div><button id="independent">INDEPENDENT / NO FACTION</button><p><small>Choose a crew to approach after the prologue, or stay independent.</small></p><p><small>Playable vertical slice. Fictional characters and story. Desktop: WASD, mouse look, click to punch, hold Q or right mouse to block, Shift sprint, E talk / shop / get in a car, Space handbrake, Esc pause. Phone: floating left joystick, drag right side to look, HIT, BLOCK, TALK, RUN toggle, pause button. Save is device-local.</small></p><div id="loadState" aria-live="polite">Loading 3D engine…</div><div id="loadBar"><i></i></div><button id="start" disabled title="Loading 3D engine">NEW GAME</button><button id="continue" disabled title="Loading 3D engine">CONTINUE SAVED GAME</button><div id="saveState" aria-live="polite"></div></div></div><div id="hud"><small style="opacity:.65">R17 • DRIVE · SHOP · HUSTLE</small><b id="status">HEALTH 100 | REP 0</b><div id="quest">Find your hometown contact</div><div id="missionDistance"></div><div id="location">CLENDON PARK</div></div><div id="cross">+</div><div id="waypoint" aria-live="off"></div><button id="pauseButton" aria-label="Pause game">Ⅱ</button><div id="notice">Find the yellow diamond above your hometown contact. Press E or TALK nearby.</div><div id="joystick" aria-label="Floating movement joystick"><div id="joyBase"><div id="joyThumb"></div><span id="joyReadout" aria-live="off">MOVE</span></div><span id="controlStatus" aria-live="off">ENGINE WAIT</span></div><div id="touch"><div id="actions"><button id="interact">TALK</button><button id="attack">HIT</button><button data-m="block" id="block" aria-label="Hold to block">BLOCK</button><button data-m="sprint" id="sprint" aria-label="Toggle run" aria-pressed="false">RUN</button></div></div><div id="choicePanel" role="dialog" aria-modal="true"><div class="dialog"><h2 id="choiceTitle">Choose your path</h2><p id="choiceText"></p><button id="routeCourier">The quiet job: collect the package</button><button id="routeBrawl">The loud job: win three fights</button><button id="choiceBack">Not yet</button></div></div><div id="pausePanel" role="dialog" aria-modal="true"><div class="dialog"><h2>PAUSED</h2><p>Progress saves automatically on mission changes and periodically on this device.</p><button id="resume">RESUME</button><button id="saveNow">SAVE NOW</button><div id="gfxPanel"><div class="row"><span>GRAPHICS</span><button data-gfx="low">LOW</button><button data-gfx="medium">MEDIUM</button><button data-gfx="high">HIGH</button><button data-gfx="ultra">ULTRA</button></div><div class="row"><span>TIME</span><button data-time="golden">GOLDEN HOUR</button><button data-time="overcast">OVERCAST</button><button data-time="night">NIGHT</button></div><div class="row"><span>WEATHER</span><button data-rain="0">DRY</button><button data-rain="1">DRIZZLE</button><button data-rain="2">RAIN</button></div><div class="row"><span>DISPLAY</span><button id="fpsToggle">SHOW FPS</button></div><p id="gfxNote"></p></div><button id="exportSave">EXPORT SAVE FILE</button><button id="importSave">IMPORT SAVE FILE</button><input id="saveFile" type="file" accept=".json,application/json" hidden><p id="transferStatus" role="status" aria-live="polite"></p><button id="restart">NEW GAME (RESTART)</button></div></div><div id="dialogue" role="dialog" aria-live="polite"><div id="dlgWho"></div><div id="dlgText"></div><div id="dlgChoices"></div></div><div id="mgPad"><div><button data-mg="left" aria-label="Move left">◀</button><button data-mg="right" aria-label="Move right">▶</button></div><div><button data-mg="block">BLOCK</button><button data-mg="special">SPECIAL</button><button data-mg="kick">KICK</button><button data-mg="punch">PUNCH</button></div></div><button id="mgSkip">SKIP ▶▶</button><div id="fade"></div><button id="phoneBtn" aria-label="Phone">📱</button><div id="phone" role="dialog" aria-label="Phone"><div class="ph-head"><span>PHONE</span><button id="phClose" aria-label="Close phone">✕</button></div><div class="ph-tabs"><button data-ph="msgs" class="on">MESSAGES</button><button data-ph="jobs">JOBS</button></div><div id="phMsgs"></div><div id="phJobs"></div></div><div id="toast" aria-live="polite"></div><div id="shopPanel" role="dialog" aria-modal="true"><div class="dialog"><small id="shopSub"></small><h2 id="shopTitle"></h2><p id="shopCash"></p><div id="shopItems"></div><button id="shopClose">LEAVE</button></div></div><div id="speedo" aria-live="off"></div><div id="hint" aria-live="polite"></div><div id="fps"></div><div id="hitFlash"></div><div id="mapcredit">Map data © OpenStreetMap contributors · LINZ</div><script>
+</style><canvas id="miniMap" class="compact" width="180" height="180" aria-label="District minimap, tap to collapse" title="Tap to collapse minimap"></canvas><div id="panel"><div id="menu"><h1>AOTEAROA: UNDERWORLD</h1><p>CHAPTER ZERO: NOBODY KNOWS YOUR NAME</p><p>Friday night on your cousin Manu's couch. A busted old console, a few cans, and a debt somebody needs to collect. Fourteen crews are watching who steps up. Your hometown and your choices change how it plays out.</p><label for="hometown">CHOOSE YOUR HOMETOWN</label><select id="hometown" style="display:block;width:100%;padding:12px;margin:10px 0;background:#152320;color:white;border:1px solid #879b83"></select><p id="originStory"></p><div id="factions"></div><button id="independent">INDEPENDENT / NO FACTION</button><p><small>Choose a crew to approach after the prologue, or stay independent.</small></p><p><small>Playable vertical slice. Fictional characters and story. Desktop: WASD, mouse look, click to punch, hold Q or right mouse to block, Shift sprint, E talk / shop / get in a car, Space handbrake, Esc pause. Phone: floating left joystick, drag right side to look, HIT, BLOCK, TALK, RUN toggle, pause button. Save is device-local.</small></p><div id="loadState" aria-live="polite">Loading 3D engine…</div><div id="loadBar"><i></i></div><button id="start" disabled title="Loading 3D engine">NEW GAME</button><button id="continue" disabled title="Loading 3D engine">CONTINUE SAVED GAME</button><div id="saveState" aria-live="polite"></div></div></div><div id="hud"><small style="opacity:.65">R18 • CHAPTER ONE</small><b id="status">HEALTH 100 | REP 0</b><div id="quest">Find your hometown contact</div><div id="missionDistance"></div><div id="location">CLENDON PARK</div></div><div id="cross">+</div><div id="waypoint" aria-live="off"></div><button id="pauseButton" aria-label="Pause game">Ⅱ</button><div id="notice">Find the yellow diamond above your hometown contact. Press E or TALK nearby.</div><div id="joystick" aria-label="Floating movement joystick"><div id="joyBase"><div id="joyThumb"></div><span id="joyReadout" aria-live="off">MOVE</span></div><span id="controlStatus" aria-live="off">ENGINE WAIT</span></div><div id="touch"><div id="actions"><button id="interact">TALK</button><button id="attack">HIT</button><button data-m="block" id="block" aria-label="Hold to block">BLOCK</button><button data-m="sprint" id="sprint" aria-label="Toggle run" aria-pressed="false">RUN</button></div></div><div id="choicePanel" role="dialog" aria-modal="true"><div class="dialog"><h2 id="choiceTitle">Choose your path</h2><p id="choiceText"></p><button id="routeCourier">The quiet job: collect the package</button><button id="routeBrawl">The loud job: win three fights</button><button id="choiceBack">Not yet</button></div></div><div id="pausePanel" role="dialog" aria-modal="true"><div class="dialog"><h2>PAUSED</h2><p>Progress saves automatically on mission changes and periodically on this device.</p><button id="resume">RESUME</button><button id="saveNow">SAVE NOW</button><div id="gfxPanel"><div class="row"><span>GRAPHICS</span><button data-gfx="low">LOW</button><button data-gfx="medium">MEDIUM</button><button data-gfx="high">HIGH</button><button data-gfx="ultra">ULTRA</button></div><div class="row"><span>TIME</span><button data-time="golden">GOLDEN HOUR</button><button data-time="overcast">OVERCAST</button><button data-time="night">NIGHT</button></div><div class="row"><span>WEATHER</span><button data-rain="0">DRY</button><button data-rain="1">DRIZZLE</button><button data-rain="2">RAIN</button></div><div class="row"><span>DISPLAY</span><button id="fpsToggle">SHOW FPS</button></div><p id="gfxNote"></p></div><button id="exportSave">EXPORT SAVE FILE</button><button id="importSave">IMPORT SAVE FILE</button><input id="saveFile" type="file" accept=".json,application/json" hidden><p id="transferStatus" role="status" aria-live="polite"></p><button id="restart">NEW GAME (RESTART)</button></div></div><div id="dialogue" role="dialog" aria-live="polite"><div id="dlgWho"></div><div id="dlgText"></div><div id="dlgChoices"></div></div><div id="mgPad"><div><button data-mg="left" aria-label="Move left">◀</button><button data-mg="right" aria-label="Move right">▶</button></div><div><button data-mg="block">BLOCK</button><button data-mg="special">SPECIAL</button><button data-mg="kick">KICK</button><button data-mg="punch">PUNCH</button></div></div><button id="mgSkip">SKIP ▶▶</button><div id="fade"></div><button id="phoneBtn" aria-label="Phone">📱</button><div id="phone" role="dialog" aria-label="Phone"><div class="ph-head"><span>PHONE</span><button id="phClose" aria-label="Close phone">✕</button></div><div class="ph-tabs"><button data-ph="msgs" class="on">MESSAGES</button><button data-ph="jobs">JOBS</button></div><div id="phMsgs"></div><div id="phJobs"></div></div><div id="toast" aria-live="polite"></div><div id="shopPanel" role="dialog" aria-modal="true"><div class="dialog"><small id="shopSub"></small><h2 id="shopTitle"></h2><p id="shopCash"></p><div id="shopItems"></div><button id="shopClose">LEAVE</button></div></div><div id="speedo" aria-live="off"></div><div id="hint" aria-live="polite"></div><div id="fps"></div><div id="hitFlash"></div><div id="mapcredit">Map data © OpenStreetMap contributors · LINZ</div><script>
 window.__auEngineReady=false;
 // Render hometown choices even when the external 3D engine cannot be fetched.
 const fallbackHometowns={Northland:['Kaikohe','Kaitaia','Whangārei','Opononi'],Auckland:['South Auckland','West Auckland','Central Auckland','North Shore'],Waikato:['Hamilton','Huntly','Tokoroa'],'Bay of Plenty':['Tauranga','Rotorua','Whakatāne'],'East Coast':['Gisborne','Wairoa'],'Hawke’s Bay':['Napier','Hastings'],'Central North Island':['Taupō','New Plymouth','Whanganui','Palmerston North'],Wellington:['Wellington','Lower Hutt','Porirua'],'Top of South':['Nelson','Blenheim'],Canterbury:['Christchurch','Ashburton','Timaru'],'West Coast':['Greymouth','Hokitika'],Otago:['Dunedin','Queenstown','Wānaka'],Southland:['Invercargill','Bluff'],Islands:['Stewart Island / Rakiura','Chatham Islands']};
@@ -2078,8 +2078,10 @@ class City {
   }
   parkCar(x, z, rot, y) {
     const r = this.hash(Math.round(x * 10), Math.round(z * 10));
-    const car = { x, z, y, rot, type: Math.floor(r * 4), color: this.hash(Math.round(z * 7), 9) };
-    car.col = this.collision.addOBB(x, z, 0.95, [2.0, 2.3, 2.6, 2.35][car.type], -rot, 'car');
+    // Typical Manurewa mix: hatches and sedans, wagons, double-cab utes, people movers, the odd Hiace.
+    const type = r < 0.28 ? 0 : r < 0.5 ? 1 : r < 0.65 ? 2 : r < 0.8 ? 3 : r < 0.92 ? 4 : 5;
+    const car = { x, z, y, rot, type, color: this.hash(Math.round(z * 7), 9) };
+    car.col = this.collision.addOBB(x, z, 0.95, CAR_DIM[type].L / 2, -rot, 'car');
     this.cars.push(car);
   }
   platforms() {
@@ -2526,35 +2528,73 @@ class PropBuilder {
   }
 
   // ---------------------------------------------------------------- cars
-  carProto(type) {
-    const P = [
-      { L: 4.0, W: 1.74, body: [[0, .32], [0, .95], [.15, 1.05], [.32, 1.43], [1.0, 1.5], [2.3, 1.48], [3.05, 1.0], [3.9, .86], [4.0, .62], [4.0, .32]], glass: [[.17, 1.07], [.34, 1.45], [2.3, 1.45], [3.09, 1.0]], wb: [.72, 3.28] },
-      { L: 4.6, W: 1.78, body: [[0, .34], [0, .95], [.1, 1.02], [.85, 1.06], [1.35, 1.44], [2.9, 1.45], [3.55, 1.0], [4.5, .86], [4.6, .62], [4.6, .34]], glass: [[.83, 1.06], [1.36, 1.46], [2.9, 1.46], [3.59, 1.0]], wb: [.9, 3.65] },
-      { L: 5.2, W: 1.85, body: [[0, .45], [0, 1.08], [1.9, 1.08], [1.95, 1.12], [2.25, 1.8], [3.4, 1.82], [3.95, 1.18], [5.1, 1.02], [5.2, .7], [5.2, .45]], glass: [[2.1, 1.12], [2.28, 1.83], [3.4, 1.83], [3.99, 1.18]], wb: [1.0, 4.15] },
-      { L: 4.7, W: 1.86, body: [[0, .42], [0, 1.05], [.05, 1.6], [.3, 1.74], [3.1, 1.74], [3.7, 1.15], [4.6, 1.02], [4.7, .7], [4.7, .42]], glass: [[.02, 1.08], [.29, 1.76], [3.1, 1.76], [3.74, 1.15]], wb: [.85, 3.75] },
+  // Parametric NZ street cars (Japanese imports): lower body extruded from a side profile with wheel arches,
+  // a narrower glass greenhouse with painted roof and pillars, arch liners, wheels, lamps, bumpers and plates.
+  // 0 hatch (Corolla/Swift) 1 sedan 2 wagon (Legacy/Caldina) 3 double-cab ute (Hilux) 4 people mover (Odyssey) 5 van (Hiace)
+  carProto(type, police = false) {
+    const T = [
+      { L: 4.05, W: 1.72, R: 0.31, wx: [0.74, 3.28], sill: 0.24, belt: 0.96, nose: 0.72, ws: 1.05, roofA: 1.6, roofC: 3.4, roof: 1.47, back: 'hatch' },
+      { L: 4.65, W: 1.78, R: 0.32, wx: [0.92, 3.62], sill: 0.24, belt: 0.95, nose: 0.66, ws: 1.32, roofA: 1.85, roofC: 3.55, roof: 1.45, back: 'boot' },
+      { L: 4.75, W: 1.76, R: 0.32, wx: [0.92, 3.66], sill: 0.24, belt: 0.97, nose: 0.68, ws: 1.25, roofA: 0.32, roofC: 3.62, roof: 1.5, back: 'wagon' },
+      { L: 5.3, W: 1.85, R: 0.39, wx: [1.0, 4.08], sill: 0.42, belt: 1.18, nose: 1.0, ws: 1.18, roofA: 2.15, roofC: 4.1, roof: 1.82, back: 'ute' },
+      { L: 4.8, W: 1.8, R: 0.33, wx: [0.95, 3.8], sill: 0.26, belt: 1.02, nose: 0.82, ws: 1.25, roofA: 0.28, roofC: 3.85, roof: 1.68, back: 'wagon' },
+      { L: 4.7, W: 1.7, R: 0.32, wx: [0.85, 3.4], sill: 0.3, belt: 1.05, nose: 1.0, ws: 0.4, roofA: 0.08, roofC: 4.35, roof: 1.98, back: 'van' },
     ][type];
-    const shape = pts => { const s = new THREE.Shape(); pts.forEach((p, i) => i ? s.lineTo(p[0], p[1]) : s.moveTo(p[0], p[1])); s.closePath(); return s; };
-    const orient = g => { g.translate(-P.L / 2, 0, -P.W / 2); g.rotateY(-Math.PI / 2); return g; };
-    const bevel = 0.05;
-    const body = new THREE.ExtrudeGeometry(shape(P.body), { depth: P.W - bevel * 2, bevelEnabled: true, bevelThickness: bevel, bevelSize: 0.04, bevelSegments: 2, curveSegments: 4 });
-    body.translate(0, 0, bevel);
-    const glass = new THREE.ExtrudeGeometry(shape(P.glass), { depth: P.W + 0.03, bevelEnabled: false });
-    glass.translate(0, 0, -0.015);
-    const wheels = [], rims = [];
-    for (const x of P.wb) for (const z of [0.16, P.W - 0.16]) {
-      const t = new THREE.CylinderGeometry(0.33, 0.33, 0.22, 16); t.rotateX(Math.PI / 2); t.translate(x, 0.33, z); wheels.push(t);
-      const r = new THREE.CylinderGeometry(0.21, 0.21, 0.235, 12); r.rotateX(Math.PI / 2); r.translate(x, 0.33, z); rims.push(r);
+    const { L, W, R } = T, AR = R + 0.07;
+    const shape = pts => { const sh = new THREE.Shape(); pts.forEach((p, i) => i ? sh.lineTo(p[0], p[1]) : sh.moveTo(p[0], p[1])); sh.closePath(); return sh; };
+    const extrude = (pts, depth, z0, bevel = 0) => { const g = new THREE.ExtrudeGeometry(shape(pts), { depth: depth - bevel * 2, bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel * 0.8, bevelSegments: 2, curveSegments: 4 }); g.translate(0, 0, z0 + bevel); return g.index ? g.toNonIndexed() : g; };
+    const box = (x0, x1, y0, y1, z0, z1) => { const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0); g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); return g.toNonIndexed(); };
+    const orient = g => { g.translate(-L / 2, 0, -W / 2); g.rotateY(-Math.PI / 2); return g; };
+    // Lower body profile (x from the rear bumper to the front bumper), arches cut out of the sills.
+    const low = [[0.04, T.sill + 0.06]];
+    for (const wx of T.wx) { low.push([wx - AR, T.sill]); for (let k = 0; k <= 8; k++) { const a = Math.PI - k / 8 * Math.PI; low.push([wx + Math.cos(a) * AR, R + Math.sin(a) * AR * 0.95]); } low.push([wx + AR, T.sill]); }
+    const hood = T.back === 'van' ? T.belt : T.belt - 0.1;
+    low.push([L - 0.05, T.sill + 0.04], [L, T.sill + 0.16], [L, hood - 0.12], [L - 0.07, hood], [L - T.nose, T.belt]);
+    if (T.back === 'boot') low.push([0.55, T.belt], [0.1, T.belt - 0.04], [0, T.belt - 0.18]);
+    else if (T.back === 'ute') low.push([T.roofA - 0.05, T.belt], [0.04, T.belt - 0.02], [0, T.belt - 0.12]);
+    else low.push([0.02, T.belt], [0, T.belt - 0.15]);
+    const body = [extrude(low, W, 0, 0.06)];
+    // Greenhouse: glass shell slightly inside the pillar planes, then a painted roof and pillars.
+    const xw = L - T.nose, xa = L - T.ws - (T.back === 'van' ? 0 : 0.02), top = T.roof;
+    const back0 = T.back === 'boot' ? 0.6 : T.back === 'ute' ? T.roofA : 0.06, back1 = T.back === 'boot' ? 1.05 : T.back === 'ute' ? T.roofA : T.back === 'van' ? 0.08 : 0.22;
+    const gw = W * 0.82, gz = (W - gw) / 2, pw = W * 0.86, pz = (W - pw) / 2;
+    const glassPts = [[xw, T.belt - 0.01], [xa, top - 0.04], [back1 + 0.05, top - 0.04], [back0, T.belt - 0.01]];
+    const rest = [];
+    const col = (g, hex) => { const c = new THREE.Color(hex), n = g.attributes.position.count, arr = new Float32Array(n * 3); for (let i = 0; i < n; i++) { arr[i * 3] = c.r; arr[i * 3 + 1] = c.g; arr[i * 3 + 2] = c.b; } g.setAttribute('color', new THREE.BufferAttribute(arr, 3)); if (g.attributes.uv) g.deleteAttribute('uv'); return g; };
+    rest.push(col(extrude(glassPts, gw, gz), 0x0b1014));
+    body.push(extrude([[xa - 0.02, top - 0.05], [back1, top - 0.05], [back1 - 0.03, top], [xa + 0.04, top]], pw, pz, 0.025));
+    // A, B, C pillars on both sides.
+    for (const z of [pz - 0.005, W - pz - 0.03]) {
+      body.push(extrude([[xw - 0.02, T.belt], [xw + 0.07, T.belt], [xa + 0.06, top - 0.04], [xa - 0.04, top - 0.04]], 0.035, z));
+      const bx = T.back === 'van' ? (xa + back1) * 0.5 : (xw + back0) * 0.52;
+      if (T.back !== 'ute' || true) body.push(box(bx - 0.06, bx + 0.06, T.belt, top - 0.04, z, z + 0.035));
+      body.push(extrude([[back0 - 0.02, T.belt], [back0 + (T.back === 'boot' ? 0.25 : 0.32), T.belt], [back1 + 0.22, top - 0.04], [back1, top - 0.04]], 0.035, z));
+      body.push(box(xw - 0.02, xw + 0.14, T.belt + 0.04, T.belt + 0.16, z < W / 2 ? -0.07 : W - 0.03, z < W / 2 ? 0.03 : W + 0.07)); // mirrors
     }
-    const lights = [], tails = [];
-    for (const z of [0.28, P.W - 0.28]) {
-      const h = new THREE.BoxGeometry(0.06, 0.13, 0.32); h.translate(P.L - 0.01, P.body[P.body.length - 2][1] + 0.06, z); lights.push(h);
-      const t = new THREE.BoxGeometry(0.06, 0.16, 0.3); t.translate(0.01, P.body[1][1] - 0.05, z); tails.push(t);
+    // Ute: tonneau-covered tray and tailgate line.
+    if (T.back === 'ute') rest.push(col(box(0.06, T.roofA - 0.08, T.belt - 0.03, T.belt + 0.01, 0.1, W - 0.1), 0x15171a));
+    // Wheels, arch liners, lamps, bumpers, plates.
+    for (const wx of T.wx) for (const z of [0.13, W - 0.13]) {
+      const t = new THREE.CylinderGeometry(R, R, 0.21, 18); t.rotateX(Math.PI / 2); t.translate(wx, R, z); rest.push(col(t.toNonIndexed(), 0x121212));
+      const rim = new THREE.CylinderGeometry(R * 0.62, R * 0.62, 0.222, 14); rim.rotateX(Math.PI / 2); rim.translate(wx, R, z); rest.push(col(rim.toNonIndexed(), 0xaeb4b8));
+      const hub = new THREE.CylinderGeometry(R * 0.18, R * 0.18, 0.232, 8); hub.rotateX(Math.PI / 2); hub.translate(wx, R, z); rest.push(col(hub.toNonIndexed(), 0x3a3d40));
     }
-    const trim = [new THREE.BoxGeometry(0.12, 0.2, P.W + 0.04), new THREE.BoxGeometry(0.12, 0.2, P.W + 0.04)];
-    trim[0].translate(-0.02, P.body[0][1] + 0.05, P.W / 2); trim[1].translate(P.L + 0.02, P.body[0][1] + 0.05, P.W / 2);
-    const merge = list => { const g = list.map(x => x.index ? x.toNonIndexed() : x); return orient(mergeNonIndexed(g)); };
-    const flat = g => g.index ? g.toNonIndexed() : g;
-    return { body: orient(flat(body)), glass: orient(flat(glass)), tires: merge(wheels), rims: merge(rims), lights: merge(lights), tails: merge(tails), trim: merge(trim) };
+    for (const wx of T.wx) { const g = new THREE.CylinderGeometry(AR - 0.01, AR - 0.01, W - 0.1, 12, 1, true, -Math.PI / 2, Math.PI); g.rotateX(Math.PI / 2); g.translate(wx, R, W / 2); g.scale(1, 1, 1); rest.push(col(g.toNonIndexed(), 0x0c0c0c)); }
+    const lampY = hood - 0.2;
+    for (const z of [0.18, W - 0.5]) { rest.push(col(box(L - 0.06, L + 0.012, lampY, lampY + 0.13, z, z + 0.32), 0xe4e8ea)); rest.push(col(box(-0.012, 0.05, T.belt - 0.32, T.belt - 0.12, z + (z < 1 ? -0.02 : 0.12), z + (z < 1 ? 0.26 : 0.36)), 0x8c1010)); }
+    rest.push(col(box(L - 0.04, L + 0.03, T.sill + 0.05, T.sill + 0.24, 0.12, W - 0.12), 0x1a1b1c), col(box(-0.03, 0.04, T.sill + 0.05, T.sill + 0.22, 0.12, W - 0.12), 0x1a1b1c));
+    rest.push(col(box(L - 0.02, L + 0.02, lampY - 0.02, lampY + 0.1, 0.55, W - 0.55), 0x111213)); // grille
+    for (const [x0, x1] of [[L + 0.025, L + 0.04], [-0.04, -0.025]]) { rest.push(col(box(x0, x1, T.sill + 0.26, T.sill + 0.38, W / 2 - 0.18, W / 2 + 0.18), 0xf4f4f0)); rest.push(col(box(x0 + (x0 > 0 ? 0.005 : -0.005), x1 + (x0 > 0 ? 0.005 : -0.005), T.sill + 0.3, T.sill + 0.34, W / 2 - 0.13, W / 2 + 0.13), 0x101010)); }
+    if (police) {
+      // NZ Police: white with blue/yellow Battenburg squares along the sides and a light bar.
+      for (const z of [-0.012, W - 0.005]) for (let k = 0; k < 12; k++) for (const row of [0, 1]) {
+        const x0 = 0.35 + k * 0.33; if (x0 > L - 0.4) continue;
+        rest.push(col(box(x0, x0 + 0.33, T.sill + 0.28 + row * 0.2, T.sill + 0.48 + row * 0.2, z, z + 0.017), (k + row) % 2 ? 0xf2c300 : 0x1b3a8c));
+      }
+      rest.push(col(box(xa - 0.55, xa - 0.15, top, top + 0.1, W / 2 - 0.6, W / 2 - 0.02), 0xd01818), col(box(xa - 0.55, xa - 0.15, top, top + 0.1, W / 2 + 0.02, W / 2 + 0.6), 0x1840e0));
+    }
+    const flatAll = list => list.map(g => (g.index ? g.toNonIndexed() : g));
+    return { body: orient(mergeNonIndexed(flatAll(body))), rest: orient(mergeNonIndexedColored(rest)) };
   }
   cars() {
     const paints = [0xf2f2f0, 0xf2f2f0, 0xf2f2f0, 0xb8bcc0, 0xb8bcc0, 0x6e7276, 0x6e7276, 0x15171a, 0x15171a, 0x1f3f78, 0x8a1414, 0x3a4a3a, 0x7a6a4a, 0xc8b89a];
@@ -2570,18 +2610,16 @@ class PropBuilder {
     const tail = new THREE.MeshStandardMaterial({ color: 0x8a0f0f, roughness: 0.2 });
     // Car kit shared with driving and traffic: per-type body + merged rest geometry, paint, palette.
     const kit = this.city.carKit = { protos: [], paint, rest: this.carRest || (this.carRest = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.35, metalness: 0.35 })), paints };
-    for (let type = 0; type < 4; type++) {
+    for (let type = 0; type < 6; type++) {
       const list = this.city.cars.filter(c => c.type === type);
       for (const c of list) c.y = c.y || 0;
-      const p = this.carProto(type);
+      const p = this.carProto(type), rest = p.rest;
+      kit.protos[type] = { body: p.body, rest };
       const C = { cullClass: 'cars', cell: 300, track: true };
       if (list.length) instanced(this.scene, p.body, paint, list, placeMatrix, { ...C, color: c => new THREE.Color(paints[Math.floor(c.color * paints.length)]) });
-      // Glass, tyres, rims, lamps and trim share one vertex-coloured material: two draw calls per car type.
-      const colored = (g, hex) => { const c = new THREE.Color(hex), n = g.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; } g.setAttribute('color', new THREE.BufferAttribute(a, 3)); if (g.attributes.uv) g.deleteAttribute('uv'); return g; };
-      const rest = mergeNonIndexedColored([colored(p.glass, 0x0a0d10), colored(p.tires, 0x141414), colored(p.rims, 0xb4b9bc), colored(p.lights, 0xe8e4dc), colored(p.tails, 0x8a0f0f), colored(p.trim, 0x1b1c1d)]);
-      kit.protos[type] = { body: p.body, rest };
       if (list.length) instanced(this.scene, rest, kit.rest, list, placeMatrix, C);
     }
+    kit.police = this.carProto(1, true);
   }
 
   wires() {
@@ -3667,6 +3705,10 @@ const CAST = {
   mikey: { name: 'MIKEY', color: '#7ac8ff' },
   pita: { name: 'UNCLE PITA', color: '#e0c8ff' },
   debtor: { name: 'DEBTOR', color: '#ffd0a0' }, // renamed per hustle
+  tipene: { name: 'TIPENE', color: '#e8ba55' },
+  rawiri: { name: 'RAWIRI', color: '#c8e0a0' },
+  lani: { name: 'AUNTY LANI', color: '#ffb8d8' },
+  rival: { name: 'RIVAL', color: '#ff7070' }, // renamed to the rival crew's name
 };
 const SCRIPT = {
   proIntro: [
@@ -3836,6 +3878,49 @@ const SCRIPT = {
 };
 
 // Phone texts (not voiced). {vars} are filled in by the game.
+// Chapter One: the run to Southmall, Aunty Lani's dairy, the rival crew, and Manu gets jumped.
+Object.assign(SCRIPT, {
+  c1Rawiri: [
+    { who: 'rawiri', id: 'c1_01', text: 'You Tipene\'s new boy? Took your time.' },
+    { who: 'manu', id: 'c1_02', text: 'Traffic, uce. You know Great South Road.' },
+    { who: 'rawiri', id: 'c1_03', text: 'Here. Don\'t open it, don\'t lose it, don\'t get pulled over with it.' },
+    { who: 'you', id: 'c1_04', text: 'Sweet. Straight to Tipene.' },
+  ],
+  c1Deliver: [
+    { who: 'tipene', id: 'c1_05', text: 'There he is. No cops on your tail? Good.' },
+    { who: 'tipene', id: 'c1_06', text: 'Two hundred. And there\'s something else.' },
+    { who: 'tipene', id: 'c1_07', text: 'Aunty Lani at the Clendon dairy. She looks after us, we look after her. Go see her.' },
+  ],
+  c1Hot: [{ who: 'tipene', id: 'c1_08', text: 'You brought the cops here? Lose them first, then come back.' }],
+  c1Lani: [
+    { who: 'lani', id: 'c1_09', text: 'Oh, you\'re the one Tipene sent. Thank God.' },
+    { who: 'lani', id: 'c1_10', text: 'Those {rival} boys keep coming in, filling their pockets, giving my mokos lip.' },
+    { who: 'lani', id: 'c1_11', text: 'They hang round the skate park after school. Please, love. Make it stop.' },
+    { who: 'you', id: 'c1_12', text: 'Leave it with me, Aunty.' },
+  ],
+  c1Rivals: [
+    { who: 'rival', id: 'c1_13', text: 'Oi. You lost? This is our park.' },
+    { who: 'you', id: 'c1_14', text: 'Aunty Lani\'s dairy. You\'re done going in there.' },
+    { who: 'rival', id: 'c1_15', text: 'Says who?' },
+    { choice: [
+      { text: 'Says Tipene. You want that problem?', id: 'c1_c1', result: 'talk' },
+      { text: 'Says me. Come on then.', id: 'c1_c2', result: 'fight' },
+    ] },
+  ],
+  c1RivalsBackOff: [{ who: 'rival', id: 'c1_16', text: '...Whatever, bro. Plenty of other dairies.' }],
+  c1RivalsFight: [{ who: 'rival', id: 'c1_17', text: 'Tipene\'s not here, egg. Get him, boys.' }],
+  c1ManuDown: [
+    { who: 'manu', id: 'c1_18', text: 'Cuz... took you long enough.' },
+    { who: 'manu', id: 'c1_19', text: 'Those {rival} boys. Said it was for the park. My ribs, bro.' },
+    { who: 'you', id: 'c1_20', text: 'Can you walk? Car\'s over here. I\'ll get you home.' },
+  ],
+  c1Home: [
+    { who: 'manu', id: 'c1_21', text: 'Cheers, cuz. Don\'t tell Mum about this.' },
+    { who: 'manu', id: 'c1_22', text: 'Tipene rang. He reckons you\'re the real deal now.' },
+    { who: 'manu', id: 'c1_23', text: 'Just... watch yourself, eh. This doesn\'t stop now.' },
+  ],
+});
+
 // Shorty's ongoing hustles (repeatable side jobs after his chapter).
 Object.assign(SCRIPT, {
   hustleMeet: [
@@ -3853,6 +3938,16 @@ Object.assign(SCRIPT, {
   hustleAgain: [{ who: 'debtor', id: 'hus_07', text: 'I already paid, bro. Leave me alone.' }],
 });
 const TEXTS = {
+  c1Call: [
+    { from: 'tipene', text: 'you did good for us. got a run for u tonight' },
+    { from: 'tipene', text: 'grab a car, pick up ur cuz manu, see rawiri at the southmall carpark' },
+    { from: 'tipene', text: 'bring me what he gives u. dont get pulled over' },
+  ],
+  c1ManuJumped: [
+    { from: 'manu', text: 'bro' },
+    { from: 'manu', text: '{rival} boys jumped me at manurewa station 😤' },
+    { from: 'manu', text: 'come get me' },
+  ],
   hustleNew: [
     { from: 'shorty', text: 'got another one for u' },
     { from: 'shorty', text: '{name} owes {amount}. {street}' },
@@ -4045,7 +4140,7 @@ function fadeIn() { const f = $('fade'); f.style.opacity = '0'; }
 
 // ===== 59-phone.js =====
 // In-game phone: texts arrive one by one with a buzz; JOBS lists who still owes what.
-const CONTACTS = { shorty: 'SHORTY', manu: 'MANU', you: 'YOU' };
+const CONTACTS = { shorty: 'SHORTY', manu: 'MANU', you: 'YOU', tipene: 'TIPENE' };
 class Phone {
   constructor() {
     this.el = $('phone'); this.msgsEl = $('phMsgs'); this.jobsEl = $('phJobs'); this.btn = $('phoneBtn'); this.toast = $('toast');
@@ -4124,7 +4219,7 @@ const migrateSave = s => {
 const FACTION_COLORS = [0x3764d8, 0xc33737, 0x4b8e68, 0x9c8d54, 0xe4b82c, 0x7e4b99, 0x2e8692, 0xa67639, 0x9b9b9b, 0x7b4444, 0x67928b, 0xb57e50, 0x6b6a9d, 0x8d6c80];
 const ORIGINS = { Northland: ['Kaikohe', 'Kaitaia', 'Whangārei', 'Opononi'], Auckland: ['South Auckland', 'West Auckland', 'Central Auckland', 'North Shore'], Waikato: ['Hamilton', 'Huntly', 'Tokoroa'], 'Bay of Plenty': ['Tauranga', 'Rotorua', 'Whakatāne'], 'East Coast': ['Gisborne', 'Wairoa'], 'Hawke’s Bay': ['Napier', 'Hastings'], 'Central North Island': ['Taupō', 'New Plymouth', 'Whanganui', 'Palmerston North'], Wellington: ['Wellington', 'Lower Hutt', 'Porirua'], 'Top of South': ['Nelson', 'Blenheim'], Canterbury: ['Christchurch', 'Ashburton', 'Timaru'], 'West Coast': ['Greymouth', 'Hokitika'], Otago: ['Dunedin', 'Queenstown', 'Wānaka'], Southland: ['Invercargill', 'Bluff'], Islands: ['Stewart Island / Rakiura', 'Chatham Islands'] };
 const SAVE_KEY = 'aotearoa-underworld-v2', SAVE_EXPORT_FORMAT = 'aotearoa-underworld-save';
-const STAGES = ['prologue', 'debt-find', 'debt-fight', 'debt-return', 'shorty-wait', 'shorty-meet', 'shorty-jobs', 'shorty-return', 'recruit', 'faction-choice', 'mission-courier', 'mission-brawl', 'mission-return', 'complete'];
+const STAGES = ['prologue', 'debt-find', 'debt-fight', 'debt-return', 'shorty-wait', 'shorty-meet', 'shorty-jobs', 'shorty-return', 'recruit', 'faction-choice', 'mission-courier', 'mission-brawl', 'mission-return', 'complete', 'c1-call', 'c1-car', 'c1-pickup', 'c1-deliver', 'c1-dairy', 'c1-rivals', 'c1-wait', 'c1-manu', 'c1-home', 'c1-done'];
 const VALID_STAGES = [...STAGES, ...Object.keys(LEGACY_STAGES)];
 const EYE = 1.62;
 
@@ -4254,6 +4349,8 @@ function createGame(world) {
   let strength = 0, boostT = 0, lastHurt = -1e9, lastPunch = -1e9, combo = 0, rmb = false;
   const drive = new PlayerCars(world), traffic = new Traffic(world, world.trafficCount || 0), shops = new Shops(world.city);
   const blocking = () => !drive.car && !!(keys.KeyQ || keys.KeyF || rmb || move.block);
+  const heat = new Heat(), police = new Police(world, traffic);
+  let policeSeen = false;
   let stage = 'prologue', cash = 0, missionRoute = '', pauseOpen = false, saveAllowed = true, debtRoute = '', debtCash = 0, inPrologue = false;
   function hometownHash(name) { let h = 2166136261; for (const c of name) h = Math.imul(h ^ c.codePointAt(0), 16777619) >>> 0; return h >>> 0; }
   // Darren's hangout depends on your hometown, so different origins send you to different corners of the district.
@@ -4337,10 +4434,21 @@ function createGame(world) {
     if (stage === 'mission-courier') return [`${chosen}: recover the package from the green marker.`, stash.position];
     if (stage === 'mission-brawl') { const living = enemies.filter(e => e.alive).sort((a, b) => dist(a.p.position) - dist(b.p.position)); return [`${chosen}: defeat three hostile opponents (${defeated}/3).`, living[0]?.p.position || null]; }
     if (stage === 'mission-return') return [`Return to the fixer for the ${missionRoute === 'courier' ? 'quiet' : 'loud'} ending.`, fixer.position];
+    if (stage === 'complete') return [`Crew chapter done (${chosen}, ${missionRoute} route). Tipene will be in touch.`, null];
+    if (stage === 'c1-call') return ['Tipene wants you. Keep your phone handy.', null];
+    if (stage === 'c1-car') return ['Get a car (TALK next to any parked car), then pick up Manu at his place.', manu.position];
+    if (stage === 'c1-pickup') return ['Drive to the Southmall car park and see Rawiri.', rawiri.position];
+    if (stage === 'c1-deliver') return [heat.level > 0 ? 'Lose the cops, then take the parcel to Tipene at Clendon skate park.' : 'Take the parcel to Tipene at Clendon skate park.', fixer.position];
+    if (stage === 'c1-dairy') return ['See Aunty Lani at Clendon Dairy.', lani.position];
+    if (stage === 'c1-rivals') return [`Deal with the ${rivalCrew()} boys at Clendon skate park.`, c1.rivals.find(r => r.alive)?.p.position || places.skatepark.pos];
+    if (stage === 'c1-wait') return ['Aunty Lani\'s dairy is quiet. Keep your phone handy.', null];
+    if (stage === 'c1-manu') return ['Manu got jumped at Manurewa station. Get there and sort them out.', manu.position];
+    if (stage === 'c1-home') return [c1.manuInCar ? 'Drive Manu home.' : 'Get Manu into a car (drive up to him).', c1.manuInCar ? home.pos : manu.position];
+    if (stage === 'c1-done') return ['CHAPTER ONE COMPLETE. Shorty still texts jobs; more chapters to come.', null];
     return [`Chapter complete: ${hometown} / ${chosen} / ${missionRoute} route.`, null];
   }
   function updateHUD() {
-    $('status').textContent = `HP ${Math.ceil(hp)} | ENERGY ${Math.ceil(stamina)}${boostT > 0 ? '⚡' : ''} | $${cash} | REP ${rep}${strength ? ' | PWR ' + strength : ''} | ${chosen.toUpperCase()}`;
+    $('status').textContent = `HP ${Math.ceil(hp)} | ENERGY ${Math.ceil(stamina)}${boostT > 0 ? '⚡' : ''} | $${cash} | REP ${rep}${strength ? ' | PWR ' + strength : ''}${heat.level > 0 ? ' | HEAT ' + '★'.repeat(heat.stars) : ''} | ${chosen.toUpperCase()}`;
     const [goal, target] = objective(); $('quest').textContent = goal; $('status').setAttribute('title', `${hometown} | ${originRegion}`);
     const side = hustle && hustle.state !== 'done' ? ` · HUSTLE ${hustle.name} ${Math.round(dist(hustle.npc.position))}m` : '';
     if (target) $('missionDistance').textContent = `OBJECTIVE ${Math.round(dist(target))}m away${side}`;
@@ -4402,6 +4510,7 @@ function createGame(world) {
   function beginNew() {
     saveAllowed = true; stage = 'prologue'; hp = 100; cash = 0; rep = 0; chapter = 0; defeated = 0; missionRoute = ''; stamina = 100; debtRoute = ''; debtCash = 0; strength = 0; endHustle(true);
     if (drive.car) exitCar();
+    heat.level = 0; police.clear(); c1.timer = 25; stage = 'prologue'; placeChapterOne();
     jobState = { kev: 'open', mikey: 'open', pita: 'open' }; phone.clear();
     placeDarren();
     enemies.forEach(resetEnemy);
@@ -4448,6 +4557,7 @@ function createGame(world) {
       if (e.alive && !e.p.parent) scene.add(e.p); if (!e.alive && e.p.parent) scene.remove(e.p);
     });
     select.value = hometown;
+    heat.level = 0; police.clear(); c1.timer = stage === 'c1-wait' ? 20 : 25; placeChapterOne();
     if (stage === 'prologue') { startPrologue(); return; }
     closeMenus(); say(`Welcome back to ${hometown}. Your ${chosen} story continues.`);
   }
@@ -4529,6 +4639,27 @@ function createGame(world) {
     }
     if (stage === 'mission-courier' && dist(stash.position) < 5) { cash += 20; advance('mission-return', `Package secured. Your ${originRegion} contacts gave you a clean exit. Return to the fixer.`); return; }
     if (stage === 'mission-return' && dist(fixer.position) < 5) { cash += missionRoute === 'courier' ? 100 : 60; rep += missionRoute === 'courier' ? 15 : 35; advance('complete', `${hometown} ending: ${chosen} now knows your name. ${missionRoute === 'courier' ? 'Quiet route: more cash, less heat.' : 'Loud route: more reputation, more enemies.'} CHAPTER COMPLETE.`); return; }
+    if (stage === 'c1-pickup' && dist(rawiri.position) < 4.5) { faceEachOther(rawiri); dlg.run('c1Rawiri', {}, () => advance('c1-deliver', 'Rawiri handed over the parcel. Take it to Tipene at Clendon skate park.')); return; }
+    if (stage === 'c1-deliver' && dist(fixer.position) < 5) {
+      faceEachOther(fixer);
+      if (heat.level > 0.2) { dlg.run('c1Hot', {}, null); return; }
+      dlg.run('c1Deliver', {}, () => { cash += 200; rep += 20; if (c1.manuInCar) manuOut(home.pos.x, home.pos.z); else { manu.position.set(home.pos.x, groundHeight(home.pos.x, home.pos.z), home.pos.z); } lani.visible = true; advance('c1-dairy', 'Tipene paid you $200. Aunty Lani at Clendon Dairy wants a word.'); });
+      return;
+    }
+    if (stage === 'c1-dairy' && dist(lani.position) < 4.5) { faceEachOther(lani); dlg.run('c1Lani', { rival: rivalCrew() }, () => { placeRivals('park'); advance('c1-rivals', `The ${rivalCrew()} boys hang round Clendon skate park. Go have a word.`); }); return; }
+    if (stage === 'c1-rivals') {
+      const lead = c1.rivals.slice(0, 3).find(r => r.alive && !r.hostile && dist(r.p.position) < 5);
+      if (lead) {
+        faceEachOther(lead.p); CAST.rival.name = rivalCrew().toUpperCase();
+        dlg.run('c1Rivals', {}, r => {
+          if (r === 'talk' && rep >= 160) dlg.run('c1RivalsBackOff', {}, () => { c1.rivals.slice(0, 3).forEach(x => { x.alive = false; x.p.visible = false; }); rep += 10; c1.timer = 20; advance('c1-wait', 'They backed off. Aunty Lani\'s sorted.'); });
+          else dlg.run('c1RivalsFight', {}, () => { c1.rivals.slice(0, 3).forEach(x => { if (x.alive) x.hostile = true; }); peds.scare(camera.position.x, camera.position.z); say('Three on one. Block, step back, hit back.'); });
+        });
+        return;
+      }
+    }
+    if (stage === 'c1-manu' && dist(manu.position) < 4.5 && !c1.rivals.slice(3).some(r => r.alive)) { faceEachOther(manu); manu.userData.human.reset(); dlg.run('c1ManuDown', { rival: rivalCrew() }, () => advance('c1-home', 'Get Manu into a car and take him home.')); return; }
+    if (stage === 'c1-done' || stage === 'complete') { if (dist(manu.position) < 4.5) { faceEachOther(manu); dlg.run('manuAfter', storyVars(), null); return; } }
     if (hustle && dist(hustle.npc.position) < 4.5 && hustle.npc.visible) { talkHustle(); return; }
     const shop = shops.nearest(camera.position); if (shop) { openShop(shop); return; }
     const car = drive.nearest(camera.position); if (car) { enterCar(car); return; }
@@ -4539,6 +4670,7 @@ function createGame(world) {
   let orbit = 0, lastDriveYaw = 0;
   function enterCar(c) {
     const car = drive.enter(c); orbit = 0; yaw = car.h + Math.PI; lastDriveYaw = yaw; pitch = -0.14;
+    if (c1.manuInCar && manu.parent !== car.group) manuIntoCar();
     document.body.classList.add('driving'); setRun(false); say('Joystick or W/S to drive, steer left/right. TALK (E) to get out. HIT honks.');
   }
   function exitCar() {
@@ -4560,6 +4692,39 @@ function createGame(world) {
   const HUSTLE_NAMES = ['BIG T', 'JOJO', 'SIONE', 'TANE', 'LOGAN', 'MOSES', 'JAYDEN', 'KANE', 'TYSON', 'RAWIRI', 'MALAKAI', 'BRAYDEN', 'TAVITA', 'HEMI', 'NIKO', 'ZANE'];
   const debtors = ['crewA', 'crewB', 'crewC'].map((look, i) => { const p = person(0, 0, { look, seed: 500 + i * 37, top: 0x2a2a2a, pants: 0x333333, pantsCell: ATLAS.track, face: ATLAS.faceB, pose: 'relaxed' }); p.visible = false; return p; });
   let hustle = null, hustleTimer = 90;
+  // People on the footpaths (realistic bodies on MEDIUM and up).
+  const PED_LOOKS = ['pedF1', 'pedM1', 'pedF2', 'pedM2', 'pedF3', 'crewC', 'pedF1', 'pedM2'];
+  const peds = new Pedestrians(world, traffic.nodes, PED_LOOKS.slice(0, world.pedCount ?? 6).map((look, i) => { const p = person(0, 0, { look, seed: 900 + i * 53, top: [0x7a2a3a, 0x2a4a6a, 0xd8d0c0, 0x3a5a3a][i % 4], pants: 0x2a2a30, face: [ATLAS.faceA, ATLAS.faceB][i % 2], pose: 'relaxed' }); p.visible = false; return p; }));
+  // ---- Chapter One cast: Tipene (the fixer), Rawiri, Aunty Lani, the rival crew ------------------
+  const rivalCrew = () => FACTIONS[((FACTIONS.indexOf(chosen) + 18) % FACTIONS.length + FACTIONS.length) % FACTIONS.length] || 'Southside Hornets';
+  const rawiri = person(places.southmallCarpark.pos.x, places.southmallCarpark.pos.z, { look: 'crewB', seed: 1201, top: 0x3a3a3a, pants: 0x2a2a2a, face: ATLAS.faceC, pose: 'crossed' });
+  const lani = person(places.clendonDairy.pos.x, places.clendonDairy.pos.z, { look: 'pedF3', seed: 1202, top: 0x8a4a6a, pants: 0x3a3a3a, face: ATLAS.faceA, pose: 'crossed' });
+  const c1 = { manuInCar: false, timer: 25, rivals: [] };
+  for (let i = 0; i < 5; i++) { const p = person(0, 0, { look: ['crewA', 'pedM2', 'crewC', 'crewA', 'pedM2'][i], seed: 1300 + i * 17, top: 0x8a1a1a, pants: 0x222222, face: ATLAS.faceB, pose: 'relaxed' }); p.visible = false; c1.rivals.push({ p, hp: 3, alive: false, hostile: false, attackT: 1, windup: 0 }); }
+  function placeRivals(group) {
+    const base = group === 'park' ? places.skatepark.pos : places.station.pos, list = group === 'park' ? c1.rivals.slice(0, 3) : c1.rivals.slice(3);
+    c1.rivals.forEach(r => { if (!list.includes(r)) { r.p.visible = false; r.alive = false; } });
+    list.forEach((r, i) => { const sp = safeSpawn(base.x + Math.cos(i * 2.1) * 3, base.z + Math.sin(i * 2.1) * 3); r.p.position.set(sp.x, groundHeight(sp.x, sp.z), sp.z); r.p.visible = true; r.alive = true; r.hp = 3; r.hostile = group === 'station'; r.windup = 0; r.p.userData.human.reset(); });
+  }
+  function manuIntoCar() {
+    const car = drive.car; if (!car) return;
+    car.group.add(manu); manu.position.set(0.42, 0.02, 0.1); manu.rotation.set(0, 0, 0); manu.userData.human.pose = 'seated'; manu.userData.human.reset(); c1.manuInCar = true; manuMarker.visible = false;
+  }
+  function manuOut(x, z) {
+    const wp = new THREE.Vector3(); manu.getWorldPosition(wp);
+    scene.add(manu); const sp = safeSpawn(x ?? wp.x, z ?? wp.z); manu.position.set(sp.x, groundHeight(sp.x, sp.z), sp.z); manu.rotation.set(0, home.rot, 0);
+    manu.userData.human.pose = 'crossed'; manu.userData.human.reset(); c1.manuInCar = false;
+  }
+  // Where Manu and the Chapter One cast belong for a given stage (new game, restore, transitions).
+  function placeChapterOne() {
+    if (c1.manuInCar) manuOut(home.pos.x, home.pos.z);
+    const atStation = stage === 'c1-manu' || stage === 'c1-home';
+    if (atStation) { const sp = safeSpawn(places.station.pos.x + 2, places.station.pos.z + 2); manu.position.set(sp.x, groundHeight(sp.x, sp.z), sp.z); if (stage === 'c1-manu') manu.userData.human.knockDown(); }
+    else { manu.position.set(home.pos.x, groundHeight(home.pos.x, home.pos.z), home.pos.z); manu.rotation.y = home.rot; manu.userData.human.reset(); }
+    rawiri.visible = stage === 'c1-pickup' || stage === 'c1-car'; lani.visible = STAGES.indexOf(stage) >= STAGES.indexOf('c1-dairy');
+    if (stage === 'c1-rivals') placeRivals('park'); else if (stage === 'c1-manu') placeRivals('station'); else c1.rivals.forEach(r => { r.p.visible = false; r.alive = false; });
+    CAST.rival.name = rivalCrew().toUpperCase();
+  }
   function startHustle() {
     const near = world.city.houses.filter(h => { const d = dist(h.pos); return d > 250 && d < 1400; });
     if (!near.length) return;
@@ -4640,11 +4805,26 @@ function createGame(world) {
       const delta = e.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position), d = delta.length();
       if (d < 4 && delta.normalize().dot(forward) > cone && d < score) { target = e; score = d; }
     }
-    if (!target) return;
+    // Chapter One rivals.
+    for (const r of c1.rivals) {
+      if (!r.alive || !r.p.visible) continue;
+      const delta = r.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position), d = delta.length();
+      if (d < 4 && delta.normalize().dot(forward) > cone) {
+        r.hostile = true; r.hp -= dmg; bloodAt(r.p.position); slideMove(r.p.position, forward.x * push, forward.z * push, 0.4); r.p.userData.human.hit(); landed();
+        if (r.hp <= 0) { r.alive = false; r.p.userData.human.knockDown(); rep += 4; heat.add(0.5); peds.scare(r.p.position.x, r.p.position.z); }
+        updateHUD(); return;
+      }
+    }
+    if (!target) {
+      // Innocent bystanders: they go down, everyone else scatters, and the cops hear about it.
+      const ped = peds.near(camera.position.x, camera.position.z, 3.5).find(a => { const v = a.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position).normalize(); return v.dot(forward) > cone; });
+      if (ped) { peds.knock(ped); bloodAt(ped.p.position); landed(); heat.add(1); peds.scare(camera.position.x, camera.position.z); say('You just laid out a random. Someone\'s calling the cops.'); updateHUD(); }
+      return;
+    }
     target.hp -= dmg; bloodAt(target.p.position); slideMove(target.p.position, forward.x * push, forward.z * push, 0.4);
     landed(); target.p.userData.human.hit();
     if (target.hp <= 0) {
-      target.alive = false; target.dyingT = 0.0001; target.p.userData.human.knockDown(); rep += 5;
+      target.alive = false; target.dyingT = 0.0001; target.p.userData.human.knockDown(); rep += 5; heat.add(0.4); peds.scare(target.p.position.x, target.p.position.z);
       if (stage === 'mission-brawl') { defeated++; if (defeated >= 3) { advance('mission-return', `You won the fights. Your ${hometown} fixer wants to see you.`); return; } }
       say('Opponent defeated. Reputation +5.');
     } else say('Hit landed.');
@@ -4753,11 +4933,54 @@ function createGame(world) {
     st.attackT = (st.attackT ?? 0.6) - dt;
     if (d < 1.95 && st.attackT <= 0) { st.windup = 0.42; h.punch(); }
   }
+  function busted() {
+    const lost = Math.round(cash * 0.3); cash -= lost; heat.level = 0; police.clear();
+    if (drive.car) exitCar();
+    if (c1.manuInCar) manuOut(home.pos.x, home.pos.z);
+    const p = police.station; camera.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z);
+    say(`Busted. A night in the cells at Manurewa station and a $${lost} fine.`); updateHUD(); store();
+  }
+  // ---- Chapter One per-frame logic ---------------------------------------------------------
+  function chapterOne(dt) {
+    const rdt = world.realDt || dt;
+    if (stage === 'complete' && (c1.timer -= rdt) <= 0) { c1.timer = 1e9; phone.receive(TEXTS.c1Call, {}, () => { rawiri.visible = true; advance('c1-car', 'Tipene texted. Get a car, then pick up Manu at his place.'); }); }
+    if ((stage === 'c1-car' || stage === 'c1-home') && drive.car && !c1.manuInCar && Math.hypot(manu.position.x - drive.car.x, manu.position.z - drive.car.z) < 10 && manu.parent === scene) {
+      manuIntoCar();
+      if (stage === 'c1-car') advance('c1-pickup', 'Manu\'s in. Drive to the Southmall car park and see Rawiri.'); else say('Manu\'s in. Take him home.');
+    }
+    if (stage === 'c1-home' && c1.manuInCar && drive.car && Math.abs(drive.car.v) < 2.5 && Math.hypot(home.pos.x - drive.car.x, home.pos.z - drive.car.z) < 16) {
+      manuOut(home.pos.x, home.pos.z); faceEachOther(manu);
+      dlg.run('c1Home', {}, () => { cash += 100; rep += 25; advance('c1-done', 'CHAPTER ONE COMPLETE. Manu\'s home. Tipene reckons you\'re the real deal.'); });
+    }
+    if (stage === 'c1-wait' && (c1.timer -= rdt) <= 0) {
+      c1.timer = 1e9;
+      phone.receive(TEXTS.c1ManuJumped, { rival: rivalCrew() }, () => { advance('c1-manu', 'Manu got jumped at Manurewa station. Get there.'); placeChapterOne(); });
+    }
+    // Rival fights.
+    for (const r of c1.rivals) {
+      if (!r.alive || !r.p.visible) continue;
+      const h = r.p.userData.human, d = dist(r.p.position);
+      if (stage === 'c1-manu' && d < 30) r.hostile = true;
+      if (!r.hostile) { h.speed = 0; h.mode = 'idle'; continue; }
+      let sp = 0;
+      if (d < 30 && d > 1.9) { const b0 = r.p.position.clone(); slideMove(r.p.position, (camera.position.x - r.p.position.x) / d * dt * 1.6, (camera.position.z - r.p.position.z) / d * dt * 1.6, 0.4); sp = b0.distanceTo(r.p.position) / Math.max(dt, 1e-4); }
+      faceEachOther(r.p); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle'; r.p.position.y = groundHeight(r.p.position.x, r.p.position.z);
+      if (!dlg.active && !drive.car) meleeAI(r, h, d, 9, KO_HOME, dt);
+    }
+    if (stage === 'c1-rivals' && c1.rivals.slice(0, 3).every(r => !r.alive) && c1.rivals[0].hostile) { c1.timer = 20; rep += 10; advance('c1-wait', 'All three down. Aunty Lani\'s dairy should be quiet now.'); }
+  }
   // ---- driving frame: arcade car + chase camera ----------------------------------------------
   function driveFrame(dt, throttle, steer) {
     const near = [];
     for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.filter(e => e.alive).map(e => e.p), ...debtors.filter(d => d.visible)]) if (p.parent && Math.abs(p.position.x - drive.car.x) < 30 && Math.abs(p.position.z - drive.car.z) < 30) near.push({ x: p.position.x, z: p.position.z, r: 0.45 });
-    drive.update(dt, throttle, steer, !!keys.Space, [...traffic.obstacles(), ...near]);
+    for (const a of peds.agents) if (a.active && a.down <= 0) near.push({ x: a.p.position.x, z: a.p.position.z, r: 0.4, ped: a });
+    drive.update(dt, throttle, steer, !!keys.Space, [...traffic.obstacles(), ...police.obstacles(), ...near]);
+    if (drive.hit) {
+      const o = drive.hit, v = drive.lastImpact || 0; drive.hit = null;
+      if (o.ped && v > 4) { peds.knock(o.ped); heat.add(2); peds.scare(drive.car.x, drive.car.z); say('You hit someone. That\'s heat.'); }
+      else if (o.police && v > 3) { heat.add(1.5); say('You rammed a cop car.'); }
+      else if (o.car && v > 7) heat.add(0.6);
+    }
     const car = drive.car;
     const dy = Math.atan2(Math.sin(yaw - lastDriveYaw), Math.cos(yaw - lastDriveYaw)); orbit += dy;
     if (lookTouchId === null && !document.pointerLockElement) orbit *= Math.exp(-dt * 1.4); else orbit *= Math.exp(-dt * 0.3);
@@ -4808,6 +5031,14 @@ function createGame(world) {
         camera.position.y = lerp(camera.position.y, ground, 1 - Math.exp(-dt * 12));
       }
       traffic.update(dt, drive.car ? { x: drive.car.x, z: drive.car.z } : camera.position, drive.car);
+      const me = drive.car ? { x: drive.car.x, z: drive.car.z } : camera.position;
+      peds.update(dt, me.x, me.z, (pp, dx, dz) => slideMove(pp, dx, dz, 0.35));
+      heat.update(dt, policeSeen);
+      const pr = police.update(dt, t, heat, me, !!drive.car);
+      policeSeen = pr.closest < 70;
+      if (pr.closest < 40 && heat.level > 0) peds.scare(me.x, me.z, 20);
+      if (pr.caught) busted();
+      chapterOne(dt);
       // Traffic that reaches you on foot clips you (they normally stop in time).
       if (!drive.car) for (const o of traffic.obstacles()) if (o.car.v > 4 && Math.hypot(o.x - camera.position.x, o.z - camera.position.z) < 1.3) { hurtPlayer(12, KO_HOME); o.car.v = 0; say('Watch the road, egg.'); }
       window.__auTelemetry = { engine: 'three', started, paused: pauseOpen, x: camera.position.x, z: camera.position.z, joyX: joy.x, joyY: joy.y };
@@ -4895,7 +5126,7 @@ function createGame(world) {
     // Dying enemies stay down for a few seconds, then leave the scene.
     for (const e of enemies) if (!e.alive && e.dyingT > 0) { e.dyingT += dt; if (e.dyingT > 4.5 && e.p.parent) { scene.remove(e.p); e.dyingT = 0; } }
     // Crew contacts and the fixer turn their heads to watch the player.
-    for (const c of [...contacts.map(c => c.p), fixer, manu, shorty, JOBS.pita.npc, ...(darrenState.hostile ? [] : [darren]), ...(jobState.kev === 'fight' ? [] : [JOBS.kev.npc])]) {
+    for (const c of [...contacts.map(c => c.p), fixer, manu, shorty, JOBS.pita.npc, rawiri, lani, ...(darrenState.hostile ? [] : [darren]), ...(jobState.kev === 'fight' ? [] : [JOBS.kev.npc])]) {
       const h = c.userData.human, dx = camera.position.x - c.position.x, dz = camera.position.z - c.position.z, d = Math.hypot(dx, dz);
       const want = d < 9 ? Math.atan2(dx, dz) - c.rotation.y : 0;
       h.lookYaw = lerp(h.lookYaw, Math.atan2(Math.sin(want), Math.cos(want)), 1 - Math.exp(-dt * 4));
@@ -4913,7 +5144,7 @@ function createGame(world) {
     const sh = world.shake || 0; world.shake = Math.max(0, sh - dt);
     camera.rotation.set(pitch + (Math.random() - 0.5) * sh * 0.12, yaw + (Math.random() - 0.5) * sh * 0.12, 0);
     // Animate characters near the camera every frame, distant ones at a lower rate.
-    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.map(e => e.p), ...debtors]) {
+    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.map(e => e.p), ...debtors, ...peds.people, rawiri, lani, ...c1.rivals.map(r => r.p)]) {
       if (!p.parent || !p.visible) continue;
       const d = p.position.distanceTo(camera.position);
       const h = p.userData.human;
@@ -4937,6 +5168,11 @@ function createGame(world) {
     setHp: v => { hp = v; }, setCash: v => { cash = v; }, strength: () => strength, traffic: () => traffic.cars.length,
     hustle: () => hustle && { name: hustle.name, amount: hustle.amount, state: hustle.state, type: hustle.type, x: hustle.npc.position.x, z: hustle.npc.position.z },
     startHustle: type => { hustleTimer = 0; startHustle(); if (hustle && type) hustle.type = type; return !!hustle; },
+    pedDebug: () => peds.agents.map(a => ({ active: a.active, x: Math.round(a.p.position.x), z: Math.round(a.p.position.z), flee: a.flee, down: a.down, vis: a.p.visible })),
+    heat: () => heat.level, addHeat: n => heat.add(n), clearHeat: () => { heat.level = 0; police.clear(); }, police: () => police.cars.map(c => ({ x: c.x, z: c.z })), peds: () => peds.agents.filter(a => a.active).length,
+    carTo: (x, z) => { if (drive.car) { drive.car.x = x; drive.car.z = z; drive.car.v = 0; } },
+    c1: () => ({ manuInCar: c1.manuInCar, rawiri: rawiri.position.clone(), lani: lani.position.clone(), home: home.pos.clone(), rivals: c1.rivals.map(r => ({ x: r.p.position.x, z: r.p.position.z, alive: r.alive, hostile: r.hostile })) }),
+    skipTimers: () => { c1.timer = 0; },
     jobs: () => ({ ...jobState }),
     targets: () => ({ fixer: fixer.position.clone(), manu: manu.position.clone(), darren: darren.position.clone(), shorty: shorty.position.clone(), kev: JOBS.kev.npc.position.clone(), mikey: JOBS.mikey.npc.position.clone(), pita: JOBS.pita.npc.position.clone(), stash: stash.position.clone(), contacts: contacts.map(c => ({ f: c.f, x: c.p.position.x, z: c.p.position.z })), enemies: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z, alive: e.alive })) }),
   };
@@ -4946,7 +5182,7 @@ function createGame(world) {
 // ===== 61-drive.js =====
 // Driving and traffic. Any parked car can be taken (TALK next to it): arcade handling, chase camera,
 // engine note and horn. Traffic drives the real road graph on the left, stops for you and each other.
-const CAR_DIM = [{ L: 4.0, wb: 2.56 }, { L: 4.6, wb: 2.75 }, { L: 5.2, wb: 3.15 }, { L: 4.7, wb: 2.9 }];
+const CAR_DIM = [{ L: 4.05, wb: 2.54 }, { L: 4.65, wb: 2.7 }, { L: 4.75, wb: 2.74 }, { L: 5.3, wb: 3.08 }, { L: 4.8, wb: 2.85 }, { L: 4.7, wb: 2.55 }];
 const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _v3 = new THREE.Vector3(), _s1 = new THREE.Vector3(1, 1, 1), _y = new THREE.Vector3(0, 1, 0);
 const ZERO_M = new THREE.Matrix4().makeScale(0, 0, 0);
 
@@ -5030,7 +5266,7 @@ class PlayerCars {
     for (const s of [-half, -half / 3, half / 3, half]) {
       const px = x + fx * s, pz = z + fz * s;
       if (this.world.collision.collides(px, pz, 0.9)) return true;
-      for (const o of others) if ((o.x - px) ** 2 + (o.z - pz) ** 2 < (0.9 + o.r) ** 2) return true;
+      for (const o of others) if ((o.x - px) ** 2 + (o.z - pz) ** 2 < (0.9 + o.r) ** 2) { this.hit = o; return true; }
     }
     return x < MAP_BOUNDS.x0 || x > MAP_BOUNDS.x1 || z < MAP_BOUNDS.z0 || z > MAP_BOUNDS.z1;
   }
@@ -5090,7 +5326,7 @@ class Traffic {
     for (let tries = 0; tries < 40; tries++) {
       const n = this.nodes[Math.floor(Math.random() * this.nodes.length)], d = Math.hypot(n.x - px, n.z - pz);
       if (d < 110 || d > 280 || !n.nb.length) continue;
-      const e = n.nb[Math.floor(Math.random() * n.nb.length)], type = Math.floor(Math.random() * 4), M = this.meshes[type]; if (!M.free.length) return;
+      const e = n.nb[Math.floor(Math.random() * n.nb.length)], type = Math.floor(Math.random() * 6), M = this.meshes[type]; if (!M.free.length) return;
       const slot = M.free.pop(), K = this.kit;
       M.body.setColorAt(slot, new THREE.Color(K.paints[Math.floor(Math.random() * K.paints.length)])); M.body.instanceColor.needsUpdate = true;
       const from = this.nodes.indexOf(n);
@@ -5204,6 +5440,150 @@ class Shops {
   close() { this.panel.style.display = 'none'; this.api?.close(); }
 }
 
+// ===== 63-street.js =====
+// Street life: heat and police (Battenburg patrol cars that chase on the real road graph), and people
+// walking the footpaths who react when things kick off.
+class Heat {
+  constructor() { this.level = 0; this.calm = 0; }
+  add(n) { this.level = Math.min(5, this.level + n); this.calm = 0; }
+  get stars() { return Math.ceil(this.level - 0.001); }
+  update(dt, seen) {
+    if (this.level <= 0) return;
+    this.calm = seen ? 0 : this.calm + dt;
+    if (this.calm > 14) this.level = Math.max(0, this.level - dt / 9); // about one star per 9 s once you've lost them
+  }
+}
+
+class Siren {
+  ensure() { if (this.ac) return; try { const ac = this.ac = new (window.AudioContext || window.webkitAudioContext)(); this.g = ac.createGain(); this.g.gain.value = 0; this.o = ac.createOscillator(); this.o.type = 'triangle'; this.o.connect(this.g); this.g.connect(ac.destination); this.o.start(); } catch (_) { this.ac = null; } }
+  set(level, t) { if (!this.ac) return; const f = 700 + 450 * (0.5 + 0.5 * Math.sin(t * 2.2)); this.o.frequency.setTargetAtTime(f, this.ac.currentTime, 0.05); this.g.gain.setTargetAtTime(level * 0.03, this.ac.currentTime, 0.2); }
+}
+
+class Police {
+  constructor(world, traffic) {
+    this.world = world; this.nodes = traffic.nodes; this.cars = []; this.siren = new Siren();
+    const K = world.city.carKit, P = K.police;
+    this.white = new THREE.MeshStandardMaterial({ color: 0xf4f4f2, metalness: 0.4, roughness: 0.35 });
+    this.red = new THREE.MeshBasicMaterial({ color: 0xff2020, toneMapped: false }); this.blue = new THREE.MeshBasicMaterial({ color: 0x2050ff, toneMapped: false });
+    this.make = () => {
+      const g = new THREE.Group(), body = new THREE.Mesh(P.body, this.white), rest = new THREE.Mesh(P.rest, K.rest);
+      const lr = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.11, 0.38), this.red), lb = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.11, 0.38), this.blue);
+      lr.position.set(0.3, 1.51, 0.12); lb.position.set(-0.3, 1.51, 0.12);
+      body.castShadow = rest.castShadow = true; g.add(body, rest, lr, lb); g.userData = { lr, lb };
+      return g;
+    };
+    const st = world.city.map.buildings.find(b => /Police/i.test(b.name));
+    this.station = st ? { x: st.c[0] - 16, z: st.c[1] + 6 } : { x: 1505, z: -660 };
+  }
+  nearestNode(x, z, min, max) {
+    for (let k = 0; k < 60; k++) { const i = Math.floor(Math.random() * this.nodes.length), n = this.nodes[i], d = Math.hypot(n.x - x, n.z - z); if (d > min && d < max && n.nb.length) return i; }
+    return -1;
+  }
+  update(dt, t, heat, target, inCar) {
+    const want = heat.level > 0 ? Math.min(3, heat.stars) : 0;
+    while (this.cars.length < want) {
+      const i = this.nearestNode(target.x, target.z, 130, 260); if (i < 0) break;
+      const g = this.make(); this.world.scene.add(g); this.siren.ensure();
+      this.cars.push({ g, from: i, to: this.nodes[i].nb[0].to, t: 0, x: this.nodes[i].x, z: this.nodes[i].z, h: 0, v: 8, direct: false, near: 0, leaveT: 0 });
+    }
+    let closest = 1e9;
+    for (let k = this.cars.length - 1; k >= 0; k--) {
+      const c = this.cars[k], d = Math.hypot(target.x - c.x, target.z - c.z);
+      if (want === 0) { c.leaveT += dt; if (c.leaveT > 12 || d > 220) { this.world.scene.remove(c.g); this.cars.splice(k, 1); continue; } }
+      closest = Math.min(closest, d);
+      // Chase: off the graph and straight at you when close, else greedy along the streets.
+      c.direct = want > 0 && d < 40;
+      if (c.direct) {
+        const ux = (target.x - c.x) / (d || 1), uz = (target.z - c.z) / (d || 1), sp = d < 7 ? Math.max(0, c.v - 14 * dt) : Math.min(15, c.v + 6 * dt);
+        const nx = c.x + ux * sp * dt, nz = c.z + uz * sp * dt;
+        if (!this.world.collision.collides(nx, nz, 1.0)) { c.x = nx; c.z = nz; } else c.direct = false;
+        c.v = sp; const want2 = Math.atan2(ux, uz); let dh = want2 - c.h; dh = Math.atan2(Math.sin(dh), Math.cos(dh)); c.h += dh * Math.min(1, dt * 4);
+      }
+      if (!c.direct) {
+        const A = this.nodes[c.from], B = this.nodes[c.to], ex = B.x - A.x, ez = B.z - A.z, L = Math.hypot(ex, ez) || 0.01;
+        const vmax = want > 0 ? 17 : 9; c.v = Math.min(vmax, c.v + 5 * dt); c.t += c.v * dt;
+        if (c.t >= L) {
+          c.t = 0; const prev = c.from; c.from = c.to;
+          const opts = B.nb.filter(e => e.to !== prev); const pool = opts.length ? opts : B.nb;
+          let best = pool[0], bd = 1e9;
+          for (const e of pool) { const n = this.nodes[e.to], dd = Math.hypot(n.x - target.x, n.z - target.z) + (want ? 0 : Math.random() * 400); if (dd < bd) { bd = dd; best = e; } }
+          c.to = best.to;
+        }
+        const A2 = this.nodes[c.from], B2 = this.nodes[c.to], fx = B2.x - A2.x, fz = B2.z - A2.z, l2 = Math.hypot(fx, fz) || 0.01;
+        const tx = A2.x + fx / l2 * Math.min(c.t, l2) + fz / l2 * 2, tz = A2.z + fz / l2 * Math.min(c.t, l2) - fx / l2 * 2, k2 = 1 - Math.exp(-dt * 6);
+        c.x = lerp(c.x, tx, k2); c.z = lerp(c.z, tz, k2); const wh = Math.atan2(fx, fz); let dh = wh - c.h; dh = Math.atan2(Math.sin(dh), Math.cos(dh)); c.h += dh * k2;
+      }
+      c.g.position.set(c.x, groundHeight(c.x, c.z) * 0.3, c.z); c.g.rotation.y = c.h;
+      const flash = Math.sin(t * 14 + k) > 0; c.g.userData.lr.visible = want > 0 ? flash : false; c.g.userData.lb.visible = want > 0 ? !flash : false;
+      // Caught: a patrol car alongside you for a moment.
+      c.near = d < (inCar ? 5 : 6.5) && want > 0 ? c.near + dt : 0;
+    }
+    this.siren.set(want > 0 && closest < 250 ? Math.max(0.15, 1 - closest / 250) : 0, t);
+    return { closest, caught: this.cars.some(c => c.near > (inCar ? 2 : 1.6)) };
+  }
+  obstacles() { const out = []; for (const c of this.cars) { const fx = Math.sin(c.h), fz = Math.cos(c.h); out.push({ x: c.x + fx * 1.2, z: c.z + fz * 1.2, r: 1.0, police: c }, { x: c.x - fx * 1.2, z: c.z - fz * 1.2, r: 1.0, police: c }); } return out; }
+  clear() { for (const c of this.cars) this.world.scene.remove(c.g); this.cars = []; this.siren.set(0, 0); }
+}
+
+// People on the footpaths: they walk the street graph on the footpath side, scatter when a fight
+// starts or the cops turn up, and go down if you hit them (which brings heat).
+class Pedestrians {
+  constructor(world, nodes, people) {
+    this.nodes = nodes; this.people = people; this.agents = people.map(p => ({ p, h: p.userData.human, active: false }));
+    // 60 m grid of street nodes so spawns pick from what's actually near the player.
+    this.grid = new Map();
+    nodes.forEach((n, i) => { const k = Math.floor(n.x / 60) + ',' + Math.floor(n.z / 60); if (!this.grid.has(k)) this.grid.set(k, []); this.grid.get(k).push(i); });
+  }
+  spawn(a, px, pz) {
+    const cand = [], cx = Math.floor(px / 60), cz = Math.floor(pz / 60);
+    for (let x = cx - 2; x <= cx + 2; x++) for (let z = cz - 2; z <= cz + 2; z++) for (const i of this.grid.get(x + ',' + z) || []) { const n = this.nodes[i], d = Math.hypot(n.x - px, n.z - pz); if (d > 45 && d < 120 && n.nb.length) cand.push(i); }
+    if (!cand.length) return false;
+    {
+      const i = cand[Math.floor(Math.random() * cand.length)], n = this.nodes[i];
+      const e = n.nb[Math.floor(Math.random() * n.nb.length)];
+      Object.assign(a, { active: true, from: i, to: e.to, e, t: Math.random() * 5, side: Math.random() < 0.5 ? 1 : -1, speed: 1.15 + Math.random() * 0.4, flee: 0, down: 0 });
+      // Start on the footpath beside the node (otherwise they'd slide in from the map origin).
+      const B = this.nodes[e.to], L = Math.hypot(B.x - n.x, B.z - n.z) || 1, vx = (B.x - n.x) / L, vz = (B.z - n.z) / L, off = (e.lane * 2 + 3.4) * a.side;
+      a.p.position.set(n.x + vz * off, 0, n.z - vx * off); a.p.position.y = groundHeight(a.p.position.x, a.p.position.z);
+      a.p.visible = true; a.h.reset(); a.h.mode = 'idle'; return true;
+    }
+  }
+  update(dt, px, pz, collide) {
+    // One new walker every 0.4 s while there are free slots (steady, not frame-rate dependent).
+    this.spawnT = (this.spawnT ?? 0) - dt;
+    if (this.spawnT <= 0) { const free = this.agents.find(a => !a.active); if (free) this.spawn(free, px, pz); this.spawnT = 0.4; }
+    for (const a of this.agents) {
+      if (!a.active) continue;
+      const p = a.p, d = Math.hypot(p.position.x - px, p.position.z - pz);
+      if (d > 160) { a.active = false; p.visible = false; continue; }
+      if (a.down > 0) { a.down -= dt; a.h.speed = 0; if (a.down <= 0) { a.h.reset(); a.flee = 5; } continue; }
+      if (a.flee > 0) {
+        a.flee -= dt; const ux = (p.position.x - px) / (d || 1), uz = (p.position.z - pz) / (d || 1), b0 = p.position.clone();
+        collide(p.position, ux * 4.6 * dt, uz * 4.6 * dt);
+        a.h.speed = b0.distanceTo(p.position) / Math.max(dt, 1e-4); p.rotation.y = Math.atan2(ux, uz);
+        p.position.y = groundHeight(p.position.x, p.position.z);
+        if (a.flee <= 0) { a.active = false; p.visible = false; } // they've cleared off
+        continue;
+      }
+      const A = this.nodes[a.from], B = this.nodes[a.to], ex = B.x - A.x, ez = B.z - A.z, L = Math.hypot(ex, ez) || 0.01;
+      a.t += a.speed * dt;
+      if (a.t >= L) {
+        a.t -= L; const prev = a.from; a.from = a.to; const opts = B.nb.filter(e => e.to !== prev), pool = opts.length ? opts : B.nb;
+        a.e = pool[Math.floor(Math.random() * pool.length)]; a.to = a.e.to;
+      }
+      const A2 = this.nodes[a.from], B2 = this.nodes[a.to], fx = B2.x - A2.x, fz = B2.z - A2.z, l2 = Math.hypot(fx, fz) || 0.01, vx = fx / l2, vz = fz / l2;
+      const off = (a.e.lane * 2 + 3.4) * a.side, tx = A2.x + vx * Math.min(a.t, l2) + vz * off, tz = A2.z + vz * Math.min(a.t, l2) - vx * off;
+      const k = 1 - Math.exp(-dt * 4); p.position.x = lerp(p.position.x, tx, k); p.position.z = lerp(p.position.z, tz, k);
+      p.position.y = groundHeight(p.position.x, p.position.z);
+      const want = Math.atan2(vx, vz); let dh = want - p.rotation.y; dh = Math.atan2(Math.sin(dh), Math.cos(dh)); p.rotation.y += dh * k;
+      a.h.speed = a.speed;
+    }
+  }
+  scare(x, z, r = 30) { for (const a of this.agents) if (a.active && a.down <= 0 && Math.hypot(a.p.position.x - x, a.p.position.z - z) < r) a.flee = 6; }
+  knock(a) { a.down = 6; a.flee = 0; a.h.knockDown(); }
+  near(x, z, r) { return this.agents.filter(a => a.active && a.down <= 0 && Math.hypot(a.p.position.x - x, a.p.position.z - z) < r); }
+}
+
 // ===== 99-boot.js =====
 // Entry point: build the world, wire settings, run the frame loop.
 async function boot() {
@@ -5244,7 +5624,7 @@ async function boot() {
   const photo = new PhotoAssets(renderer, lib, q);
   // Realistic people need texture detail (MEDIUM and up); LOW keeps the light stand-in bodies.
   PEOPLE.enabled = q.tex >= 1024 && new URLSearchParams(location.search).get('people') !== 'off'; PEOPLE.msaa = q.msaa > 0;
-  for (const look of ['manu', 'darren', 'shorty', 'kev', 'mikey', 'pita', 'crewA', 'crewB', 'crewC']) PEOPLE.get(look);
+  for (const look of ['manu', 'darren', 'shorty', 'kev', 'mikey', 'pita', 'crewA', 'crewB', 'crewC', 'pedF1', 'pedF2', 'pedF3', 'pedM1', 'pedM2']) PEOPLE.get(look);
   sky.photo = photo;
 
   setLoad(0.28, 'Building the district…');
@@ -5289,7 +5669,7 @@ async function boot() {
   const shortyHome = nearestHome(1180, -300, [cousinHome]);
   const pitaHome = nearestHome(1560, -260, [cousinHome, shortyHome]);
   const phone = new Phone();
-  const world = { scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0, dialogue, prologue, phone, cousinHome, shortyHome, pitaHome, spots: city.spots, places: city.places, city, realDt: 0, trafficCount: tierName === 'low' ? 4 : tierName === 'medium' ? 8 : 12 };
+  const world = { scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0, dialogue, prologue, phone, cousinHome, shortyHome, pitaHome, spots: city.spots, places: city.places, city, realDt: 0, trafficCount: tierName === 'low' ? 4 : tierName === 'medium' ? 8 : 12, pedCount: tierName === 'low' ? 3 : tierName === 'medium' ? 5 : 8 };
   window.__auDebug = { scene, renderer, camera, post, sky, city, lounge, updateCull, THREE };
   window.__auStory = {
     get active() { return dialogue.active; }, get line() { return dialogue.line; }, get prologue() { return prologue.active; },

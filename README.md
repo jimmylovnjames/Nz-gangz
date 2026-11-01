@@ -1,10 +1,21 @@
-# AOTEAROA: UNDERWORLD, Run 17 (driving, traffic, shops, fighting, hustles)
+# AOTEAROA: UNDERWORLD, Run 18 (cops, better cars, pedestrians, Chapter One)
 
 Open `index.html` in a modern browser with internet access (Three.js loads from jsDelivr). On the phone: extract the ZIP and open `index.html`. For best results on a computer, serve the folder with `python -m http.server 8000` and visit `http://localhost:8000`.
 
 Desktop: WASD or arrow keys to move, mouse to look (click to lock), click or HIT to punch, hold Q or right mouse to block, Shift (hold) to sprint, E to talk / shop / get in or out of a car, Space handbrake, Escape to pause. Phone: touch the lower-left circle and slide to walk, swipe the right side to look, tap TALK/HIT, hold BLOCK, tap RUN to toggle running (it lights up, and switches off when you stop). Tap the radar to collapse it. Saves stay in the device's browser storage; PAUSE has EXPORT/IMPORT SAVE FILE for moving between phones.
 
 The streets are real; the crews, characters and events are invented. Run 12 replaced the real gang names used in earlier runs with fictional crews; old saves are converted automatically.
+
+## Run 18: cops, cars, people, Chapter One
+
+- **Heat and the cops.** Laying out a random, hitting someone with your car, ramming a patrol car or brawling in public raises your **HEAT** (stars on the HUD). NZ Police patrol cars (white with blue and yellow Battenburg checks, flashing lights, siren) come after you on the real streets and cut straight at you when they're close. Stay alongside one for a couple of seconds and you're **busted**: a night in the cells at Manurewa Police Station (its real spot on Great South Road) and a 30% fine. Break away and stay out of sight and the heat drops about a star every 9 seconds.
+- **Better cars.** Six Japanese-import-style body types instead of four boxes: hatch (Corolla/Swift), sedan, wagon (Legacy/Caldina), double-cab ute (Hilux, with a tonneau cover), people mover (Odyssey/Estima) and a Hiace van. They have glass greenhouses with painted roofs and pillars, wheel arches with liners, alloys, mirrors, bumpers, grilles, lamps and NZ plates. Parked cars are a typical Manurewa mix; you can drive any of them.
+- **People on the footpaths.** Passers-by walk the real streets on the footpath side: two young women, an aunty, an older Pākehā fella and a young guy (new MakeHuman CC0 bodies), plus a crew lad. They scatter when a fight starts or the sirens get close, go down if you hit them, and get back up and clear off.
+- **Chapter One** (after the crew chapter). Tipene, the crew's fixer, texts you:
+  1. **The run**: grab a car, pick up Manu (he rides in the passenger seat), meet Rawiri at the Southmall car park, and bring the parcel back to Tipene at Clendon skate park. Bring the cops with you and he sends you away to lose them.
+  2. **Aunty Lani**: the woman who runs Clendon Dairy says a rival crew's boys keep raiding the shop and giving her mokos lip. Find them at the skate park: talk them down (needs 160+ rep) or take on all three.
+  3. **Manu gets jumped**: he texts from Manurewa station. Fight off the two who did it, pick him up, and drive him home.
+  Chapter One lines (Tipene, Rawiri, Aunty Lani, the rival crew, Manu) are in VOICE_SCRIPT.md, 134 lines in all. It's a draft; rewrite any of it.
 
 ## Run 17: things to do
 

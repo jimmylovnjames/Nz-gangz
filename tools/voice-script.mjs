@@ -39,10 +39,13 @@ const SCENES = {
   pitaTake: ['Player takes Pita\'s money', 'Quiet.'], pitaCover: ['Player lets Pita keep it', 'Warm.'], pitaAgain: ['Pita after it\'s sorted', ''],
   shortyBackAll: ['Back at Shorty\'s with every cent', 'Impressed.'], shortyBackCovered: ['Back at Shorty\'s, you paid Pita\'s share yourself', 'Shorty sees right through it.'],
   shortyBackShort: ['Back at Shorty\'s, you let Pita off', 'Unimpressed.'], shortyBackEnd: ['Shorty pays your cut and points you to the crews', ''],
+  c1Rawiri: ['Chapter One: the Southmall car park, Rawiri hands over the parcel', 'Manu is riding with you.'], c1Deliver: ['Back at the skate park: Tipene (the crew fixer) takes the parcel', 'Calm, in charge.'], c1Hot: ['Tipene if the cops followed you', 'Sharp.'],
+  c1Lani: ['Clendon Dairy: Aunty Lani, who runs it', 'Tired, worried for her grandkids. {rival} is the rival crew name.'], c1Rivals: ['Clendon skate park: the rival crew boys', 'Cocky teenagers.'], c1RivalsBackOff: ['Rivals back down', ''], c1RivalsFight: ['Rivals start a fight', ''],
+  c1ManuDown: ['Manurewa station: Manu after he got jumped', 'Hurt, trying to laugh it off.'], c1Home: ['Outside Manu\'s place, end of Chapter One', 'Grateful, then serious.'],
   hustleMeet: ['Shorty\'s side jobs: you turn up at the debtor\'s place (DEBTOR = whoever owes, name changes each job)', '{amount} is the dollar amount, e.g. "three hundred". Record a general version.'],
   hustlePays: ['Debtor pays when asked', ''], hustleScared: ['Debtor pays after you lean on him', 'Rattled.'], hustleRefuses: ['Debtor refuses and squares up', ''], hustleBeaten: ['Debtor after you knock him down', 'Winded.'], hustleAgain: ['Talking to a debtor who already paid', ''],
 };
-const name = { manu: 'MANU', you: 'YOU', darren: 'DARREN', shorty: 'SHORTY', kev: 'KEV', mikey: 'MIKEY', pita: 'UNCLE PITA', debtor: 'DEBTOR' };
+const name = { manu: 'MANU', you: 'YOU', darren: 'DARREN', shorty: 'SHORTY', kev: 'KEV', mikey: 'MIKEY', pita: 'UNCLE PITA', debtor: 'DEBTOR', tipene: 'TIPENE', rawiri: 'RAWIRI', lani: 'AUNTY LANI', rival: 'RIVAL CREW' };
 let md = `# Voice script\n\nEvery spoken line has an id. Record each line as its own file, put the files in the \`voice/\` folder next to \`index.html\`, and list them in \`voice/manifest.js\`:\n\n\`\`\`js\nwindow.AU_VOICE = { pro_01: 'pro_01.m4a', pro_02: 'pro_02.m4a' };\n\`\`\`\n\nAny format the phone plays works (m4a from the recorder app is fine). Lines without a recording show as subtitles only, so you can add them a few at a time. \`{spot}\` is filled in with where Darren hangs out (it changes with your hometown), so record it as a general "round the shops" or send me the variants.\n\nThe game runs from \`src/engine/58-story.js\` (SCRIPT); change the wording there and run \`node tools/voice-script.mjs\` to refresh this file.\n`;
 let count = 0;
 for (const [key, lines] of Object.entries(SCRIPT)) {

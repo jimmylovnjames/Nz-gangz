@@ -1,4 +1,4 @@
-AOTEAROA: UNDERWORLD | RUN 17 (DRIVING, TRAFFIC, SHOPS, FIGHTING, HUSTLES)
+AOTEAROA: UNDERWORLD | RUN 18 (COPS, BETTER CARS, PEDESTRIANS, CHAPTER ONE)
 
 Extract this ZIP and keep the voice folder next to index.html. Open index.html on your phone with internet on.
 Give the progress bar a few seconds on first load, then tap NEW GAME.
@@ -9,6 +9,14 @@ The map is real Manurewa and Clendon Park (OpenStreetMap): real streets and name
 Southmall with the Norfolk pine, the station, the Clendon shops and Clendon skate park. The HUD shows the street you're on.
 
 RUN is a toggle: tap it once (it lights up) and steer with your other thumb; it switches off when you stop.
+
+NEW IN RUN 18
+- HEAT: hit randoms, run people over, ram cop cars or brawl in public and the cops come (stars on the HUD).
+  Stay next to a cop car and you're busted (night at Manurewa station, 30% fine). Get away and lie low to lose them.
+- Six new car types (hatch, sedan, wagon, Hilux-style ute, people mover, Hiace) and NZ Police cars.
+- People walk the footpaths and scatter when things kick off.
+- CHAPTER ONE after the crew chapter: Tipene's run to Southmall with Manu riding shotgun, Aunty Lani's dairy,
+  the rival crew at the skate park, and Manu getting jumped at the station.
 
 NEW IN RUN 17
 - Cars: walk up to any parked car and tap TALK to get in. Joystick drives (up = go, down = brake/reverse,

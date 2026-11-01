@@ -37,7 +37,7 @@ async function boot() {
   const photo = new PhotoAssets(renderer, lib, q);
   // Realistic people need texture detail (MEDIUM and up); LOW keeps the light stand-in bodies.
   PEOPLE.enabled = q.tex >= 1024 && new URLSearchParams(location.search).get('people') !== 'off'; PEOPLE.msaa = q.msaa > 0;
-  for (const look of ['manu', 'darren', 'shorty', 'kev', 'mikey', 'pita', 'crewA', 'crewB', 'crewC']) PEOPLE.get(look);
+  for (const look of ['manu', 'darren', 'shorty', 'kev', 'mikey', 'pita', 'crewA', 'crewB', 'crewC', 'pedF1', 'pedF2', 'pedF3', 'pedM1', 'pedM2']) PEOPLE.get(look);
   sky.photo = photo;
 
   setLoad(0.28, 'Building the district…');
@@ -82,7 +82,7 @@ async function boot() {
   const shortyHome = nearestHome(1180, -300, [cousinHome]);
   const pitaHome = nearestHome(1560, -260, [cousinHome, shortyHome]);
   const phone = new Phone();
-  const world = { scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0, dialogue, prologue, phone, cousinHome, shortyHome, pitaHome, spots: city.spots, places: city.places, city, realDt: 0, trafficCount: tierName === 'low' ? 4 : tierName === 'medium' ? 8 : 12 };
+  const world = { scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0, dialogue, prologue, phone, cousinHome, shortyHome, pitaHome, spots: city.spots, places: city.places, city, realDt: 0, trafficCount: tierName === 'low' ? 4 : tierName === 'medium' ? 8 : 12, pedCount: tierName === 'low' ? 3 : tierName === 'medium' ? 5 : 8 };
   window.__auDebug = { scene, renderer, camera, post, sky, city, lounge, updateCull, THREE };
   window.__auStory = {
     get active() { return dialogue.active; }, get line() { return dialogue.line; }, get prologue() { return prologue.active; },

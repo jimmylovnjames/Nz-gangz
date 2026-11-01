@@ -563,8 +563,10 @@ class City {
   }
   parkCar(x, z, rot, y) {
     const r = this.hash(Math.round(x * 10), Math.round(z * 10));
-    const car = { x, z, y, rot, type: Math.floor(r * 4), color: this.hash(Math.round(z * 7), 9) };
-    car.col = this.collision.addOBB(x, z, 0.95, [2.0, 2.3, 2.6, 2.35][car.type], -rot, 'car');
+    // Typical Manurewa mix: hatches and sedans, wagons, double-cab utes, people movers, the odd Hiace.
+    const type = r < 0.28 ? 0 : r < 0.5 ? 1 : r < 0.65 ? 2 : r < 0.8 ? 3 : r < 0.92 ? 4 : 5;
+    const car = { x, z, y, rot, type, color: this.hash(Math.round(z * 7), 9) };
+    car.col = this.collision.addOBB(x, z, 0.95, CAR_DIM[type].L / 2, -rot, 'car');
     this.cars.push(car);
   }
   platforms() {

@@ -16,7 +16,7 @@ const migrateSave = s => {
 const FACTION_COLORS = [0x3764d8, 0xc33737, 0x4b8e68, 0x9c8d54, 0xe4b82c, 0x7e4b99, 0x2e8692, 0xa67639, 0x9b9b9b, 0x7b4444, 0x67928b, 0xb57e50, 0x6b6a9d, 0x8d6c80];
 const ORIGINS = { Northland: ['Kaikohe', 'Kaitaia', 'Whangārei', 'Opononi'], Auckland: ['South Auckland', 'West Auckland', 'Central Auckland', 'North Shore'], Waikato: ['Hamilton', 'Huntly', 'Tokoroa'], 'Bay of Plenty': ['Tauranga', 'Rotorua', 'Whakatāne'], 'East Coast': ['Gisborne', 'Wairoa'], 'Hawke’s Bay': ['Napier', 'Hastings'], 'Central North Island': ['Taupō', 'New Plymouth', 'Whanganui', 'Palmerston North'], Wellington: ['Wellington', 'Lower Hutt', 'Porirua'], 'Top of South': ['Nelson', 'Blenheim'], Canterbury: ['Christchurch', 'Ashburton', 'Timaru'], 'West Coast': ['Greymouth', 'Hokitika'], Otago: ['Dunedin', 'Queenstown', 'Wānaka'], Southland: ['Invercargill', 'Bluff'], Islands: ['Stewart Island / Rakiura', 'Chatham Islands'] };
 const SAVE_KEY = 'aotearoa-underworld-v2', SAVE_EXPORT_FORMAT = 'aotearoa-underworld-save';
-const STAGES = ['prologue', 'debt-find', 'debt-fight', 'debt-return', 'shorty-wait', 'shorty-meet', 'shorty-jobs', 'shorty-return', 'recruit', 'faction-choice', 'mission-courier', 'mission-brawl', 'mission-return', 'complete'];
+const STAGES = ['prologue', 'debt-find', 'debt-fight', 'debt-return', 'shorty-wait', 'shorty-meet', 'shorty-jobs', 'shorty-return', 'recruit', 'faction-choice', 'mission-courier', 'mission-brawl', 'mission-return', 'complete', 'c1-call', 'c1-car', 'c1-pickup', 'c1-deliver', 'c1-dairy', 'c1-rivals', 'c1-wait', 'c1-manu', 'c1-home', 'c1-done'];
 const VALID_STAGES = [...STAGES, ...Object.keys(LEGACY_STAGES)];
 const EYE = 1.62;
 
@@ -146,6 +146,8 @@ function createGame(world) {
   let strength = 0, boostT = 0, lastHurt = -1e9, lastPunch = -1e9, combo = 0, rmb = false;
   const drive = new PlayerCars(world), traffic = new Traffic(world, world.trafficCount || 0), shops = new Shops(world.city);
   const blocking = () => !drive.car && !!(keys.KeyQ || keys.KeyF || rmb || move.block);
+  const heat = new Heat(), police = new Police(world, traffic);
+  let policeSeen = false;
   let stage = 'prologue', cash = 0, missionRoute = '', pauseOpen = false, saveAllowed = true, debtRoute = '', debtCash = 0, inPrologue = false;
   function hometownHash(name) { let h = 2166136261; for (const c of name) h = Math.imul(h ^ c.codePointAt(0), 16777619) >>> 0; return h >>> 0; }
   // Darren's hangout depends on your hometown, so different origins send you to different corners of the district.
@@ -229,10 +231,21 @@ function createGame(world) {
     if (stage === 'mission-courier') return [`${chosen}: recover the package from the green marker.`, stash.position];
     if (stage === 'mission-brawl') { const living = enemies.filter(e => e.alive).sort((a, b) => dist(a.p.position) - dist(b.p.position)); return [`${chosen}: defeat three hostile opponents (${defeated}/3).`, living[0]?.p.position || null]; }
     if (stage === 'mission-return') return [`Return to the fixer for the ${missionRoute === 'courier' ? 'quiet' : 'loud'} ending.`, fixer.position];
+    if (stage === 'complete') return [`Crew chapter done (${chosen}, ${missionRoute} route). Tipene will be in touch.`, null];
+    if (stage === 'c1-call') return ['Tipene wants you. Keep your phone handy.', null];
+    if (stage === 'c1-car') return ['Get a car (TALK next to any parked car), then pick up Manu at his place.', manu.position];
+    if (stage === 'c1-pickup') return ['Drive to the Southmall car park and see Rawiri.', rawiri.position];
+    if (stage === 'c1-deliver') return [heat.level > 0 ? 'Lose the cops, then take the parcel to Tipene at Clendon skate park.' : 'Take the parcel to Tipene at Clendon skate park.', fixer.position];
+    if (stage === 'c1-dairy') return ['See Aunty Lani at Clendon Dairy.', lani.position];
+    if (stage === 'c1-rivals') return [`Deal with the ${rivalCrew()} boys at Clendon skate park.`, c1.rivals.find(r => r.alive)?.p.position || places.skatepark.pos];
+    if (stage === 'c1-wait') return ['Aunty Lani\'s dairy is quiet. Keep your phone handy.', null];
+    if (stage === 'c1-manu') return ['Manu got jumped at Manurewa station. Get there and sort them out.', manu.position];
+    if (stage === 'c1-home') return [c1.manuInCar ? 'Drive Manu home.' : 'Get Manu into a car (drive up to him).', c1.manuInCar ? home.pos : manu.position];
+    if (stage === 'c1-done') return ['CHAPTER ONE COMPLETE. Shorty still texts jobs; more chapters to come.', null];
     return [`Chapter complete: ${hometown} / ${chosen} / ${missionRoute} route.`, null];
   }
   function updateHUD() {
-    $('status').textContent = `HP ${Math.ceil(hp)} | ENERGY ${Math.ceil(stamina)}${boostT > 0 ? '⚡' : ''} | $${cash} | REP ${rep}${strength ? ' | PWR ' + strength : ''} | ${chosen.toUpperCase()}`;
+    $('status').textContent = `HP ${Math.ceil(hp)} | ENERGY ${Math.ceil(stamina)}${boostT > 0 ? '⚡' : ''} | $${cash} | REP ${rep}${strength ? ' | PWR ' + strength : ''}${heat.level > 0 ? ' | HEAT ' + '★'.repeat(heat.stars) : ''} | ${chosen.toUpperCase()}`;
     const [goal, target] = objective(); $('quest').textContent = goal; $('status').setAttribute('title', `${hometown} | ${originRegion}`);
     const side = hustle && hustle.state !== 'done' ? ` · HUSTLE ${hustle.name} ${Math.round(dist(hustle.npc.position))}m` : '';
     if (target) $('missionDistance').textContent = `OBJECTIVE ${Math.round(dist(target))}m away${side}`;
@@ -294,6 +307,7 @@ function createGame(world) {
   function beginNew() {
     saveAllowed = true; stage = 'prologue'; hp = 100; cash = 0; rep = 0; chapter = 0; defeated = 0; missionRoute = ''; stamina = 100; debtRoute = ''; debtCash = 0; strength = 0; endHustle(true);
     if (drive.car) exitCar();
+    heat.level = 0; police.clear(); c1.timer = 25; stage = 'prologue'; placeChapterOne();
     jobState = { kev: 'open', mikey: 'open', pita: 'open' }; phone.clear();
     placeDarren();
     enemies.forEach(resetEnemy);
@@ -340,6 +354,7 @@ function createGame(world) {
       if (e.alive && !e.p.parent) scene.add(e.p); if (!e.alive && e.p.parent) scene.remove(e.p);
     });
     select.value = hometown;
+    heat.level = 0; police.clear(); c1.timer = stage === 'c1-wait' ? 20 : 25; placeChapterOne();
     if (stage === 'prologue') { startPrologue(); return; }
     closeMenus(); say(`Welcome back to ${hometown}. Your ${chosen} story continues.`);
   }
@@ -421,6 +436,27 @@ function createGame(world) {
     }
     if (stage === 'mission-courier' && dist(stash.position) < 5) { cash += 20; advance('mission-return', `Package secured. Your ${originRegion} contacts gave you a clean exit. Return to the fixer.`); return; }
     if (stage === 'mission-return' && dist(fixer.position) < 5) { cash += missionRoute === 'courier' ? 100 : 60; rep += missionRoute === 'courier' ? 15 : 35; advance('complete', `${hometown} ending: ${chosen} now knows your name. ${missionRoute === 'courier' ? 'Quiet route: more cash, less heat.' : 'Loud route: more reputation, more enemies.'} CHAPTER COMPLETE.`); return; }
+    if (stage === 'c1-pickup' && dist(rawiri.position) < 4.5) { faceEachOther(rawiri); dlg.run('c1Rawiri', {}, () => advance('c1-deliver', 'Rawiri handed over the parcel. Take it to Tipene at Clendon skate park.')); return; }
+    if (stage === 'c1-deliver' && dist(fixer.position) < 5) {
+      faceEachOther(fixer);
+      if (heat.level > 0.2) { dlg.run('c1Hot', {}, null); return; }
+      dlg.run('c1Deliver', {}, () => { cash += 200; rep += 20; if (c1.manuInCar) manuOut(home.pos.x, home.pos.z); else { manu.position.set(home.pos.x, groundHeight(home.pos.x, home.pos.z), home.pos.z); } lani.visible = true; advance('c1-dairy', 'Tipene paid you $200. Aunty Lani at Clendon Dairy wants a word.'); });
+      return;
+    }
+    if (stage === 'c1-dairy' && dist(lani.position) < 4.5) { faceEachOther(lani); dlg.run('c1Lani', { rival: rivalCrew() }, () => { placeRivals('park'); advance('c1-rivals', `The ${rivalCrew()} boys hang round Clendon skate park. Go have a word.`); }); return; }
+    if (stage === 'c1-rivals') {
+      const lead = c1.rivals.slice(0, 3).find(r => r.alive && !r.hostile && dist(r.p.position) < 5);
+      if (lead) {
+        faceEachOther(lead.p); CAST.rival.name = rivalCrew().toUpperCase();
+        dlg.run('c1Rivals', {}, r => {
+          if (r === 'talk' && rep >= 160) dlg.run('c1RivalsBackOff', {}, () => { c1.rivals.slice(0, 3).forEach(x => { x.alive = false; x.p.visible = false; }); rep += 10; c1.timer = 20; advance('c1-wait', 'They backed off. Aunty Lani\'s sorted.'); });
+          else dlg.run('c1RivalsFight', {}, () => { c1.rivals.slice(0, 3).forEach(x => { if (x.alive) x.hostile = true; }); peds.scare(camera.position.x, camera.position.z); say('Three on one. Block, step back, hit back.'); });
+        });
+        return;
+      }
+    }
+    if (stage === 'c1-manu' && dist(manu.position) < 4.5 && !c1.rivals.slice(3).some(r => r.alive)) { faceEachOther(manu); manu.userData.human.reset(); dlg.run('c1ManuDown', { rival: rivalCrew() }, () => advance('c1-home', 'Get Manu into a car and take him home.')); return; }
+    if (stage === 'c1-done' || stage === 'complete') { if (dist(manu.position) < 4.5) { faceEachOther(manu); dlg.run('manuAfter', storyVars(), null); return; } }
     if (hustle && dist(hustle.npc.position) < 4.5 && hustle.npc.visible) { talkHustle(); return; }
     const shop = shops.nearest(camera.position); if (shop) { openShop(shop); return; }
     const car = drive.nearest(camera.position); if (car) { enterCar(car); return; }
@@ -431,6 +467,7 @@ function createGame(world) {
   let orbit = 0, lastDriveYaw = 0;
   function enterCar(c) {
     const car = drive.enter(c); orbit = 0; yaw = car.h + Math.PI; lastDriveYaw = yaw; pitch = -0.14;
+    if (c1.manuInCar && manu.parent !== car.group) manuIntoCar();
     document.body.classList.add('driving'); setRun(false); say('Joystick or W/S to drive, steer left/right. TALK (E) to get out. HIT honks.');
   }
   function exitCar() {
@@ -452,6 +489,39 @@ function createGame(world) {
   const HUSTLE_NAMES = ['BIG T', 'JOJO', 'SIONE', 'TANE', 'LOGAN', 'MOSES', 'JAYDEN', 'KANE', 'TYSON', 'RAWIRI', 'MALAKAI', 'BRAYDEN', 'TAVITA', 'HEMI', 'NIKO', 'ZANE'];
   const debtors = ['crewA', 'crewB', 'crewC'].map((look, i) => { const p = person(0, 0, { look, seed: 500 + i * 37, top: 0x2a2a2a, pants: 0x333333, pantsCell: ATLAS.track, face: ATLAS.faceB, pose: 'relaxed' }); p.visible = false; return p; });
   let hustle = null, hustleTimer = 90;
+  // People on the footpaths (realistic bodies on MEDIUM and up).
+  const PED_LOOKS = ['pedF1', 'pedM1', 'pedF2', 'pedM2', 'pedF3', 'crewC', 'pedF1', 'pedM2'];
+  const peds = new Pedestrians(world, traffic.nodes, PED_LOOKS.slice(0, world.pedCount ?? 6).map((look, i) => { const p = person(0, 0, { look, seed: 900 + i * 53, top: [0x7a2a3a, 0x2a4a6a, 0xd8d0c0, 0x3a5a3a][i % 4], pants: 0x2a2a30, face: [ATLAS.faceA, ATLAS.faceB][i % 2], pose: 'relaxed' }); p.visible = false; return p; }));
+  // ---- Chapter One cast: Tipene (the fixer), Rawiri, Aunty Lani, the rival crew ------------------
+  const rivalCrew = () => FACTIONS[((FACTIONS.indexOf(chosen) + 18) % FACTIONS.length + FACTIONS.length) % FACTIONS.length] || 'Southside Hornets';
+  const rawiri = person(places.southmallCarpark.pos.x, places.southmallCarpark.pos.z, { look: 'crewB', seed: 1201, top: 0x3a3a3a, pants: 0x2a2a2a, face: ATLAS.faceC, pose: 'crossed' });
+  const lani = person(places.clendonDairy.pos.x, places.clendonDairy.pos.z, { look: 'pedF3', seed: 1202, top: 0x8a4a6a, pants: 0x3a3a3a, face: ATLAS.faceA, pose: 'crossed' });
+  const c1 = { manuInCar: false, timer: 25, rivals: [] };
+  for (let i = 0; i < 5; i++) { const p = person(0, 0, { look: ['crewA', 'pedM2', 'crewC', 'crewA', 'pedM2'][i], seed: 1300 + i * 17, top: 0x8a1a1a, pants: 0x222222, face: ATLAS.faceB, pose: 'relaxed' }); p.visible = false; c1.rivals.push({ p, hp: 3, alive: false, hostile: false, attackT: 1, windup: 0 }); }
+  function placeRivals(group) {
+    const base = group === 'park' ? places.skatepark.pos : places.station.pos, list = group === 'park' ? c1.rivals.slice(0, 3) : c1.rivals.slice(3);
+    c1.rivals.forEach(r => { if (!list.includes(r)) { r.p.visible = false; r.alive = false; } });
+    list.forEach((r, i) => { const sp = safeSpawn(base.x + Math.cos(i * 2.1) * 3, base.z + Math.sin(i * 2.1) * 3); r.p.position.set(sp.x, groundHeight(sp.x, sp.z), sp.z); r.p.visible = true; r.alive = true; r.hp = 3; r.hostile = group === 'station'; r.windup = 0; r.p.userData.human.reset(); });
+  }
+  function manuIntoCar() {
+    const car = drive.car; if (!car) return;
+    car.group.add(manu); manu.position.set(0.42, 0.02, 0.1); manu.rotation.set(0, 0, 0); manu.userData.human.pose = 'seated'; manu.userData.human.reset(); c1.manuInCar = true; manuMarker.visible = false;
+  }
+  function manuOut(x, z) {
+    const wp = new THREE.Vector3(); manu.getWorldPosition(wp);
+    scene.add(manu); const sp = safeSpawn(x ?? wp.x, z ?? wp.z); manu.position.set(sp.x, groundHeight(sp.x, sp.z), sp.z); manu.rotation.set(0, home.rot, 0);
+    manu.userData.human.pose = 'crossed'; manu.userData.human.reset(); c1.manuInCar = false;
+  }
+  // Where Manu and the Chapter One cast belong for a given stage (new game, restore, transitions).
+  function placeChapterOne() {
+    if (c1.manuInCar) manuOut(home.pos.x, home.pos.z);
+    const atStation = stage === 'c1-manu' || stage === 'c1-home';
+    if (atStation) { const sp = safeSpawn(places.station.pos.x + 2, places.station.pos.z + 2); manu.position.set(sp.x, groundHeight(sp.x, sp.z), sp.z); if (stage === 'c1-manu') manu.userData.human.knockDown(); }
+    else { manu.position.set(home.pos.x, groundHeight(home.pos.x, home.pos.z), home.pos.z); manu.rotation.y = home.rot; manu.userData.human.reset(); }
+    rawiri.visible = stage === 'c1-pickup' || stage === 'c1-car'; lani.visible = STAGES.indexOf(stage) >= STAGES.indexOf('c1-dairy');
+    if (stage === 'c1-rivals') placeRivals('park'); else if (stage === 'c1-manu') placeRivals('station'); else c1.rivals.forEach(r => { r.p.visible = false; r.alive = false; });
+    CAST.rival.name = rivalCrew().toUpperCase();
+  }
   function startHustle() {
     const near = world.city.houses.filter(h => { const d = dist(h.pos); return d > 250 && d < 1400; });
     if (!near.length) return;
@@ -532,11 +602,26 @@ function createGame(world) {
       const delta = e.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position), d = delta.length();
       if (d < 4 && delta.normalize().dot(forward) > cone && d < score) { target = e; score = d; }
     }
-    if (!target) return;
+    // Chapter One rivals.
+    for (const r of c1.rivals) {
+      if (!r.alive || !r.p.visible) continue;
+      const delta = r.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position), d = delta.length();
+      if (d < 4 && delta.normalize().dot(forward) > cone) {
+        r.hostile = true; r.hp -= dmg; bloodAt(r.p.position); slideMove(r.p.position, forward.x * push, forward.z * push, 0.4); r.p.userData.human.hit(); landed();
+        if (r.hp <= 0) { r.alive = false; r.p.userData.human.knockDown(); rep += 4; heat.add(0.5); peds.scare(r.p.position.x, r.p.position.z); }
+        updateHUD(); return;
+      }
+    }
+    if (!target) {
+      // Innocent bystanders: they go down, everyone else scatters, and the cops hear about it.
+      const ped = peds.near(camera.position.x, camera.position.z, 3.5).find(a => { const v = a.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position).normalize(); return v.dot(forward) > cone; });
+      if (ped) { peds.knock(ped); bloodAt(ped.p.position); landed(); heat.add(1); peds.scare(camera.position.x, camera.position.z); say('You just laid out a random. Someone\'s calling the cops.'); updateHUD(); }
+      return;
+    }
     target.hp -= dmg; bloodAt(target.p.position); slideMove(target.p.position, forward.x * push, forward.z * push, 0.4);
     landed(); target.p.userData.human.hit();
     if (target.hp <= 0) {
-      target.alive = false; target.dyingT = 0.0001; target.p.userData.human.knockDown(); rep += 5;
+      target.alive = false; target.dyingT = 0.0001; target.p.userData.human.knockDown(); rep += 5; heat.add(0.4); peds.scare(target.p.position.x, target.p.position.z);
       if (stage === 'mission-brawl') { defeated++; if (defeated >= 3) { advance('mission-return', `You won the fights. Your ${hometown} fixer wants to see you.`); return; } }
       say('Opponent defeated. Reputation +5.');
     } else say('Hit landed.');
@@ -645,11 +730,54 @@ function createGame(world) {
     st.attackT = (st.attackT ?? 0.6) - dt;
     if (d < 1.95 && st.attackT <= 0) { st.windup = 0.42; h.punch(); }
   }
+  function busted() {
+    const lost = Math.round(cash * 0.3); cash -= lost; heat.level = 0; police.clear();
+    if (drive.car) exitCar();
+    if (c1.manuInCar) manuOut(home.pos.x, home.pos.z);
+    const p = police.station; camera.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z);
+    say(`Busted. A night in the cells at Manurewa station and a $${lost} fine.`); updateHUD(); store();
+  }
+  // ---- Chapter One per-frame logic ---------------------------------------------------------
+  function chapterOne(dt) {
+    const rdt = world.realDt || dt;
+    if (stage === 'complete' && (c1.timer -= rdt) <= 0) { c1.timer = 1e9; phone.receive(TEXTS.c1Call, {}, () => { rawiri.visible = true; advance('c1-car', 'Tipene texted. Get a car, then pick up Manu at his place.'); }); }
+    if ((stage === 'c1-car' || stage === 'c1-home') && drive.car && !c1.manuInCar && Math.hypot(manu.position.x - drive.car.x, manu.position.z - drive.car.z) < 10 && manu.parent === scene) {
+      manuIntoCar();
+      if (stage === 'c1-car') advance('c1-pickup', 'Manu\'s in. Drive to the Southmall car park and see Rawiri.'); else say('Manu\'s in. Take him home.');
+    }
+    if (stage === 'c1-home' && c1.manuInCar && drive.car && Math.abs(drive.car.v) < 2.5 && Math.hypot(home.pos.x - drive.car.x, home.pos.z - drive.car.z) < 16) {
+      manuOut(home.pos.x, home.pos.z); faceEachOther(manu);
+      dlg.run('c1Home', {}, () => { cash += 100; rep += 25; advance('c1-done', 'CHAPTER ONE COMPLETE. Manu\'s home. Tipene reckons you\'re the real deal.'); });
+    }
+    if (stage === 'c1-wait' && (c1.timer -= rdt) <= 0) {
+      c1.timer = 1e9;
+      phone.receive(TEXTS.c1ManuJumped, { rival: rivalCrew() }, () => { advance('c1-manu', 'Manu got jumped at Manurewa station. Get there.'); placeChapterOne(); });
+    }
+    // Rival fights.
+    for (const r of c1.rivals) {
+      if (!r.alive || !r.p.visible) continue;
+      const h = r.p.userData.human, d = dist(r.p.position);
+      if (stage === 'c1-manu' && d < 30) r.hostile = true;
+      if (!r.hostile) { h.speed = 0; h.mode = 'idle'; continue; }
+      let sp = 0;
+      if (d < 30 && d > 1.9) { const b0 = r.p.position.clone(); slideMove(r.p.position, (camera.position.x - r.p.position.x) / d * dt * 1.6, (camera.position.z - r.p.position.z) / d * dt * 1.6, 0.4); sp = b0.distanceTo(r.p.position) / Math.max(dt, 1e-4); }
+      faceEachOther(r.p); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle'; r.p.position.y = groundHeight(r.p.position.x, r.p.position.z);
+      if (!dlg.active && !drive.car) meleeAI(r, h, d, 9, KO_HOME, dt);
+    }
+    if (stage === 'c1-rivals' && c1.rivals.slice(0, 3).every(r => !r.alive) && c1.rivals[0].hostile) { c1.timer = 20; rep += 10; advance('c1-wait', 'All three down. Aunty Lani\'s dairy should be quiet now.'); }
+  }
   // ---- driving frame: arcade car + chase camera ----------------------------------------------
   function driveFrame(dt, throttle, steer) {
     const near = [];
     for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.filter(e => e.alive).map(e => e.p), ...debtors.filter(d => d.visible)]) if (p.parent && Math.abs(p.position.x - drive.car.x) < 30 && Math.abs(p.position.z - drive.car.z) < 30) near.push({ x: p.position.x, z: p.position.z, r: 0.45 });
-    drive.update(dt, throttle, steer, !!keys.Space, [...traffic.obstacles(), ...near]);
+    for (const a of peds.agents) if (a.active && a.down <= 0) near.push({ x: a.p.position.x, z: a.p.position.z, r: 0.4, ped: a });
+    drive.update(dt, throttle, steer, !!keys.Space, [...traffic.obstacles(), ...police.obstacles(), ...near]);
+    if (drive.hit) {
+      const o = drive.hit, v = drive.lastImpact || 0; drive.hit = null;
+      if (o.ped && v > 4) { peds.knock(o.ped); heat.add(2); peds.scare(drive.car.x, drive.car.z); say('You hit someone. That\'s heat.'); }
+      else if (o.police && v > 3) { heat.add(1.5); say('You rammed a cop car.'); }
+      else if (o.car && v > 7) heat.add(0.6);
+    }
     const car = drive.car;
     const dy = Math.atan2(Math.sin(yaw - lastDriveYaw), Math.cos(yaw - lastDriveYaw)); orbit += dy;
     if (lookTouchId === null && !document.pointerLockElement) orbit *= Math.exp(-dt * 1.4); else orbit *= Math.exp(-dt * 0.3);
@@ -700,6 +828,14 @@ function createGame(world) {
         camera.position.y = lerp(camera.position.y, ground, 1 - Math.exp(-dt * 12));
       }
       traffic.update(dt, drive.car ? { x: drive.car.x, z: drive.car.z } : camera.position, drive.car);
+      const me = drive.car ? { x: drive.car.x, z: drive.car.z } : camera.position;
+      peds.update(dt, me.x, me.z, (pp, dx, dz) => slideMove(pp, dx, dz, 0.35));
+      heat.update(dt, policeSeen);
+      const pr = police.update(dt, t, heat, me, !!drive.car);
+      policeSeen = pr.closest < 70;
+      if (pr.closest < 40 && heat.level > 0) peds.scare(me.x, me.z, 20);
+      if (pr.caught) busted();
+      chapterOne(dt);
       // Traffic that reaches you on foot clips you (they normally stop in time).
       if (!drive.car) for (const o of traffic.obstacles()) if (o.car.v > 4 && Math.hypot(o.x - camera.position.x, o.z - camera.position.z) < 1.3) { hurtPlayer(12, KO_HOME); o.car.v = 0; say('Watch the road, egg.'); }
       window.__auTelemetry = { engine: 'three', started, paused: pauseOpen, x: camera.position.x, z: camera.position.z, joyX: joy.x, joyY: joy.y };
@@ -787,7 +923,7 @@ function createGame(world) {
     // Dying enemies stay down for a few seconds, then leave the scene.
     for (const e of enemies) if (!e.alive && e.dyingT > 0) { e.dyingT += dt; if (e.dyingT > 4.5 && e.p.parent) { scene.remove(e.p); e.dyingT = 0; } }
     // Crew contacts and the fixer turn their heads to watch the player.
-    for (const c of [...contacts.map(c => c.p), fixer, manu, shorty, JOBS.pita.npc, ...(darrenState.hostile ? [] : [darren]), ...(jobState.kev === 'fight' ? [] : [JOBS.kev.npc])]) {
+    for (const c of [...contacts.map(c => c.p), fixer, manu, shorty, JOBS.pita.npc, rawiri, lani, ...(darrenState.hostile ? [] : [darren]), ...(jobState.kev === 'fight' ? [] : [JOBS.kev.npc])]) {
       const h = c.userData.human, dx = camera.position.x - c.position.x, dz = camera.position.z - c.position.z, d = Math.hypot(dx, dz);
       const want = d < 9 ? Math.atan2(dx, dz) - c.rotation.y : 0;
       h.lookYaw = lerp(h.lookYaw, Math.atan2(Math.sin(want), Math.cos(want)), 1 - Math.exp(-dt * 4));
@@ -805,7 +941,7 @@ function createGame(world) {
     const sh = world.shake || 0; world.shake = Math.max(0, sh - dt);
     camera.rotation.set(pitch + (Math.random() - 0.5) * sh * 0.12, yaw + (Math.random() - 0.5) * sh * 0.12, 0);
     // Animate characters near the camera every frame, distant ones at a lower rate.
-    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.map(e => e.p), ...debtors]) {
+    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.map(e => e.p), ...debtors, ...peds.people, rawiri, lani, ...c1.rivals.map(r => r.p)]) {
       if (!p.parent || !p.visible) continue;
       const d = p.position.distanceTo(camera.position);
       const h = p.userData.human;
@@ -829,6 +965,11 @@ function createGame(world) {
     setHp: v => { hp = v; }, setCash: v => { cash = v; }, strength: () => strength, traffic: () => traffic.cars.length,
     hustle: () => hustle && { name: hustle.name, amount: hustle.amount, state: hustle.state, type: hustle.type, x: hustle.npc.position.x, z: hustle.npc.position.z },
     startHustle: type => { hustleTimer = 0; startHustle(); if (hustle && type) hustle.type = type; return !!hustle; },
+    pedDebug: () => peds.agents.map(a => ({ active: a.active, x: Math.round(a.p.position.x), z: Math.round(a.p.position.z), flee: a.flee, down: a.down, vis: a.p.visible })),
+    heat: () => heat.level, addHeat: n => heat.add(n), clearHeat: () => { heat.level = 0; police.clear(); }, police: () => police.cars.map(c => ({ x: c.x, z: c.z })), peds: () => peds.agents.filter(a => a.active).length,
+    carTo: (x, z) => { if (drive.car) { drive.car.x = x; drive.car.z = z; drive.car.v = 0; } },
+    c1: () => ({ manuInCar: c1.manuInCar, rawiri: rawiri.position.clone(), lani: lani.position.clone(), home: home.pos.clone(), rivals: c1.rivals.map(r => ({ x: r.p.position.x, z: r.p.position.z, alive: r.alive, hostile: r.hostile })) }),
+    skipTimers: () => { c1.timer = 0; },
     jobs: () => ({ ...jobState }),
     targets: () => ({ fixer: fixer.position.clone(), manu: manu.position.clone(), darren: darren.position.clone(), shorty: shorty.position.clone(), kev: JOBS.kev.npc.position.clone(), mikey: JOBS.mikey.npc.position.clone(), pita: JOBS.pita.npc.position.clone(), stash: stash.position.clone(), contacts: contacts.map(c => ({ f: c.f, x: c.p.position.x, z: c.p.position.z })), enemies: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z, alive: e.alive })) }),
   };

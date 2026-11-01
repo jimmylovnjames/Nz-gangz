@@ -309,35 +309,73 @@ class PropBuilder {
   }
 
   // ---------------------------------------------------------------- cars
-  carProto(type) {
-    const P = [
-      { L: 4.0, W: 1.74, body: [[0, .32], [0, .95], [.15, 1.05], [.32, 1.43], [1.0, 1.5], [2.3, 1.48], [3.05, 1.0], [3.9, .86], [4.0, .62], [4.0, .32]], glass: [[.17, 1.07], [.34, 1.45], [2.3, 1.45], [3.09, 1.0]], wb: [.72, 3.28] },
-      { L: 4.6, W: 1.78, body: [[0, .34], [0, .95], [.1, 1.02], [.85, 1.06], [1.35, 1.44], [2.9, 1.45], [3.55, 1.0], [4.5, .86], [4.6, .62], [4.6, .34]], glass: [[.83, 1.06], [1.36, 1.46], [2.9, 1.46], [3.59, 1.0]], wb: [.9, 3.65] },
-      { L: 5.2, W: 1.85, body: [[0, .45], [0, 1.08], [1.9, 1.08], [1.95, 1.12], [2.25, 1.8], [3.4, 1.82], [3.95, 1.18], [5.1, 1.02], [5.2, .7], [5.2, .45]], glass: [[2.1, 1.12], [2.28, 1.83], [3.4, 1.83], [3.99, 1.18]], wb: [1.0, 4.15] },
-      { L: 4.7, W: 1.86, body: [[0, .42], [0, 1.05], [.05, 1.6], [.3, 1.74], [3.1, 1.74], [3.7, 1.15], [4.6, 1.02], [4.7, .7], [4.7, .42]], glass: [[.02, 1.08], [.29, 1.76], [3.1, 1.76], [3.74, 1.15]], wb: [.85, 3.75] },
+  // Parametric NZ street cars (Japanese imports): lower body extruded from a side profile with wheel arches,
+  // a narrower glass greenhouse with painted roof and pillars, arch liners, wheels, lamps, bumpers and plates.
+  // 0 hatch (Corolla/Swift) 1 sedan 2 wagon (Legacy/Caldina) 3 double-cab ute (Hilux) 4 people mover (Odyssey) 5 van (Hiace)
+  carProto(type, police = false) {
+    const T = [
+      { L: 4.05, W: 1.72, R: 0.31, wx: [0.74, 3.28], sill: 0.24, belt: 0.96, nose: 0.72, ws: 1.05, roofA: 1.6, roofC: 3.4, roof: 1.47, back: 'hatch' },
+      { L: 4.65, W: 1.78, R: 0.32, wx: [0.92, 3.62], sill: 0.24, belt: 0.95, nose: 0.66, ws: 1.32, roofA: 1.85, roofC: 3.55, roof: 1.45, back: 'boot' },
+      { L: 4.75, W: 1.76, R: 0.32, wx: [0.92, 3.66], sill: 0.24, belt: 0.97, nose: 0.68, ws: 1.25, roofA: 0.32, roofC: 3.62, roof: 1.5, back: 'wagon' },
+      { L: 5.3, W: 1.85, R: 0.39, wx: [1.0, 4.08], sill: 0.42, belt: 1.18, nose: 1.0, ws: 1.18, roofA: 2.15, roofC: 4.1, roof: 1.82, back: 'ute' },
+      { L: 4.8, W: 1.8, R: 0.33, wx: [0.95, 3.8], sill: 0.26, belt: 1.02, nose: 0.82, ws: 1.25, roofA: 0.28, roofC: 3.85, roof: 1.68, back: 'wagon' },
+      { L: 4.7, W: 1.7, R: 0.32, wx: [0.85, 3.4], sill: 0.3, belt: 1.05, nose: 1.0, ws: 0.4, roofA: 0.08, roofC: 4.35, roof: 1.98, back: 'van' },
     ][type];
-    const shape = pts => { const s = new THREE.Shape(); pts.forEach((p, i) => i ? s.lineTo(p[0], p[1]) : s.moveTo(p[0], p[1])); s.closePath(); return s; };
-    const orient = g => { g.translate(-P.L / 2, 0, -P.W / 2); g.rotateY(-Math.PI / 2); return g; };
-    const bevel = 0.05;
-    const body = new THREE.ExtrudeGeometry(shape(P.body), { depth: P.W - bevel * 2, bevelEnabled: true, bevelThickness: bevel, bevelSize: 0.04, bevelSegments: 2, curveSegments: 4 });
-    body.translate(0, 0, bevel);
-    const glass = new THREE.ExtrudeGeometry(shape(P.glass), { depth: P.W + 0.03, bevelEnabled: false });
-    glass.translate(0, 0, -0.015);
-    const wheels = [], rims = [];
-    for (const x of P.wb) for (const z of [0.16, P.W - 0.16]) {
-      const t = new THREE.CylinderGeometry(0.33, 0.33, 0.22, 16); t.rotateX(Math.PI / 2); t.translate(x, 0.33, z); wheels.push(t);
-      const r = new THREE.CylinderGeometry(0.21, 0.21, 0.235, 12); r.rotateX(Math.PI / 2); r.translate(x, 0.33, z); rims.push(r);
+    const { L, W, R } = T, AR = R + 0.07;
+    const shape = pts => { const sh = new THREE.Shape(); pts.forEach((p, i) => i ? sh.lineTo(p[0], p[1]) : sh.moveTo(p[0], p[1])); sh.closePath(); return sh; };
+    const extrude = (pts, depth, z0, bevel = 0) => { const g = new THREE.ExtrudeGeometry(shape(pts), { depth: depth - bevel * 2, bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel * 0.8, bevelSegments: 2, curveSegments: 4 }); g.translate(0, 0, z0 + bevel); return g.index ? g.toNonIndexed() : g; };
+    const box = (x0, x1, y0, y1, z0, z1) => { const g = new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0); g.translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); return g.toNonIndexed(); };
+    const orient = g => { g.translate(-L / 2, 0, -W / 2); g.rotateY(-Math.PI / 2); return g; };
+    // Lower body profile (x from the rear bumper to the front bumper), arches cut out of the sills.
+    const low = [[0.04, T.sill + 0.06]];
+    for (const wx of T.wx) { low.push([wx - AR, T.sill]); for (let k = 0; k <= 8; k++) { const a = Math.PI - k / 8 * Math.PI; low.push([wx + Math.cos(a) * AR, R + Math.sin(a) * AR * 0.95]); } low.push([wx + AR, T.sill]); }
+    const hood = T.back === 'van' ? T.belt : T.belt - 0.1;
+    low.push([L - 0.05, T.sill + 0.04], [L, T.sill + 0.16], [L, hood - 0.12], [L - 0.07, hood], [L - T.nose, T.belt]);
+    if (T.back === 'boot') low.push([0.55, T.belt], [0.1, T.belt - 0.04], [0, T.belt - 0.18]);
+    else if (T.back === 'ute') low.push([T.roofA - 0.05, T.belt], [0.04, T.belt - 0.02], [0, T.belt - 0.12]);
+    else low.push([0.02, T.belt], [0, T.belt - 0.15]);
+    const body = [extrude(low, W, 0, 0.06)];
+    // Greenhouse: glass shell slightly inside the pillar planes, then a painted roof and pillars.
+    const xw = L - T.nose, xa = L - T.ws - (T.back === 'van' ? 0 : 0.02), top = T.roof;
+    const back0 = T.back === 'boot' ? 0.6 : T.back === 'ute' ? T.roofA : 0.06, back1 = T.back === 'boot' ? 1.05 : T.back === 'ute' ? T.roofA : T.back === 'van' ? 0.08 : 0.22;
+    const gw = W * 0.82, gz = (W - gw) / 2, pw = W * 0.86, pz = (W - pw) / 2;
+    const glassPts = [[xw, T.belt - 0.01], [xa, top - 0.04], [back1 + 0.05, top - 0.04], [back0, T.belt - 0.01]];
+    const rest = [];
+    const col = (g, hex) => { const c = new THREE.Color(hex), n = g.attributes.position.count, arr = new Float32Array(n * 3); for (let i = 0; i < n; i++) { arr[i * 3] = c.r; arr[i * 3 + 1] = c.g; arr[i * 3 + 2] = c.b; } g.setAttribute('color', new THREE.BufferAttribute(arr, 3)); if (g.attributes.uv) g.deleteAttribute('uv'); return g; };
+    rest.push(col(extrude(glassPts, gw, gz), 0x0b1014));
+    body.push(extrude([[xa - 0.02, top - 0.05], [back1, top - 0.05], [back1 - 0.03, top], [xa + 0.04, top]], pw, pz, 0.025));
+    // A, B, C pillars on both sides.
+    for (const z of [pz - 0.005, W - pz - 0.03]) {
+      body.push(extrude([[xw - 0.02, T.belt], [xw + 0.07, T.belt], [xa + 0.06, top - 0.04], [xa - 0.04, top - 0.04]], 0.035, z));
+      const bx = T.back === 'van' ? (xa + back1) * 0.5 : (xw + back0) * 0.52;
+      if (T.back !== 'ute' || true) body.push(box(bx - 0.06, bx + 0.06, T.belt, top - 0.04, z, z + 0.035));
+      body.push(extrude([[back0 - 0.02, T.belt], [back0 + (T.back === 'boot' ? 0.25 : 0.32), T.belt], [back1 + 0.22, top - 0.04], [back1, top - 0.04]], 0.035, z));
+      body.push(box(xw - 0.02, xw + 0.14, T.belt + 0.04, T.belt + 0.16, z < W / 2 ? -0.07 : W - 0.03, z < W / 2 ? 0.03 : W + 0.07)); // mirrors
     }
-    const lights = [], tails = [];
-    for (const z of [0.28, P.W - 0.28]) {
-      const h = new THREE.BoxGeometry(0.06, 0.13, 0.32); h.translate(P.L - 0.01, P.body[P.body.length - 2][1] + 0.06, z); lights.push(h);
-      const t = new THREE.BoxGeometry(0.06, 0.16, 0.3); t.translate(0.01, P.body[1][1] - 0.05, z); tails.push(t);
+    // Ute: tonneau-covered tray and tailgate line.
+    if (T.back === 'ute') rest.push(col(box(0.06, T.roofA - 0.08, T.belt - 0.03, T.belt + 0.01, 0.1, W - 0.1), 0x15171a));
+    // Wheels, arch liners, lamps, bumpers, plates.
+    for (const wx of T.wx) for (const z of [0.13, W - 0.13]) {
+      const t = new THREE.CylinderGeometry(R, R, 0.21, 18); t.rotateX(Math.PI / 2); t.translate(wx, R, z); rest.push(col(t.toNonIndexed(), 0x121212));
+      const rim = new THREE.CylinderGeometry(R * 0.62, R * 0.62, 0.222, 14); rim.rotateX(Math.PI / 2); rim.translate(wx, R, z); rest.push(col(rim.toNonIndexed(), 0xaeb4b8));
+      const hub = new THREE.CylinderGeometry(R * 0.18, R * 0.18, 0.232, 8); hub.rotateX(Math.PI / 2); hub.translate(wx, R, z); rest.push(col(hub.toNonIndexed(), 0x3a3d40));
     }
-    const trim = [new THREE.BoxGeometry(0.12, 0.2, P.W + 0.04), new THREE.BoxGeometry(0.12, 0.2, P.W + 0.04)];
-    trim[0].translate(-0.02, P.body[0][1] + 0.05, P.W / 2); trim[1].translate(P.L + 0.02, P.body[0][1] + 0.05, P.W / 2);
-    const merge = list => { const g = list.map(x => x.index ? x.toNonIndexed() : x); return orient(mergeNonIndexed(g)); };
-    const flat = g => g.index ? g.toNonIndexed() : g;
-    return { body: orient(flat(body)), glass: orient(flat(glass)), tires: merge(wheels), rims: merge(rims), lights: merge(lights), tails: merge(tails), trim: merge(trim) };
+    for (const wx of T.wx) { const g = new THREE.CylinderGeometry(AR - 0.01, AR - 0.01, W - 0.1, 12, 1, true, -Math.PI / 2, Math.PI); g.rotateX(Math.PI / 2); g.translate(wx, R, W / 2); g.scale(1, 1, 1); rest.push(col(g.toNonIndexed(), 0x0c0c0c)); }
+    const lampY = hood - 0.2;
+    for (const z of [0.18, W - 0.5]) { rest.push(col(box(L - 0.06, L + 0.012, lampY, lampY + 0.13, z, z + 0.32), 0xe4e8ea)); rest.push(col(box(-0.012, 0.05, T.belt - 0.32, T.belt - 0.12, z + (z < 1 ? -0.02 : 0.12), z + (z < 1 ? 0.26 : 0.36)), 0x8c1010)); }
+    rest.push(col(box(L - 0.04, L + 0.03, T.sill + 0.05, T.sill + 0.24, 0.12, W - 0.12), 0x1a1b1c), col(box(-0.03, 0.04, T.sill + 0.05, T.sill + 0.22, 0.12, W - 0.12), 0x1a1b1c));
+    rest.push(col(box(L - 0.02, L + 0.02, lampY - 0.02, lampY + 0.1, 0.55, W - 0.55), 0x111213)); // grille
+    for (const [x0, x1] of [[L + 0.025, L + 0.04], [-0.04, -0.025]]) { rest.push(col(box(x0, x1, T.sill + 0.26, T.sill + 0.38, W / 2 - 0.18, W / 2 + 0.18), 0xf4f4f0)); rest.push(col(box(x0 + (x0 > 0 ? 0.005 : -0.005), x1 + (x0 > 0 ? 0.005 : -0.005), T.sill + 0.3, T.sill + 0.34, W / 2 - 0.13, W / 2 + 0.13), 0x101010)); }
+    if (police) {
+      // NZ Police: white with blue/yellow Battenburg squares along the sides and a light bar.
+      for (const z of [-0.012, W - 0.005]) for (let k = 0; k < 12; k++) for (const row of [0, 1]) {
+        const x0 = 0.35 + k * 0.33; if (x0 > L - 0.4) continue;
+        rest.push(col(box(x0, x0 + 0.33, T.sill + 0.28 + row * 0.2, T.sill + 0.48 + row * 0.2, z, z + 0.017), (k + row) % 2 ? 0xf2c300 : 0x1b3a8c));
+      }
+      rest.push(col(box(xa - 0.55, xa - 0.15, top, top + 0.1, W / 2 - 0.6, W / 2 - 0.02), 0xd01818), col(box(xa - 0.55, xa - 0.15, top, top + 0.1, W / 2 + 0.02, W / 2 + 0.6), 0x1840e0));
+    }
+    const flatAll = list => list.map(g => (g.index ? g.toNonIndexed() : g));
+    return { body: orient(mergeNonIndexed(flatAll(body))), rest: orient(mergeNonIndexedColored(rest)) };
   }
   cars() {
     const paints = [0xf2f2f0, 0xf2f2f0, 0xf2f2f0, 0xb8bcc0, 0xb8bcc0, 0x6e7276, 0x6e7276, 0x15171a, 0x15171a, 0x1f3f78, 0x8a1414, 0x3a4a3a, 0x7a6a4a, 0xc8b89a];
@@ -353,18 +391,16 @@ class PropBuilder {
     const tail = new THREE.MeshStandardMaterial({ color: 0x8a0f0f, roughness: 0.2 });
     // Car kit shared with driving and traffic: per-type body + merged rest geometry, paint, palette.
     const kit = this.city.carKit = { protos: [], paint, rest: this.carRest || (this.carRest = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.35, metalness: 0.35 })), paints };
-    for (let type = 0; type < 4; type++) {
+    for (let type = 0; type < 6; type++) {
       const list = this.city.cars.filter(c => c.type === type);
       for (const c of list) c.y = c.y || 0;
-      const p = this.carProto(type);
+      const p = this.carProto(type), rest = p.rest;
+      kit.protos[type] = { body: p.body, rest };
       const C = { cullClass: 'cars', cell: 300, track: true };
       if (list.length) instanced(this.scene, p.body, paint, list, placeMatrix, { ...C, color: c => new THREE.Color(paints[Math.floor(c.color * paints.length)]) });
-      // Glass, tyres, rims, lamps and trim share one vertex-coloured material: two draw calls per car type.
-      const colored = (g, hex) => { const c = new THREE.Color(hex), n = g.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[i * 3] = c.r; a[i * 3 + 1] = c.g; a[i * 3 + 2] = c.b; } g.setAttribute('color', new THREE.BufferAttribute(a, 3)); if (g.attributes.uv) g.deleteAttribute('uv'); return g; };
-      const rest = mergeNonIndexedColored([colored(p.glass, 0x0a0d10), colored(p.tires, 0x141414), colored(p.rims, 0xb4b9bc), colored(p.lights, 0xe8e4dc), colored(p.tails, 0x8a0f0f), colored(p.trim, 0x1b1c1d)]);
-      kit.protos[type] = { body: p.body, rest };
       if (list.length) instanced(this.scene, rest, kit.rest, list, placeMatrix, C);
     }
+    kit.police = this.carProto(1, true);
   }
 
   wires() {

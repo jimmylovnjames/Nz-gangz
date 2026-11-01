@@ -10,6 +10,10 @@ const CAST = {
   mikey: { name: 'MIKEY', color: '#7ac8ff' },
   pita: { name: 'UNCLE PITA', color: '#e0c8ff' },
   debtor: { name: 'DEBTOR', color: '#ffd0a0' }, // renamed per hustle
+  tipene: { name: 'TIPENE', color: '#e8ba55' },
+  rawiri: { name: 'RAWIRI', color: '#c8e0a0' },
+  lani: { name: 'AUNTY LANI', color: '#ffb8d8' },
+  rival: { name: 'RIVAL', color: '#ff7070' }, // renamed to the rival crew's name
 };
 const SCRIPT = {
   proIntro: [
@@ -179,6 +183,49 @@ const SCRIPT = {
 };
 
 // Phone texts (not voiced). {vars} are filled in by the game.
+// Chapter One: the run to Southmall, Aunty Lani's dairy, the rival crew, and Manu gets jumped.
+Object.assign(SCRIPT, {
+  c1Rawiri: [
+    { who: 'rawiri', id: 'c1_01', text: 'You Tipene\'s new boy? Took your time.' },
+    { who: 'manu', id: 'c1_02', text: 'Traffic, uce. You know Great South Road.' },
+    { who: 'rawiri', id: 'c1_03', text: 'Here. Don\'t open it, don\'t lose it, don\'t get pulled over with it.' },
+    { who: 'you', id: 'c1_04', text: 'Sweet. Straight to Tipene.' },
+  ],
+  c1Deliver: [
+    { who: 'tipene', id: 'c1_05', text: 'There he is. No cops on your tail? Good.' },
+    { who: 'tipene', id: 'c1_06', text: 'Two hundred. And there\'s something else.' },
+    { who: 'tipene', id: 'c1_07', text: 'Aunty Lani at the Clendon dairy. She looks after us, we look after her. Go see her.' },
+  ],
+  c1Hot: [{ who: 'tipene', id: 'c1_08', text: 'You brought the cops here? Lose them first, then come back.' }],
+  c1Lani: [
+    { who: 'lani', id: 'c1_09', text: 'Oh, you\'re the one Tipene sent. Thank God.' },
+    { who: 'lani', id: 'c1_10', text: 'Those {rival} boys keep coming in, filling their pockets, giving my mokos lip.' },
+    { who: 'lani', id: 'c1_11', text: 'They hang round the skate park after school. Please, love. Make it stop.' },
+    { who: 'you', id: 'c1_12', text: 'Leave it with me, Aunty.' },
+  ],
+  c1Rivals: [
+    { who: 'rival', id: 'c1_13', text: 'Oi. You lost? This is our park.' },
+    { who: 'you', id: 'c1_14', text: 'Aunty Lani\'s dairy. You\'re done going in there.' },
+    { who: 'rival', id: 'c1_15', text: 'Says who?' },
+    { choice: [
+      { text: 'Says Tipene. You want that problem?', id: 'c1_c1', result: 'talk' },
+      { text: 'Says me. Come on then.', id: 'c1_c2', result: 'fight' },
+    ] },
+  ],
+  c1RivalsBackOff: [{ who: 'rival', id: 'c1_16', text: '...Whatever, bro. Plenty of other dairies.' }],
+  c1RivalsFight: [{ who: 'rival', id: 'c1_17', text: 'Tipene\'s not here, egg. Get him, boys.' }],
+  c1ManuDown: [
+    { who: 'manu', id: 'c1_18', text: 'Cuz... took you long enough.' },
+    { who: 'manu', id: 'c1_19', text: 'Those {rival} boys. Said it was for the park. My ribs, bro.' },
+    { who: 'you', id: 'c1_20', text: 'Can you walk? Car\'s over here. I\'ll get you home.' },
+  ],
+  c1Home: [
+    { who: 'manu', id: 'c1_21', text: 'Cheers, cuz. Don\'t tell Mum about this.' },
+    { who: 'manu', id: 'c1_22', text: 'Tipene rang. He reckons you\'re the real deal now.' },
+    { who: 'manu', id: 'c1_23', text: 'Just... watch yourself, eh. This doesn\'t stop now.' },
+  ],
+});
+
 // Shorty's ongoing hustles (repeatable side jobs after his chapter).
 Object.assign(SCRIPT, {
   hustleMeet: [
@@ -196,6 +243,16 @@ Object.assign(SCRIPT, {
   hustleAgain: [{ who: 'debtor', id: 'hus_07', text: 'I already paid, bro. Leave me alone.' }],
 });
 const TEXTS = {
+  c1Call: [
+    { from: 'tipene', text: 'you did good for us. got a run for u tonight' },
+    { from: 'tipene', text: 'grab a car, pick up ur cuz manu, see rawiri at the southmall carpark' },
+    { from: 'tipene', text: 'bring me what he gives u. dont get pulled over' },
+  ],
+  c1ManuJumped: [
+    { from: 'manu', text: 'bro' },
+    { from: 'manu', text: '{rival} boys jumped me at manurewa station 😤' },
+    { from: 'manu', text: 'come get me' },
+  ],
   hustleNew: [
     { from: 'shorty', text: 'got another one for u' },
     { from: 'shorty', text: '{name} owes {amount}. {street}' },
