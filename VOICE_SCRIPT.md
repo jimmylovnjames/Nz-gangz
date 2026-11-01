@@ -361,5 +361,5 @@ _Unimpressed._
 | id | who | line |
 |---|---|---|
 | `sh_back_6` | SHORTY | Here. That's your quarter. |
-| `sh_back_7` | SHORTY | Listen. People are talking about you. The crews down the square want to see you. |
+| `sh_back_7` | SHORTY | Listen. People are talking about you. The crews down at Clendon skate park want to see you. |
 | `sh_back_8` | SHORTY | That's a big deal, bro. Don't muck it up. |

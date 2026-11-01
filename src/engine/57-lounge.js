@@ -126,7 +126,7 @@ class Lounge {
     const pmrem = new THREE.PMREMGenerator(renderer);
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture; this.scene.environmentIntensity = 0.12;
     // Cousin on the couch with his controller.
-    this.cousin = new Human(charMaterial, { seed: 4242, skin: 0x7a4b31, top: 0x2a2d33, topCell: ATLAS.cotton, pants: 0x3a3a3a, pantsCell: ATLAS.track, face: ATLAS.faceC, beanie: 0x1a1a1a, pose: 'seated', scale: 1.02 });
+    this.cousin = new Human(charMaterial, { look: 'manu', seed: 4242, skin: 0x7a4b31, top: 0x2a2d33, topCell: ATLAS.cotton, pants: 0x3a3a3a, pantsCell: ATLAS.track, face: ATLAS.faceC, beanie: 0x1a1a1a, pose: 'seated', scale: 1.02 });
     this.cousin.root.position.set(0.62, 0.02, 1.6); this.cousin.root.rotation.y = Math.PI;
     this.scene.add(this.cousin.root);
     const pad = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.03, 0.08), new THREE.MeshStandardMaterial({ color: 0x1b1b1d, roughness: 0.5 }));

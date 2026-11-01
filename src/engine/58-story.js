@@ -172,7 +172,7 @@ const SCRIPT = {
   ],
   shortyBackEnd: [
     { who: 'shorty', id: 'sh_back_6', text: 'Here. That\'s your quarter.' },
-    { who: 'shorty', id: 'sh_back_7', text: 'Listen. People are talking about you. The crews down the square want to see you.' },
+    { who: 'shorty', id: 'sh_back_7', text: 'Listen. People are talking about you. The crews down at Clendon skate park want to see you.' },
     { who: 'shorty', id: 'sh_back_8', text: 'That\'s a big deal, bro. Don\'t muck it up.', result: 'done' },
   ],
 };

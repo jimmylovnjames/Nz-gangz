@@ -22,7 +22,7 @@ async function boot() {
   post.configure(q);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.1, 1800);
+  const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.1, 6500);
   scene.add(camera);
   const sky = new SkySystem(scene, renderer);
   sky.configureShadows(q);
@@ -35,6 +35,9 @@ async function boot() {
   for (let i = 0; i < names.length; i++) { forge.make(names[i]); if (i % 3 === 2) { setLoad(0.05 + 0.2 * i / names.length); await nextTick(); } }
   const lib = new MaterialLib(forge, q);
   const photo = new PhotoAssets(renderer, lib, q);
+  // Realistic people need texture detail (MEDIUM and up); LOW keeps the light stand-in bodies.
+  PEOPLE.enabled = q.tex >= 1024 && new URLSearchParams(location.search).get('people') !== 'off'; PEOPLE.msaa = q.msaa > 0;
+  for (const look of ['manu', 'darren', 'shorty', 'kev', 'mikey', 'pita', 'crewA', 'crewB', 'crewC']) PEOPLE.get(look);
   sky.photo = photo;
 
   setLoad(0.28, 'Building the district…');
@@ -43,6 +46,8 @@ async function boot() {
   city.finish();
   setLoad(0.72, 'Planting trees, parking cars…'); await nextTick();
   new PropBuilder(lib, scene, city, q).build();
+  registerCull(scene);
+  const cullScale = () => q.tex >= 1024 ? 1 : q.tex >= 512 ? 0.8 : 0.6;
   setLoad(0.82, 'Dressing the locals…'); await nextTick();
   const charMaterial = buildCharacterAtlas();
   const fists = new Fists(charMaterial, camera);
@@ -70,14 +75,15 @@ async function boot() {
   const lounge = new Lounge(lib, charMaterial, knuckle, renderer);
   const dialogue = new Dialogue();
   const prologue = new Prologue(lounge, knuckle, dialogue);
-  const homes = city.houses.filter(h => h.ring === 2);
-  const nearestHome = (x, z, skip) => (homes.length ? homes : city.houses).filter(h => !skip.includes(h)).reduce((best, h) => !best || Math.hypot(h.pos.x - x, h.pos.z - z) < Math.hypot(best.pos.x - x, best.pos.z - z) ? h : best, null);
-  const cousinHome = nearestHome(-130, 70, []);
-  const shortyHome = nearestHome(140, -75, [cousinHome]);
-  const pitaHome = nearestHome(85, 135, [cousinHome, shortyHome]);
+  const homes = city.houses;
+  const nearestHome = (x, z, skip) => homes.filter(h => !skip.includes(h)).reduce((best, h) => !best || Math.hypot(h.pos.x - x, h.pos.z - z) < Math.hypot(best.pos.x - x, best.pos.z - z) ? h : best, null);
+  // Manu lives in Clendon, a few streets from the skate park; Shorty and Uncle Pita are over in Manurewa.
+  const cousinHome = nearestHome(-1460, 560, []);
+  const shortyHome = nearestHome(1180, -300, [cousinHome]);
+  const pitaHome = nearestHome(1560, -260, [cousinHome, shortyHome]);
   const phone = new Phone();
-  const world = { scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0, dialogue, prologue, phone, cousinHome, shortyHome, pitaHome, spots: city.spots, realDt: 0 };
-  window.__auDebug = { scene, renderer, camera, post, sky, city, lounge };
+  const world = { scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0, dialogue, prologue, phone, cousinHome, shortyHome, pitaHome, spots: city.spots, places: city.places, city, realDt: 0 };
+  window.__auDebug = { scene, renderer, camera, post, sky, city, lounge, updateCull, THREE };
   window.__auStory = {
     get active() { return dialogue.active; }, get line() { return dialogue.line; }, get prologue() { return prologue.active; },
     advance: () => dialogue.advance(), choose: i => dialogue.choose(i), skip: () => prologue.skip(), minigame: knuckle, phone,
@@ -160,6 +166,7 @@ async function boot() {
       world.realDt = Math.min(elapsed / 1000, 0.5);
       if (!game.isPaused()) phone.update(world.realDt);
       const forward = game.update(dt, now, G.uTime.value);
+      updateCull(camera, cullScale());
       sky.update(camera, forward);
       rain.update(camera);
       updatePool(dt);

@@ -34,6 +34,19 @@ const MAT_DEFS = {
   alu: { alias: 'metal', tint: 0xc2c7ca },
   steel: { alias: 'metal', tint: 0xa3a9ad },
   darkMetal: { alias: 'metal', tint: 0x3a3e41 },
+  // Real-map surfaces and details.
+  kerbTop: { tex: 'concrete', scale: 1.2, offset: 1, wet: 0.6 },
+  drive: { alias: 'path', tint: 0xf4f0e8 },
+  skate: { tex: 'concrete', scale: 3, cast: 1, wet: 0.7 },
+  court: { color: 0x3f6f5a, rough: 0.75, offset: 1 },
+  water: { color: 0x1d2c30, rough: 0.06, metal: 0.0, offset: 1 },
+  markWhite: { color: 0xf2f1ea, rough: 0.55, offset: 2 },
+  markYellow: { color: 0xf0c020, rough: 0.55, offset: 2 },
+  block: { tex: 'tiltslab', scale: 2.0, cast: 1 },
+  roofTile: { tex: 'stone', scale: 2.0, cast: 1 },
+  hedge: { color: 0x3c5a2a, rough: 0.95, cast: 1 },
+  glassRoof: { color: 0x9fb4bf, rough: 0.08, metal: 0.6 },
+  asphaltFar: { alias: 'patch' },
   lamp: { color: 0x1d1d1d, emissive: 0xffd2a0, day: 0.08, night: 9 },
   neon: { color: 0x111111, emissive: 0xffffff, day: 0.6, night: 5 },
 };
@@ -158,9 +171,14 @@ class MaterialLib {
       if (d.alphaTest) { m.alphaTest = d.alphaTest; m.alphaToCoverage = this.q.msaa > 0; }
       if (d.offset) { m.polygonOffset = true; m.polygonOffsetFactor = -2; m.polygonOffsetUnits = -2; }
       if (d.wet) this.addWetness(m, d.wet, key);
+    } else if (d.atlas) {
+      // Text atlases (street names, shop signs): unlit-ish boards that glow a little at night.
+      m = new THREE.MeshStandardMaterial({ map: d.atlas.tex, roughness: 0.55, metalness: 0, vertexColors: false });
+      if (d.glow) { m.emissiveMap = d.atlas.tex; this.addNightEmissive(m, { emissive: 0xffffff, day: 0.0, night: 1.3 }, key); }
     } else {
       m = new THREE.MeshStandardMaterial({ color: d.color, roughness: d.rough ?? 0.7, metalness: d.metal ?? 0, vertexColors: true });
       if (d.emissive) this.addNightEmissive(m, d, key);
+      if (d.offset) { m.polygonOffset = true; m.polygonOffsetFactor = -2 * d.offset; m.polygonOffsetUnits = -2 * d.offset; }
     }
     if (d.side === 2) m.side = THREE.DoubleSide;
     m.userData.cast = !!d.cast;

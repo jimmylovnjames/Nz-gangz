@@ -1,24 +1,65 @@
 // Batched static geometry: every primitive is appended to a (material, chunk) bucket and merged
 // into one indexed mesh per bucket, which keeps draw calls low enough for phones.
-const WORLD_HALF = 275, CHUNKS = 3, CHUNK_SIZE = WORLD_HALF * 2 / CHUNKS;
+// Chunks are 400 m squares over the real-map area; buffers are typed and grow as needed.
+const CHUNK_SIZE = 400, CHUNK_X0 = -2400, CHUNK_Z0 = -2000;
 const _aliasTint = new THREE.Color();
 const _v = new THREE.Vector3(), _n = new THREE.Vector3();
+// Distance culling (metres from the camera to the mesh's bounding sphere). Set per quality tier at boot.
+const CULL_DIST = { base: 1500, detail: 380, far: 3200, props: 260, trees: 520, cars: 230, people: 160 };
+const CULLED = [];
+function registerCull(root) { root.traverse(o => { if (o.isMesh && o.userData.cull) { if (o.isInstancedMesh) o.computeBoundingSphere(); else o.geometry.computeBoundingSphere?.(); CULLED.push(o); } }); }
+function updateCull(cam, scale = 1) {
+  const p = cam.position;
+  for (const m of CULLED) {
+    if (m.userData.dyn) { m.visible = m.parent && Math.hypot(m.matrixWorld.elements[12] - p.x, m.matrixWorld.elements[14] - p.z) < m.userData.cull * scale; continue; }
+    const sp = m.isInstancedMesh ? m.boundingSphere : m.geometry.boundingSphere; if (!sp) continue;
+    const c = sp.center, d = Math.hypot(c.x - p.x, c.z - p.z) - sp.radius;
+    m.visible = d < m.userData.cull * scale;
+  }
+}
+class FBuf {
+  constructor(T = Float32Array, n = 256) { this.T = T; this.a = new T(n); this.n = 0; }
+  grow(k) { if (this.n + k <= this.a.length) return; let m = this.a.length * 2; while (m < this.n + k) m *= 2; const b = new this.T(m); b.set(this.a.subarray(0, this.n)); this.a = b; }
+  push(...v) { this.grow(v.length); for (const x of v) this.a[this.n++] = x; }
+  p2(x, y) { this.grow(2); const a = this.a; a[this.n] = x; a[this.n + 1] = y; this.n += 2; }
+  p3(x, y, z) { this.grow(3); const a = this.a; a[this.n] = x; a[this.n + 1] = y; a[this.n + 2] = z; this.n += 3; }
+  p4(x, y, z, w) { this.grow(4); const a = this.a; a[this.n] = x; a[this.n + 1] = y; a[this.n + 2] = z; a[this.n + 3] = w; this.n += 4; }
+  append(o, add = 0) { this.grow(o.n); if (!add) this.a.set(o.a.subarray(0, o.n), this.n); else for (let i = 0; i < o.n; i++) this.a[this.n + i] = o.a[i] + add; this.n += o.n; }
+  view() { return this.a.subarray(0, this.n); }
+  get length() { return this.n; }
+}
 
 class GeoBuilder {
   constructor(lib) {
     this.lib = lib; this.buckets = new Map();
     this.mat = null; this.nmat = new THREE.Matrix3();
     this.tint = [1, 1, 1];
+    this.cls = 'base'; // cull class: 'base' (ground, walls, roofs), 'detail' (windows, fences, kerbs, signs), 'far' (context ring)
   }
   setTransform(m) { this.mat = m; if (m) this.nmat.getNormalMatrix(m); }
   setTint(c) { this.tint = c ? [c.r, c.g, c.b] : [1, 1, 1]; }
   bucket(key, x, z) {
-    const ci = clamp(Math.floor((x + WORLD_HALF) / CHUNK_SIZE), 0, CHUNKS - 1);
-    const cj = clamp(Math.floor((z + WORLD_HALF) / CHUNK_SIZE), 0, CHUNKS - 1);
-    const id = key + '|' + ci + '|' + cj;
+    // Ground, walls and roofs batch into 800 m chunks; small detail into 400 m chunks (culled sooner).
+    const far = this.cls === 'far', cs = this.cls === 'base' ? CHUNK_SIZE * 2 : CHUNK_SIZE;
+    const ci = far ? 0 : clamp(Math.floor((x - CHUNK_X0) / cs), 0, 15), cj = far ? 0 : clamp(Math.floor((z - CHUNK_Z0) / cs), 0, 15);
+    const id = key + '|' + this.cls + '|' + ci + '|' + cj;
     let b = this.buckets.get(id);
-    if (!b) { b = { key, pos: [], nor: [], uv: [], col: [], win: key === 'glass' ? [] : null, idx: [], n: 0 }; this.buckets.set(id, b); }
+    if (!b) { b = { key, cls: this.cls, pos: new FBuf(), nor: new FBuf(), uv: new FBuf(), col: new FBuf(), win: key === 'glass' ? new FBuf() : null, idx: new FBuf(Uint32Array), n: 0 }; this.buckets.set(id, b); }
     return b;
+  }
+  // Pre-triangulated horizontal mesh (map surface layers): xz pairs + indices, metre UVs, flat normal.
+  triangles(key, V, I, y, tint, cx, cz) {
+    const b = this.bucket(MAT_DEFS[key]?.alias || key, cx, cz), s = this.lib.scale(key), base = b.n;
+    let t = tint || [1, 1, 1];
+    if (MAT_DEFS[key]?.alias) { _aliasTint.set(MAT_DEFS[key].tint ?? 0xffffff); t = [t[0] * _aliasTint.r, t[1] * _aliasTint.g, t[2] * _aliasTint.b]; }
+    for (let i = 0; i < V.length; i += 2) { b.pos.p3(V[i], y, V[i + 1]); b.nor.p3(0, 1, 0); b.uv.p2(V[i] / s, -V[i + 1] / s); b.col.p3(t[0], t[1], t[2]); }
+    // earcut output winds either way; make every triangle face up.
+    for (let i = 0; i < I.length; i += 3) {
+      const a = I[i], c = I[i + 1], d = I[i + 2];
+      const cr = (V[2 * c] - V[2 * a]) * (V[2 * d + 1] - V[2 * a + 1]) - (V[2 * c + 1] - V[2 * a + 1]) * (V[2 * d] - V[2 * a]);
+      if (cr < 0) b.idx.p3(base + a, base + c, base + d); else b.idx.p3(base + a, base + d, base + c);
+    }
+    b.n += V.length / 2;
   }
   // Rectangle from origin o, spanning w along unit axis u and h along unit axis v. Normal = u x v.
   // UVs are metres (offset by uv0) divided by the material's tile scale.
@@ -55,14 +96,14 @@ class GeoBuilder {
     const t = tint ? (tint.isColor ? [tint.r, tint.g, tint.b] : tint) : this.tint, base = b.n;
     for (let i = 0; i < pts.length; i++) {
       _v.set(pts[i][0], pts[i][1], pts[i][2]); if (m) _v.applyMatrix4(m);
-      b.pos.push(_v.x, _v.y, _v.z); b.nor.push(_n.x, _n.y, _n.z);
-      b.uv.push(uv[i * 2], uv[i * 2 + 1]);
+      b.pos.p3(_v.x, _v.y, _v.z); b.nor.p3(_n.x, _n.y, _n.z);
+      b.uv.p2(uv[i * 2], uv[i * 2 + 1]);
       const a = ao ? ao[i] : 1;
-      b.col.push(t[0] * a, t[1] * a, t[2] * a);
-      if (b.win) b.win.push(win ? win[0] : 0, win ? win[1] : 1, win ? win[2] : 1, win ? win[3] : 0);
+      b.col.p3(t[0] * a, t[1] * a, t[2] * a);
+      if (b.win) b.win.p4(win ? win[0] : 0, win ? win[1] : 1, win ? win[2] : 1, win ? win[3] : 0);
     }
-    if (pts.length === 4) b.idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
-    else for (let i = 1; i < pts.length - 1; i++) b.idx.push(base, base + i, base + i + 1);
+    if (pts.length === 4) { b.idx.p3(base, base + 1, base + 2); b.idx.p3(base, base + 2, base + 3); }
+    else for (let i = 1; i < pts.length - 1; i++) b.idx.p3(base, base + i, base + i + 1);
     b.n += pts.length;
   }
   // Axis-aligned box (in the current transform). faces: string of letters to include (px nx py ny pz nz -> 'XxYyZz').
@@ -100,11 +141,11 @@ class GeoBuilder {
     const merged = new Map();
     for (const [id, b] of this.buckets) {
       if (totals[b.key] > 24000) { merged.set(id, b); continue; }
-      const m = merged.get(b.key);
-      if (!m) { merged.set(b.key, b); continue; }
-      for (const k of ['pos', 'nor', 'uv', 'col']) for (const v of b[k]) m[k].push(v);
-      if (m.win) for (const v of b.win) m.win.push(v);
-      for (const i of b.idx) m.idx.push(i + m.n);
+      const mk = b.key + '|' + b.cls, m = merged.get(mk);
+      if (!m) { merged.set(mk, b); continue; }
+      for (const k of ['pos', 'nor', 'uv', 'col']) m[k].append(b[k]);
+      if (m.win) m.win.append(b.win);
+      m.idx.append(b.idx, m.n);
       m.n += b.n;
     }
     this.buckets = merged;
@@ -112,17 +153,18 @@ class GeoBuilder {
     for (const b of this.buckets.values()) {
       if (!b.n) continue;
       const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3));
-      g.setAttribute('normal', new THREE.Float32BufferAttribute(b.nor, 3));
-      g.setAttribute('uv', new THREE.Float32BufferAttribute(b.uv, 2));
-      g.setAttribute('color', new THREE.Float32BufferAttribute(b.col, 3));
-      if (b.win) g.setAttribute('aWin', new THREE.Float32BufferAttribute(b.win, 4));
-      g.setIndex(b.n > 65535 ? new THREE.Uint32BufferAttribute(b.idx, 1) : new THREE.Uint16BufferAttribute(b.idx, 1));
+      g.setAttribute('position', new THREE.BufferAttribute(b.pos.view().slice(), 3));
+      g.setAttribute('normal', new THREE.BufferAttribute(b.nor.view().slice(), 3));
+      g.setAttribute('uv', new THREE.BufferAttribute(b.uv.view().slice(), 2));
+      g.setAttribute('color', new THREE.BufferAttribute(b.col.view().slice(), 3));
+      if (b.win) g.setAttribute('aWin', new THREE.BufferAttribute(b.win.view().slice(), 4));
+      g.setIndex(b.n > 65535 ? new THREE.BufferAttribute(b.idx.view().slice(), 1) : new THREE.BufferAttribute(Uint16Array.from(b.idx.view()), 1));
       g.computeBoundingSphere(); g.computeBoundingBox();
       const material = this.lib.get(b.key);
       const mesh = new THREE.Mesh(g, material);
       mesh.castShadow = material.userData.cast; mesh.receiveShadow = true;
       mesh.matrixAutoUpdate = false; mesh.updateMatrix();
+      mesh.userData.cull = CULL_DIST[b.cls] ?? 1500;
       scene.add(mesh); meshes.push(mesh);
     }
     this.buckets.clear();
@@ -130,41 +172,62 @@ class GeoBuilder {
   }
 }
 
-// Spatial hash over axis-aligned boxes {x, z, w, d}. Same semantics as the original obstacle list.
+// Spatial hash over mixed shapes: boxes, rotated boxes, circles, wall segments and building outlines.
+// collides(x, z, r) asks whether a circle of radius r at (x, z) touches anything solid.
 class CollisionGrid {
   constructor(cell = 8) { this.cell = cell; this.cells = new Map(); this.list = []; this.stamp = 0; }
   key(i, j) { return i * 4096 + j; }
-  add(x, z, w, d, tag) {
-    const o = { x, z, w, d, tag, mark: 0 }; this.list.push(o);
-    const c = this.cell;
-    for (let i = Math.floor((x - w / 2) / c); i <= Math.floor((x + w / 2) / c); i++)
-      for (let j = Math.floor((z - d / 2) / c); j <= Math.floor((z + d / 2) / c); j++) {
-        const k = this.key(i, j); let a = this.cells.get(k); if (!a) this.cells.set(k, a = []); a.push(o);
-      }
+  insert(o, x0, z0, x1, z1) {
+    const c = this.cell; this.list.push(o);
+    for (let i = Math.floor(x0 / c); i <= Math.floor(x1 / c); i++)
+      for (let j = Math.floor(z0 / c); j <= Math.floor(z1 / c); j++) { const k = this.key(i, j); let a = this.cells.get(k); if (!a) this.cells.set(k, a = []); a.push(o); }
     return o;
   }
+  add(x, z, w, d, tag) { return this.insert({ t: 0, x, z, w, d, tag, mark: 0 }, x - w / 2, z - d / 2, x + w / 2, z + d / 2); }
+  addCircle(x, z, r, tag) { return this.insert({ t: 1, x, z, r, tag, mark: 0 }, x - r, z - r, x + r, z + r); }
+  addSeg(ax, az, bx, bz, th, tag) { return this.insert({ t: 2, ax, az, bx, bz, th, tag, mark: 0 }, Math.min(ax, bx) - th, Math.min(az, bz) - th, Math.max(ax, bx) + th, Math.max(az, bz) + th); }
+  addOBB(x, z, hw, hd, ang, tag) { const c = Math.cos(ang), s = Math.sin(ang), ex = Math.abs(c * hw) + Math.abs(s * hd), ez = Math.abs(s * hw) + Math.abs(c * hd); return this.insert({ t: 3, x, z, hw, hd, c, s, tag, mark: 0 }, x - ex, z - ez, x + ex, z + ez); }
+  addPoly(ring, tag) { let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (const p of ring) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); } return this.insert({ t: 4, ring, tag, mark: 0, x: (x0 + x1) / 2, z: (z0 + z1) / 2, w: x1 - x0, d: z1 - z0 }, x0, z0, x1, z1); }
+  hit(o, x, z, r) {
+    switch (o.t) {
+      case 0: return Math.abs(x - o.x) < o.w / 2 + r && Math.abs(z - o.z) < o.d / 2 + r;
+      case 1: return (x - o.x) ** 2 + (z - o.z) ** 2 < (o.r + r) ** 2;
+      case 2: return segDist2(x, z, o.ax, o.az, o.bx, o.bz) < (o.th + r) ** 2;
+      case 3: { const dx = x - o.x, dz = z - o.z, u = dx * o.c + dz * o.s, v = -dx * o.s + dz * o.c; return Math.abs(u) < o.hw + r && Math.abs(v) < o.hd + r; }
+      default: {
+        const R = o.ring; let inside = false;
+        for (let i = 0, j = R.length - 1; i < R.length; j = i++) {
+          const a = R[i], b = R[j];
+          if ((a[1] > z) !== (b[1] > z) && x < (b[0] - a[0]) * (z - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside;
+          if (segDist2(x, z, a[0], a[1], b[0], b[1]) < r * r) return true;
+        }
+        return inside;
+      }
+    }
+  }
   collides(x, z, r = 0.55) {
-    const c = this.cell;
+    const c = this.cell, st = ++this.stamp;
     for (let i = Math.floor((x - r) / c); i <= Math.floor((x + r) / c); i++)
       for (let j = Math.floor((z - r) / c); j <= Math.floor((z + r) / c); j++) {
         const a = this.cells.get(this.key(i, j)); if (!a) continue;
-        for (const o of a) if (Math.abs(x - o.x) < o.w / 2 + r && Math.abs(z - o.z) < o.d / 2 + r) return true;
+        for (const o of a) { if (o.mark === st) continue; o.mark = st; if (this.hit(o, x, z, r)) return true; }
       }
     return false;
   }
 }
-
-// Street geometry rules shared by the builder, ground height and props.
-const ROAD = { spacing: 55, count: 4, half: 5.5, kerb: 0.3, reserve: 9.5, kerbH: 0.14, corner: 3.2, plaza: 34 };
-function nearestLine(v) { const i = clamp(Math.round(v / ROAD.spacing), -ROAD.count, ROAD.count); return { i, d: v - i * ROAD.spacing }; }
-// True where the surface is carriageway (y = 0): straight roads plus rounded kerb returns, minus the pedestrian plaza.
-function isCarriageway(x, z) {
-  if (Math.abs(x) > 226.5 + 30 || Math.abs(z) > 226.5 + 30) return false;
-  if (Math.hypot(x, z) < ROAD.plaza) return false;
-  const lx = nearestLine(x), lz = nearestLine(z);
-  const ax = Math.abs(lx.d), az = Math.abs(lz.d), H = ROAD.half, R = ROAD.corner;
-  if (ax < H || az < H) return true;
-  if (ax < H + R && az < H + R) return Math.hypot(ax - (H + R), az - (H + R)) > R;
-  return false;
+function segDist2(px, pz, ax, az, bx, bz) {
+  const dx = bx - ax, dz = bz - az, L = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / L));
+  const ex = px - ax - dx * t, ez = pz - az - dz * t; return ex * ex + ez * ez;
 }
-function groundHeight(x, z) { return isCarriageway(x, z) ? 0 : ROAD.kerbH; }
+
+// Street geometry rules shared by the builder, ground height and props. NZ kerbs are about 150 mm.
+const ROAD = { kerbH: 0.15 };
+// Ground classes rasterised by the city at 0.5 m: 0 = land (kerb height), 1 = carriageway, 2 = platform.
+const GROUND = { x0: 0, z0: 0, res: 0.5, w: 0, h: 0, d: null, platform: 0.95 };
+function groundClass(x, z) {
+  if (!GROUND.d) return 0;
+  const i = Math.floor((x - GROUND.x0) / GROUND.res), j = Math.floor((z - GROUND.z0) / GROUND.res);
+  return i < 0 || j < 0 || i >= GROUND.w || j >= GROUND.h ? 0 : GROUND.d[j * GROUND.w + i];
+}
+function isCarriageway(x, z) { return groundClass(x, z) === 1; }
+function groundHeight(x, z) { const c = groundClass(x, z); return c === 1 ? 0 : c === 2 ? GROUND.platform : ROAD.kerbH; }

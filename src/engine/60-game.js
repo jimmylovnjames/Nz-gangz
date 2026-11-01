@@ -1,3 +1,4 @@
+const MAP_VERSION = 'manurewa-1';
 // Game logic ported from Run 11 (missions, factions, saves, UI), unchanged in behaviour except bug fixes:
 // movement no longer turns into NaN, forward follows the view after turning, and the waypoint/radar rotate correctly.
 // Fictional crews. Order matches the colours and contact positions used since Run 1.
@@ -20,14 +21,14 @@ const VALID_STAGES = [...STAGES, ...Object.keys(LEGACY_STAGES)];
 const EYE = 1.62;
 
 function createGame(world) {
-  const { scene, camera, collision, charMaterial, fists, renderer, dialogue: dlg, prologue, phone } = world;
+  const { scene, camera, collision, charMaterial, fists, renderer, dialogue: dlg, prologue, phone, places } = world;
   const mobile = matchMedia('(pointer:coarse)').matches;
   const collides = (x, z, r = 0.55) => collision.collides(x, z, r);
   function slideMove(p, dx, dz, r = 0.55) {
     if (!Number.isFinite(dx) || !Number.isFinite(dz)) return;
     const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dz)) / 0.45));
     for (let i = 0; i < steps; i++) {
-      const nx = clamp(p.x + dx / steps, -260, 260), nz = clamp(p.z + dz / steps, -260, 260);
+      const nx = clamp(p.x + dx / steps, MAP_BOUNDS.x0, MAP_BOUNDS.x1), nz = clamp(p.z + dz / steps, MAP_BOUNDS.z0, MAP_BOUNDS.z1);
       if (!collides(nx, nz, r)) { p.x = nx; p.z = nz; continue; }
       if (!collides(nx, p.z, r)) p.x = nx;
       if (!collides(p.x, nz, r)) p.z = nz;
@@ -45,6 +46,7 @@ function createGame(world) {
   function person(x, z, outfit = {}) {
     const h = new Human(charMaterial, { seed: seedCounter++ * 977, ...outfit });
     h.root.position.set(x, groundHeight(x, z), z);
+    h.mesh.userData.cull = CULL_DIST.people; h.mesh.userData.dyn = true; CULLED.push(h.mesh);
     scene.add(h.root);
     return h.root;
   }
@@ -53,31 +55,36 @@ function createGame(world) {
   // ---- cast ------------------------------------------------------------------------------
   let chosen = 'Independent', rep = 0, hp = 100, chapter = 0, defeated = 0, started = false;
   const contacts = [], enemies = [];
+  // The crews hang out round Clendon skate park and the reserve beside Te Matariki.
+  const crewHub = places.skatepark?.pos || places.teMatariki.pos;
+  const hubX = crewHub.x + 22, hubZ = crewHub.z - 26;
   FACTIONS.forEach((f, i) => {
-    const a = i * TAU / FACTIONS.length, x = Math.sin(a) * 25, z = Math.cos(a) * 25;
-    const p = person(x, z, { vest: FACTION_COLORS[i], top: [0x1c1c1e, 0x2a2a2d, 0x3b3530, 0x14181c][i % 4], pants: i % 3 ? 0xffffff : 0x3a3a3a, pantsCell: i % 3 ? ATLAS.denim : ATLAS.canvas, beanie: i % 3 === 0 ? 0x222222 : null, face: [ATLAS.faceA, ATLAS.faceB, ATLAS.faceC][i % 3], pose: 'crossed' });
-    p.rotation.y = Math.atan2(-x, -z) + (i % 2 ? 0.3 : -0.3);
+    const a = i * TAU / FACTIONS.length, s0 = safeSpawn(hubX + Math.sin(a) * 18, hubZ + Math.cos(a) * 18), x = s0.x, z = s0.z;
+    const p = person(x, z, { look: ['crewA', 'crewB', 'crewC'][i % 3], vest: FACTION_COLORS[i], top: [0x1c1c1e, 0x2a2a2d, 0x3b3530, 0x14181c][i % 4], pants: i % 3 ? 0xffffff : 0x3a3a3a, pantsCell: i % 3 ? ATLAS.denim : ATLAS.canvas, beanie: i % 3 === 0 ? 0x222222 : null, face: [ATLAS.faceA, ATLAS.faceB, ATLAS.faceC][i % 3], pose: 'crossed' });
+    p.rotation.y = Math.atan2(hubX - x, hubZ - z) + (i % 2 ? 0.3 : -0.3);
     const marker = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.3, 6).rotateX(Math.PI), markerMat(FACTION_COLORS[i]));
     marker.position.y = 2.25; p.add(marker); p.userData.marker = marker;
     contacts.push({ p, f });
   });
   for (let i = 0; i < 13; i++) {
-    const a = i * 2.4, x = Math.sin(a) * (45 + i * 8), z = Math.cos(a) * (45 + i * 8);
+    const a = i * 2.4, x = hubX + Math.sin(a) * (60 + i * 9), z = hubZ + Math.cos(a) * (60 + i * 9);
     const s = safeSpawn(x, z);
-    const p = person(s.x, s.z, { top: [0x232527, 0x4a1d1d, 0x2b3440, 0x3a3a3a, 0x151515][i % 5], topCell: ATLAS.cotton, pants: [0x2a2a2a, 0x1f2a3a, 0x3d3d3d][i % 3], pantsCell: ATLAS.track, beanie: i % 2 ? [0x111111, 0x7a1414, 0x223355][i % 3] : null, face: [ATLAS.faceB, ATLAS.faceA, ATLAS.faceC][i % 3], shoes: 0xe8e8e8 });
+    const p = person(s.x, s.z, { look: ['crewC', 'crewA', 'crewB'][i % 3], top: [0x232527, 0x4a1d1d, 0x2b3440, 0x3a3a3a, 0x151515][i % 5], topCell: ATLAS.cotton, pants: [0x2a2a2a, 0x1f2a3a, 0x3d3d3d][i % 3], pantsCell: ATLAS.track, beanie: i % 2 ? [0x111111, 0x7a1414, 0x223355][i % 3] : null, face: [ATLAS.faceB, ATLAS.faceA, ATLAS.faceC][i % 3], shoes: 0xe8e8e8 });
     enemies.push({ p, hp: 3, alive: true, attackT: 0 });
   }
-  const fixer = person(0, -8, { top: 0xc79a3e, topCell: ATLAS.canvas, pants: 0x4a4038, pantsCell: ATLAS.canvas, face: ATLAS.faceC, pose: 'relaxed', scale: 1.0 });
+  const fixerAt = safeSpawn(hubX, hubZ);
+  const fixer = person(fixerAt.x, fixerAt.z, { look: 'crewB', top: 0xc79a3e, topCell: ATLAS.canvas, pants: 0x4a4038, pantsCell: ATLAS.canvas, face: ATLAS.faceC, pose: 'relaxed', scale: 1.0 });
   const fixerMarker = new THREE.Mesh(new THREE.OctahedronGeometry(0.22), markerMat(0xffe067)); fixerMarker.position.y = 2.3; fixer.add(fixerMarker);
   // Manu waits outside his place for the money; Darren hangs out somewhere that depends on your hometown.
   const home = world.cousinHome;
-  const manu = person(home.pos.x, home.pos.z, { seed: 4242, skin: 0x7a4b31, top: 0x2a2d33, topCell: ATLAS.cotton, pants: 0x3a3a3a, pantsCell: ATLAS.track, face: ATLAS.faceC, beanie: 0x1a1a1a, pose: 'crossed', scale: 1.02 });
+  const manu = person(home.pos.x, home.pos.z, { look: 'manu', seed: 4242, skin: 0x7a4b31, top: 0x2a2d33, topCell: ATLAS.cotton, pants: 0x3a3a3a, pantsCell: ATLAS.track, face: ATLAS.faceC, beanie: 0x1a1a1a, pose: 'crossed', scale: 1.02 });
   manu.rotation.y = home.rot;
   const manuMarker = new THREE.Mesh(new THREE.OctahedronGeometry(0.2), markerMat(0xffe067)); manuMarker.position.y = 2.3; manu.add(manuMarker);
-  const darren = person(0, 0, { seed: 777, skin: 0xc68e6a, top: 0x6a6656, topCell: ATLAS.cotton, pants: 0xffffff, pantsCell: ATLAS.denim, face: ATLAS.faceA, shoes: 0x777777, pose: 'relaxed', scale: 0.95 });
+  const darren = person(0, 0, { look: 'darren', seed: 777, skin: 0xc68e6a, top: 0x6a6656, topCell: ATLAS.cotton, pants: 0xffffff, pantsCell: ATLAS.denim, face: ATLAS.faceA, shoes: 0x777777, pose: 'relaxed', scale: 0.95 });
   const darrenMarker = new THREE.Mesh(new THREE.OctahedronGeometry(0.2), markerMat(0xff9a7a)); darrenMarker.position.y = 2.2; darren.add(darrenMarker);
   const darrenState = { hp: 3, hostile: false, down: false, attackT: 0 };
-  const stash = itemProp('parcel', 0xa9ff85); stash.position.set(-18, ROAD.kerbH, -19); scene.add(stash);
+  const stashAt = safeSpawn(places.clendonShops.pos.x + 30, places.clendonShops.pos.z - 25);
+  const stash = itemProp('parcel', 0xa9ff85); stash.position.set(stashAt.x, groundHeight(stashAt.x, stashAt.z), stashAt.z); scene.add(stash);
   const stashMarker = new THREE.Mesh(new THREE.OctahedronGeometry(0.2), markerMat(0xa9ff85)); stashMarker.position.y = 1.0; stash.add(stashMarker);
   const enemySpawns = enemies.map(e => e.p.position.clone());
 
@@ -96,7 +103,7 @@ function createGame(world) {
   }
 
   // ---- input -----------------------------------------------------------------------------
-  camera.position.set(0, ROAD.kerbH + EYE, 8);
+  camera.position.set(world.cousinHome.spawn.pos.x, ROAD.kerbH + EYE, world.cousinHome.spawn.pos.z);
   let yaw = 0, pitch = 0;
   const keys = {}, move = {};
   addEventListener('keydown', e => { keys[e.code] = true; if (e.code === 'KeyE') talk(); });
@@ -113,7 +120,13 @@ function createGame(world) {
   }, { passive: false });
   const releaseLook = e => { if (Array.from(e.changedTouches).some(t => t.identifier === lookTouchId)) lookTouchId = null; };
   canvas.addEventListener('touchend', releaseLook); canvas.addEventListener('touchcancel', releaseLook);
+  // RUN is a toggle on touch screens so the right thumb stays free to steer. It switches itself off
+  // once you stop moving; Shift on a keyboard is still hold-to-run.
+  let runLatch = false, stillT = 0;
+  const runBtn = $('sprint');
+  const setRun = on => { runLatch = on; runBtn?.classList.toggle('on', on); runBtn?.setAttribute('aria-pressed', on ? 'true' : 'false'); };
   document.querySelectorAll('[data-m]').forEach(b => {
+    if (b.dataset.m === 'sprint') { b.addEventListener('pointerdown', e => { e.preventDefault(); setRun(!runLatch); stillT = 0; }); return; }
     b.addEventListener('pointerdown', e => { e.preventDefault(); move[b.dataset.m] = true; b.setPointerCapture(e.pointerId); });
     for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, () => { move[b.dataset.m] = false; });
   });
@@ -130,14 +143,19 @@ function createGame(world) {
   function hometownHash(name) { let h = 2166136261; for (const c of name) h = Math.imul(h ^ c.codePointAt(0), 16777619) >>> 0; return h >>> 0; }
   // Darren's hangout depends on your hometown, so different origins send you to different corners of the district.
   const titleCase = n => n.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/'S\b/g, "'s");
-  const hangouts = (() => {
-    const named = ['THE LUCKY HORSE', 'SUNRISE DAIRY', 'KAI TIME TAKEAWAYS', 'PAWN & LOAN', 'HOKI FISH & CHIPS', 'NIGHT OWL BURGERS'];
-    const shops = world.spots.filter(sp => sp.kind === 'shop' && named.includes(sp.name) && Math.hypot(sp.pos.x, sp.pos.z) < 130);
-    // label completes "Find Darren ___"; place completes "he's always hanging round ___".
-    const unique = []; for (const sp of shops) if (!unique.some(u => u.name === sp.name)) unique.push({ ...sp, label: 'outside ' + titleCase(sp.name), place: titleCase(sp.name) });
-    const extra = world.spots.filter(sp => (sp.kind === 'park' || sp.kind === 'carpark') && Math.hypot(sp.pos.x, sp.pos.z) < 140).slice(0, 2).map(sp => ({ ...sp, label: 'at ' + sp.name, place: sp.name }));
-    return unique.concat(extra).length ? unique.concat(extra) : [{ pos: new THREE.Vector3(20, ROAD.kerbH, 44), rot: Math.PI, label: 'at the town square', place: 'the town square' }];
-  })();
+  // Darren hangs round real Clendon spots; which one depends on your hometown. label completes
+  // "Find Darren ___"; place completes "he's always hanging round ___".
+  const P = places, mk = (sp, label, place) => sp && { ...sp, label, place };
+  const hangouts = [
+    mk(P.clendonShops, 'at the Clendon shops car park', 'the Clendon shops'), mk(P.clendonDairy, 'outside Clendon Dairy', 'Clendon Dairy'),
+    mk(P.skatepark, 'at Clendon skate park', 'the skate park'), mk(P.fishAndChips, 'outside Clendon Fish and Chips', 'the fish and chip shop'),
+    mk(P.teMatariki, 'outside Te Matariki library', 'Te Matariki'),
+  ].filter(Boolean);
+  // Mikey hangs round Manurewa town centre.
+  const townSpots = [
+    mk(P.southmallCarpark, 'at the Southmall car park', 'the Southmall car park'), mk(P.norfolkPine, 'by the big Norfolk pine at Southmall', 'the Norfolk pine at Southmall'),
+    mk(P.station, 'at Manurewa station', 'Manurewa station'), mk(P.greatSouthRd, 'at the Great South Road shops', 'the Great South Road shops'),
+  ].filter(Boolean);
   let hangout = hangouts[0];
   function placeDarren() {
     hangout = hangouts[hometownHash(hometown) % hangouts.length];
@@ -150,24 +168,20 @@ function createGame(world) {
   let JOBS = null;
   // ---- Shorty's chapter: Manu's weed man has three people who owe him -------------------------
   const sHome = world.shortyHome, pHome = world.pitaHome;
-  const shorty = person(sHome.pos.x, sHome.pos.z, { seed: 9001, skin: 0x6b4029, top: 0x1f3a2a, topCell: ATLAS.cotton, pants: 0x2a2a2a, pantsCell: ATLAS.track, face: ATLAS.faceC, beanie: 0x2f5a2a, pose: 'crossed', scale: 1.12 });
+  const shorty = person(sHome.pos.x, sHome.pos.z, { look: 'shorty', seed: 9001, skin: 0x6b4029, top: 0x1f3a2a, topCell: ATLAS.cotton, pants: 0x2a2a2a, pantsCell: ATLAS.track, face: ATLAS.faceC, beanie: 0x2f5a2a, pose: 'crossed', scale: 1.12 });
   shorty.rotation.y = sHome.rot;
-  const kevSpot = (() => {
-    const ws = world.spots.filter(sp => sp.kind === 'warehouse').sort((a, b) => Math.hypot(a.pos.x, a.pos.z) - Math.hypot(b.pos.x, b.pos.z));
-    const w = ws.find(sp => sp.name === 'KAHU PANEL & PAINT') || ws[0];
-    return w ? { ...w, place: titleCase(w.name) } : { pos: new THREE.Vector3(180, ROAD.kerbH, -30), rot: 0, place: 'the panel shop' };
-  })();
+  const kevSpot = { ...places.panelShop, place: 'the panel shop off Weymouth Road' };
   JOBS = {
-    kev: { name: 'KEV', amount: 600, spot: kevSpot, npc: person(0, 0, { seed: 31, skin: 0xa86f4c, top: 0x34506a, topCell: ATLAS.canvas, pants: 0x34506a, pantsCell: ATLAS.canvas, face: ATLAS.faceC, shoes: 0x222222, scale: 1.08 }) },
-    mikey: { name: 'MIKEY', amount: 300, spot: null, npc: person(0, 0, { seed: 77, skin: 0xe0b090, top: 0x8a2a3a, topCell: ATLAS.cotton, pants: 0x2a2a2a, pantsCell: ATLAS.track, face: ATLAS.faceB, beanie: 0x222244, shoes: 0xf0f0f0, scale: 0.92 }) },
-    pita: { name: 'UNCLE PITA', amount: 150, spot: { ...pHome, place: pHome.address }, npc: person(0, 0, { seed: 61, skin: 0x7a4b31, top: 0x5a4a3a, topCell: ATLAS.knit, pants: 0x4a4a4a, pantsCell: ATLAS.canvas, face: ATLAS.faceC, beanie: 0x8a8a8a, pose: 'relaxed', scale: 0.96 }) },
+    kev: { name: 'KEV', amount: 600, spot: kevSpot, npc: person(0, 0, { look: 'kev', seed: 31, skin: 0xa86f4c, top: 0x34506a, topCell: ATLAS.canvas, pants: 0x34506a, pantsCell: ATLAS.canvas, face: ATLAS.faceC, shoes: 0x222222, scale: 1.08 }) },
+    mikey: { name: 'MIKEY', amount: 300, spot: null, npc: person(0, 0, { look: 'mikey', seed: 77, skin: 0xe0b090, top: 0x8a2a3a, topCell: ATLAS.cotton, pants: 0x2a2a2a, pantsCell: ATLAS.track, face: ATLAS.faceB, beanie: 0x222244, shoes: 0xf0f0f0, scale: 0.92 }) },
+    pita: { name: 'UNCLE PITA', amount: 150, spot: { ...pHome, place: pHome.address }, npc: person(0, 0, { look: 'pita', seed: 61, skin: 0x7a4b31, top: 0x5a4a3a, topCell: ATLAS.knit, pants: 0x4a4a4a, pantsCell: ATLAS.canvas, face: ATLAS.faceC, beanie: 0x8a8a8a, pose: 'relaxed', scale: 0.96 }) },
   };
   let jobState = { kev: 'open', mikey: 'open', pita: 'open' }, shortyTimer = 0;
   const kevRun = { hp: 4, down: false, attackT: 0 }, mikeyRun = { fleeing: false, burst: 0, tired: 0, escapedT: 0, barked: false };
   const shortyMarker = new THREE.Mesh(new THREE.OctahedronGeometry(0.2), markerMat(0x9fd86a)); shortyMarker.position.y = 2.45; shorty.add(shortyMarker);
   for (const j of Object.values(JOBS)) { j.marker = new THREE.Mesh(new THREE.OctahedronGeometry(0.18), markerMat(0x9fd86a)); j.marker.position.y = 2.2; j.npc.add(j.marker); }
   function placeJobs() {
-    JOBS.mikey.spot = hangouts[(hometownHash(hometown) + 1) % hangouts.length];
+    JOBS.mikey.spot = townSpots[(hometownHash(hometown) + 1) % townSpots.length];
     for (const j of Object.values(JOBS)) {
       const p = safeSpawn(j.spot.pos.x, j.spot.pos.z);
       j.npc.position.set(p.x, groundHeight(p.x, p.z), p.z); j.npc.rotation.y = j.spot.rot; j.npc.userData.human.reset();
@@ -195,12 +209,12 @@ function createGame(world) {
     if (stage === 'debt-fight') return ['Darren wants to scrap. Knock him down.', darren.position];
     if (stage === 'debt-return') return [`Take the $${debtCash} back to Manu at his place.`, manu.position];
     if (stage === 'shorty-wait') return ['Manu\'s passing your number on. Keep your phone handy.', null];
-    if (stage === 'shorty-meet') return [`Go see Shorty at ${sHome.address}.`, shorty.position];
+    if (stage === 'shorty-meet') return [`Go see Shorty at his place on ${sHome.address}.`, shorty.position];
     if (stage === 'shorty-jobs') {
       const open = Object.entries(JOBS).filter(([k]) => !jobDone(k)).sort((a, b) => dist(a[1].npc.position) - dist(b[1].npc.position));
       return [`Collect for Shorty (${3 - open.length}/3): ${open.map(([, j]) => j.name.replace('UNCLE ', '')).join(', ')}. Check JOBS on your phone.`, open[0]?.[1].npc.position || shorty.position];
     }
-    if (stage === 'shorty-return') return [`Take the $${collected()} back to Shorty at ${sHome.address}.`, shorty.position];
+    if (stage === 'shorty-return') return [`Take the $${collected()} back to Shorty on ${sHome.address}.`, shorty.position];
     if (stage === 'recruit') return ['Meet a faction contact (coloured markers).', contacts[0].p.position];
     if (stage === 'faction-choice') return [`Talk to ${chosen} to choose your initiation.`, contacts.find(c => c.f === chosen)?.p.position || fixer.position];
     if (stage === 'mission-courier') return [`${chosen}: recover the package from the green marker.`, stash.position];
@@ -217,7 +231,7 @@ function createGame(world) {
   function store() {
     if (!saveAllowed || !started) return;
     try {
-      const data = { version: 2, stage, hometown, originRegion, chosen, rep, hp, cash, defeated, missionRoute, stamina, debtRoute, debtCash, jobs: jobState, phone: phone.log.slice(-40), enemyHP: enemies.map(e => e.hp), enemyAlive: enemies.map(e => e.alive), enemyPositions: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z })), x: camera.position.x, z: camera.position.z, yaw, pitch };
+      const data = { version: 2, map: MAP_VERSION, stage, hometown, originRegion, chosen, rep, hp, cash, defeated, missionRoute, stamina, debtRoute, debtCash, jobs: jobState, phone: phone.log.slice(-40), enemyHP: enemies.map(e => e.hp), enemyAlive: enemies.map(e => e.alive), enemyPositions: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z })), x: camera.position.x, z: camera.position.z, yaw, pitch };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data)); $('saveState').textContent = 'Saved on this device';
     } catch (e) { $('saveState').textContent = 'Local save unavailable in this browser'; }
   }
@@ -300,12 +314,14 @@ function createGame(world) {
     phone.load(Array.isArray(s.phone) ? s.phone.slice(-40) : []); shortyTimer = 6; refreshJobs(); rep = Math.max(0, Number(s.rep) || 0); hp = Math.min(100, Math.max(1, Number(s.hp) || 100)); cash = Math.max(0, Number(s.cash) || 0);
     defeated = Math.max(0, Number(s.defeated) || 0); missionRoute = s.missionRoute || '';
     stamina = Number.isFinite(s.stamina) ? Math.max(0, Math.min(100, s.stamina)) : 100;
-    const p = safeSpawn(Number.isFinite(s.x) ? clamp(s.x, -260, 260) : 0, Number.isFinite(s.z) ? clamp(s.z, -260, 260) : 8); // Run 11 saves may sit inside the new buildings
+    // Saves from before the real map (Run 15 and earlier) used the fictional grid: put the player outside Manu's.
+    const sameMap = s.map === MAP_VERSION, hs = home.spawn.pos;
+    const p = sameMap && Number.isFinite(s.x) && Number.isFinite(s.z) ? safeSpawn(clamp(s.x, MAP_BOUNDS.x0, MAP_BOUNDS.x1), clamp(s.z, MAP_BOUNDS.z0, MAP_BOUNDS.z1)) : { x: hs.x, z: hs.z };
     camera.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z);
     yaw = Number.isFinite(s.yaw) ? s.yaw : 0; pitch = Number.isFinite(s.pitch) ? s.pitch : 0;
     enemies.forEach((e, i) => {
       e.hp = Number.isFinite(s.enemyHP?.[i]) ? s.enemyHP[i] : 3; e.alive = s.enemyAlive?.[i] !== false; e.dyingT = 0; e.p.userData.human.reset();
-      const pos = s.enemyPositions?.[i];
+      const pos = sameMap ? s.enemyPositions?.[i] : null;
       const q = safeSpawn(Number.isFinite(pos?.x) ? pos.x : enemySpawns[i].x, Number.isFinite(pos?.z) ? pos.z : enemySpawns[i].z);
       e.p.position.set(q.x, groundHeight(q.x, q.z), q.z);
       if (e.alive && !e.p.parent) scene.add(e.p); if (!e.alive && e.p.parent) scene.remove(e.p);
@@ -490,28 +506,39 @@ function createGame(world) {
   // ---- radar: static street map rendered once, rotated with the view --------------------
   const miniMap = $('miniMap'), miniCtx = miniMap.getContext('2d');
   miniMap.addEventListener('click', () => miniMap.classList.toggle('compact'));
-  const MAP_PX = 2, mapCanvas = document.createElement('canvas'); mapCanvas.width = mapCanvas.height = 600 * MAP_PX;
+  // Static map of the real streets and buildings, drawn once at 1 px per 2 m.
+  const C0 = MAPDATA.meta.crop, MAP_PX = 0.5, mapCanvas = document.createElement('canvas');
+  mapCanvas.width = Math.ceil((C0.x1 - C0.x0) * MAP_PX); mapCanvas.height = Math.ceil((C0.z1 - C0.z0) * MAP_PX);
   {
-    const g = mapCanvas.getContext('2d'), o = 300 * MAP_PX;
+    const g = mapCanvas.getContext('2d'), X = x => (x - C0.x0) * MAP_PX, Z = z => (z - C0.z0) * MAP_PX;
     g.fillStyle = '#0d2622'; g.fillRect(0, 0, mapCanvas.width, mapCanvas.height);
-    g.fillStyle = '#3f5c55';
-    for (let i = -4; i <= 4; i++) { const c = o + i * 55 * MAP_PX; g.fillRect(c - 5.5 * MAP_PX, 0, 11 * MAP_PX, mapCanvas.height); g.fillRect(0, c - 5.5 * MAP_PX, mapCanvas.width, 11 * MAP_PX); }
-    g.fillStyle = '#5d6f5a'; g.fillRect(o - 34 * MAP_PX, o - 34 * MAP_PX, 68 * MAP_PX, 68 * MAP_PX);
     g.fillStyle = '#1e3a35';
-    for (const b of collision.list) if (b.tag === 'building' || b.tag === 'house' || b.tag === 'warehouse') g.fillRect(o + (b.x - b.w / 2) * MAP_PX, o + (b.z - b.d / 2) * MAP_PX, b.w * MAP_PX, b.d * MAP_PX);
+    for (const bd of world.city.map.buildings) { g.beginPath(); bd.ring.forEach((p, k) => k ? g.lineTo(X(p[0]), Z(p[1])) : g.moveTo(X(p[0]), Z(p[1]))); g.closePath(); g.fill(); }
+    g.strokeStyle = '#4d6b63'; g.lineCap = 'round'; g.lineJoin = 'round';
+    for (const r of world.city.map.roadInfo) { g.lineWidth = Math.max(2, r.w * MAP_PX * 1.4); g.beginPath(); r.pts.forEach((p, k) => k ? g.lineTo(X(p[0]), Z(p[1])) : g.moveTo(X(p[0]), Z(p[1]))); g.stroke(); }
+  }
+  // Where am I: nearest named street and the suburb, for the HUD and the radar.
+  const here = { street: '', suburb: 'Clendon Park' };
+  const roadGrid = new Map();
+  world.city.map.roadInfo.forEach((r, ri) => { if (!r.name) return; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1]; for (let t = 0; t <= 1; t += 0.25) { const k = Math.floor((a[0] + (b[0] - a[0]) * t) / 50) + ',' + Math.floor((a[1] + (b[1] - a[1]) * t) / 50); if (!roadGrid.has(k)) roadGrid.set(k, new Set()); roadGrid.get(k).add(ri * 1000 + i); } } });
+  function locate() {
+    const x = camera.position.x, z = camera.position.z, cx = Math.floor(x / 50), cz = Math.floor(z / 50); let best = 1e9, name = '';
+    for (let i = cx - 1; i <= cx + 1; i++) for (let j = cz - 1; j <= cz + 1; j++) for (const id of roadGrid.get(i + ',' + j) || []) { const r = world.city.map.roadInfo[Math.floor(id / 1000)], k = id % 1000, a = r.pts[k], b = r.pts[k + 1]; const d = segDist2(x, z, a[0], a[1], b[0], b[1]); if (d < best) { best = d; name = r.name; } }
+    here.street = name; here.suburb = x < -480 ? 'Clendon Park' : z < -760 && x < 700 ? 'Homai' : 'Manurewa';
+    $('location').textContent = `${name ? name + ', ' : ''}${here.suburb}`;
   }
   function drawMiniMap() {
     const c = miniCtx, w = c.canvas.width, h = c.canvas.height, scale = 1.25;
     c.clearRect(0, 0, w, h); c.fillStyle = '#092321'; c.fillRect(0, 0, w, h);
     c.save(); c.translate(w / 2, h / 2); c.rotate(yaw);
     const k = scale / MAP_PX;
-    c.drawImage(mapCanvas, (-300 - camera.position.x) * scale, (-300 - camera.position.z) * scale, mapCanvas.width * k, mapCanvas.height * k);
+    c.drawImage(mapCanvas, (C0.x0 - camera.position.x) * scale, (C0.z0 - camera.position.z) * scale, mapCanvas.width * k, mapCanvas.height * k);
     const dot = (x, z, color, r) => { const dx = (x - camera.position.x) * scale, dz = (z - camera.position.z) * scale; if (Math.abs(dx) > w || Math.abs(dz) > h) return; c.fillStyle = color; c.beginPath(); c.arc(dx, dz, r, 0, TAU); c.fill(); };
     for (const contact of contacts) dot(contact.p.position.x, contact.p.position.z, '#76b1fa', 2.5);
     for (const enemy of enemies) if (enemy.alive) dot(enemy.p.position.x, enemy.p.position.z, '#e96666', 2.5);
     const target = objective()[1]; if (target) dot(target.x, target.z, '#f6d766', 5);
     c.restore(); c.fillStyle = '#fff'; c.beginPath(); c.moveTo(w / 2, h / 2 - 8); c.lineTo(w / 2 - 6, h / 2 + 7); c.lineTo(w / 2 + 6, h / 2 + 7); c.closePath(); c.fill();
-    c.fillStyle = '#b9d5c5'; c.font = '11px sans-serif'; c.fillText('DISTRICT RADAR', 7, 15);
+    c.fillStyle = '#b9d5c5'; c.font = '11px sans-serif'; c.fillText(here.suburb.toUpperCase(), 7, 15);
   }
 
   // ---- per-frame simulation ---------------------------------------------------------------
@@ -524,8 +551,10 @@ function createGame(world) {
       const k = c => !!keys[c];
       const right = (k('KeyD') || k('ArrowRight') || move.right ? 1 : 0) - (k('KeyA') || k('ArrowLeft') || move.left ? 1 : 0) + (Number(joy.x) || 0);
       const back = (k('KeyS') || k('ArrowDown') || move.back ? 1 : 0) - (k('KeyW') || k('ArrowUp') || move.forward ? 1 : 0) + (Number(joy.y) || 0);
-      const wantsSprint = !!(keys.ShiftLeft || keys.ShiftRight || move.sprint);
       const moving = !talking && (Math.abs(right) > 0.05 || Math.abs(back) > 0.05);
+      stillT = moving ? 0 : stillT + dt;
+      if (runLatch && (stillT > 0.6 || talking)) setRun(false);
+      const wantsSprint = !!(keys.ShiftLeft || keys.ShiftRight || runLatch);
       const sprinting = wantsSprint && moving && stamina > 0;
       stamina = clamp(stamina + (sprinting ? -STAMINA_DRAIN : STAMINA_RECOVERY) * dt, 0, 100);
       const speed = (sprinting ? 12 : 7) * dt;
@@ -558,7 +587,7 @@ function createGame(world) {
         if (d < 1.6) {
           hp = Math.max(0, hp - dt * 5);
           e.attackT -= dt; if (e.attackT <= 0) { e.attackT = 0.9 + rnd() * 0.4; h.punch(); world.hurt = 1; world.shake = 0.12; }
-          if (hp === 0) { hp = 100; camera.position.set(0, ROAD.kerbH + EYE, 8); rep = Math.max(0, rep - 10); say('You got knocked out. Respawned at the dairy. Reputation -10.'); }
+          if (hp === 0) { hp = 100; const sp3 = home.spawn.pos; camera.position.set(sp3.x, groundHeight(sp3.x, sp3.z) + EYE, sp3.z); rep = Math.max(0, rep - 10); say('You got knocked out. You came to outside Manu\'s. Reputation -10.'); }
         }
       }
       // Darren squares up when the debt talk goes bad.
@@ -582,7 +611,7 @@ function createGame(world) {
       }
       // Shorty texts a little while after Manu passes your number on.
       if (stage === 'shorty-wait' && (shortyTimer -= world.realDt || dt) <= 0) {
-        shortyTimer = 1e9; phone.receive(TEXTS.shortyHello, phoneVars(), () => advance('shorty-meet', `Shorty texted. Go see him at ${sHome.address}.`));
+        shortyTimer = 1e9; phone.receive(TEXTS.shortyHello, phoneVars(), () => advance('shorty-meet', `Shorty texted. Go see him on ${sHome.address}.`));
       }
       // Kev fights like a panel beater: slower than Darren, hits harder.
       if (jobState.kev === 'fight' && !kevRun.down) {
@@ -615,7 +644,7 @@ function createGame(world) {
           if (d > 70) { mikeyRun.escapedT = 8; mk.visible = false; say(`Mikey got away. He'll be back at ${JOBS.mikey.spot.place} soon.`); }
         } else h.speed = 0;
       }
-      if (now - lastHud > 180) { updateHUD(); drawMiniMap(); lastHud = now; }
+      if (now - lastHud > 180) { updateHUD(); locate(); drawMiniMap(); lastHud = now; }
     }
     // Dying enemies stay down for a few seconds, then leave the scene.
     for (const e of enemies) if (!e.alive && e.dyingT > 0) { e.dyingT += dt; if (e.dyingT > 4.5 && e.p.parent) { scene.remove(e.p); e.dyingT = 0; } }

@@ -16,7 +16,7 @@ GPU-generated textures and sky.
 | Town square | herringbone_brick |
 | Brick buildings | brick_wall_02 |
 | Plaster buildings | beige_wall_002 |
-| Weatherboard houses | distressed_painted_planks |
+| Weatherboard houses | white_planks_clean (see Run 16 additions) |
 | Painted corrugated iron | corrugated_iron |
 | Old galvanised iron | worn_corrugated_iron |
 | Lawns and berms | leafy_grass |
@@ -26,3 +26,16 @@ GPU-generated textures and sky.
 | Tree bark | bark_willow |
 | Golden-hour sky | kloppenheim_06_puresky (2K HDR) |
 | Overcast sky | kloofendal_overcast_puresky (1K HDR) |
+
+
+## Run 16 additions
+
+| Used for | Asset |
+|---|---|
+| Weatherboard houses | white_planks_clean (replaces distressed_painted_planks) |
+| Concrete tile roofs | grey_roof_tiles |
+| Block walls and fences | concrete_block_wall |
+
+## People (`people/`)
+
+Built by `tools/people-build.py` from the [MakeHuman](http://www.makehumancommunity.org) base mesh, macro targets, default skeleton weights and the MakeHuman system asset pack (skins, clothes, shoes, hair, eyebrows, eyes), all released as **CC0**. Each character is one mesh (`.bin`: positions, normals, UVs, 4 bone weights on the game's 18-bone rig) plus a texture atlas (`.jpg` colour, `_n.jpg` normal, `_a.png` alpha).

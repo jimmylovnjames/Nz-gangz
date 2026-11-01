@@ -1,10 +1,27 @@
-# AOTEAROA: UNDERWORLD, Run 15 (photo-scanned surfaces and sky)
+# AOTEAROA: UNDERWORLD, Run 16 (real Manurewa and Clendon, realistic people)
 
 Open `index.html` in a modern browser with internet access (Three.js loads from jsDelivr). On the phone: extract the ZIP and open `index.html`. For best results on a computer, serve the folder with `python -m http.server 8000` and visit `http://localhost:8000`.
 
-Desktop: WASD or arrow keys to move, mouse to look (click to lock), click or HIT to attack, Shift to sprint, E to talk, Escape to pause. Phone: touch the lower-left circle and slide to walk, swipe the right side to look, TAP TALK/HIT, HOLD RUN. Tap the radar to collapse it. Saves stay in the device's browser storage; PAUSE has EXPORT/IMPORT SAVE FILE for moving between phones.
+Desktop: WASD or arrow keys to move, mouse to look (click to lock), click or HIT to attack, Shift (hold) to sprint, E to talk, Escape to pause. Phone: touch the lower-left circle and slide to walk, swipe the right side to look, tap TALK/HIT, tap RUN to toggle running (it lights up, and switches off when you stop). Tap the radar to collapse it. Saves stay in the device's browser storage; PAUSE has EXPORT/IMPORT SAVE FILE for moving between phones.
 
-This is a playable *fictional district* vertical slice, not a geographically accurate map. All crews, characters and events are invented. Run 12 replaced the real gang names used in earlier runs with fictional crews; old saves are converted automatically.
+The streets are real; the crews, characters and events are invented. Run 12 replaced the real gang names used in earlier runs with fictional crews; old saves are converted automatically.
+
+## Run 16: the real South Auckland
+
+The district is now **Manurewa and Clendon Park**, built from OpenStreetMap and LINZ data at 1:1 scale (about 3.4 km × 1.8 km, from the Clendon roundabout to Southmall and the station):
+- **Every street in the right place with its real name** (Weymouth Road, Roscommon Road, Great South Road, Palmers Road, Barneys Farm Road…). The HUD shows the street and suburb you're on; the radar is the real street map. Street-name blades are Manukau-style white on green.
+- **Every house on its real footprint** (about 7,900 LINZ building outlines): brick-and-tile, weatherboard and block houses with hip or gable roofs (longrun iron or concrete tile), garages and sheds. Sections are split between neighbours with paling, corrugated-iron and block fences, low front fences or hedges, concrete driveways and letterboxes at the boundary, wheelie bins out on the berm.
+- **Streets built the NZ way**: kerb and dish channel, grass berms, concrete footpaths, cul-de-sac heads, roundabouts, dashed white centre lines, zebra crossings with belisha beacons, real bus stops, signalised junctions, mapped power poles and lines, streetlights.
+- **Landmarks**: Southmall on its real outline with the glazed court roof and the 1911 Norfolk pine (with its cross) at the entrance; the Great South Road shops under verandahs; Manurewa station platforms on the electrified line; the war memorial; Clendon Shopping Centre and its big boxes; Te Matariki Clendon library; **Clendon skate park** with quarter pipes, a fun box, a ledge and a rail; netball and basketball hoops, rugby posts on the fields.
+- **Context**: real streets and buildings continue past the playable area, the Hunua Ranges sit to the south-east and the Pahurehure Inlet to the west. The air is clearer (less haze), as it is in NZ.
+
+Story places moved onto the map: Manu lives in Clendon a few streets from the skate park; Darren hangs round the Clendon shops, the dairy, the skate park, the fish and chip shop or Te Matariki (depends on your hometown); Shorty and Uncle Pita live over in Manurewa; Kev's panel shop is off Weymouth Road; Mikey hangs round Southmall, the Norfolk pine, the station or the Great South Road shops; the crews gather at Clendon skate park.
+
+What is not real yet: the ground is flat (no terrain heights), house colours, cladding, roof types, windows and fences are generated (the data only has outlines), backyards are guessed, and the skate park layout is a typical council park, not surveyed. Chain stores use stand-in names with their real colours (PAK'N'PAY, THE STOREHOUSE, SUPA LIQUOR…) to stay clear of trademarks; local shops keep descriptive names like CLENDON DAIRY.
+
+**Realistic people.** The cast and the crews are now full human models built from MakeHuman's CC0 assets: real body shapes (Manu, Shorty and Kev are big Polynesian builds, Uncle Pita is a koro, Mikey is a skinny kid), photographic skin, fitted clothes (Kev in overalls, Darren in a jacket, Manu in a black tee), sneakers and boots, hair, eyebrows and eyes. They use the same animation as before. They stream in after load (about 8 MB, cached); the old stand-in bodies show until then, and on LOW.
+
+Map data © OpenStreetMap contributors (ODbL), building outlines from LINZ (CC BY 4.0); the extract in `src/engine/05-mapdata.js` is ODbL. Rebuild it with `node tools/osm-build.mjs <overpass.json>`; rebuild the people with `python3 tools/people-build.py <makehuman data> <system assets> assets/people`.
 
 ## Story: Chapter Zero (Runs 13–14)
 
@@ -12,12 +29,12 @@ This is a playable *fictional district* vertical slice, not a geographically acc
 2. **The debt.** Mid-match Manu brings up Darren, who owes him $400 and has been dodging him. After the match you can offer to go collect it.
 3. **Darren.** He hangs out somewhere different depending on your hometown (outside a main-street shop, the park or the car park). Go soft (take $200, rest by Friday) or go hard (demand all $400, he squares up, knock him down).
 4. **Back to Manu** at his house in the suburbs for your cut. Impressed, he brings up his mate Shorty (his weed man), who's always moaning that half the town owes him, and offers to pass on your number.
-5. **Shorty texts you.** A phone button appears (top right) with MESSAGES and JOBS; texts buzz in with a toast. Every house has a street address now (NZ tree and bird street names), so Shorty sends his.
+5. **Shorty texts you.** A phone button appears (top right) with MESSAGES and JOBS; texts buzz in with a toast. Shorty sends the street he lives on.
 6. **Three jobs for Shorty**, in any order:
    - **Kev** at the panel shop, $600: tells you to get off his lot, so it's a scrap (he's tougher and hits harder than Darren).
    - **Mikey**, $300: bolts as soon as you get close. He sprints in bursts then blows out, so use RUN to catch him. If he gets away he comes back to his spot.
    - **Uncle Pita**, $150: a koro buying weed for his back with the grandkids' uniform money. Take it, or let him keep it and cover it yourself (if you can't, Shorty takes it out of your cut).
-7. **Back to Shorty** for a quarter of what you brought in. He reacts to how you handled Pita, then tells you the crews at the square want to see you (the faction chapter from Run 11 continues from there).
+7. **Back to Shorty** for a quarter of what you brought in. He reacts to how you handled Pita, then tells you the crews down at Clendon skate park want to see you (the faction chapter from Run 11 continues from there).
 
 Dialogue appears as subtitles with the speaker's name; tap the box to skip ahead. Every line has a voice slot: see **VOICE_SCRIPT.md** for all 100 lines with their ids. Put recordings in `voice/` next to `index.html` and list them in `voice/manifest.js` (`window.AU_VOICE = { pro_01: 'pro_01.m4a', ... }`). Lines without a recording stay as subtitles.
 

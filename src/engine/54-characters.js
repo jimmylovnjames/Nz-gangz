@@ -179,6 +179,29 @@ class Human {
     this.root.userData.human = this;
     this.phase = rnd() * TAU; this.idleSeed = rnd() * 100; this.mode = 'idle'; this.speed = 0; this.punchT = 0; this.hitT = 0; this.downT = 0;
     this.pose = o.pose || 'relaxed'; this.lookYaw = 0; this.heading = 0; this.lean = 0;
+    this.hipRest = new THREE.Vector3(0, 0.95, 0);
+    if (o.look) PEOPLE.get(o.look).then(d => d && this.applyReal(d)).catch(() => { });
+  }
+  // Swap the stand-in body for a realistic MakeHuman one: same bones, rest joints from the model.
+  applyReal(d) {
+    const B = this.bones, J = d.joints;
+    const PARENT = { hips: null, spine: 'hips', chest: 'spine', neck: 'chest', head: 'neck', armL: 'chest', foreL: 'armL', handL: 'foreL', armR: 'chest', foreR: 'armR', handR: 'foreR', thighL: 'hips', shinL: 'thighL', footL: 'shinL', thighR: 'hips', shinR: 'thighR', footR: 'shinR' };
+    for (const b of B) b.rotation.set(0, 0, 0);
+    B[0].position.set(0, 0, 0);
+    for (const [n, par] of Object.entries(PARENT)) { const a = J[n], q = par ? J[par] : [0, 0, 0]; B[BONE[n]].position.set(a[0] - q[0], a[1] - q[1], a[2] - q[2]); }
+    this.hipRest.copy(B[BONE.hips].position);
+    const old = this.mesh, mesh = new THREE.SkinnedMesh(d.geometry, d.material);
+    mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false;
+    old.remove(B[0]); mesh.add(B[0]);
+    mesh.rotation.copy(old.rotation); mesh.position.copy(old.position);
+    const rot = mesh.rotation.clone(), pos = mesh.position.clone(); mesh.rotation.set(0, 0, 0); mesh.position.set(0, 0, 0);
+    this.root.add(mesh); this.root.remove(old);
+    this.root.updateMatrixWorld(true);
+    mesh.bind(new THREE.Skeleton(B));
+    mesh.rotation.copy(rot); mesh.position.copy(pos);
+    mesh.userData = { ...old.userData };
+    const k = CULLED.indexOf(old); if (k >= 0) CULLED[k] = mesh;
+    this.mesh = mesh; this.real = true;
   }
   punch() { this.punchT = 0.45; }
   hit() { this.hitT = 0.35; }
@@ -187,7 +210,7 @@ class Human {
   update(dt, t) {
     const B = this.bones, b = n => B[BONE[n]];
     for (const bone of B) bone.rotation.set(0, 0, 0);
-    b('hips').position.set(0, 0.95, 0);
+    b('hips').position.copy(this.hipRest);
     if (this.downT > 0) {
       this.downT = Math.min(this.downT + dt, 3);
       const k = smoothstep(this.downT, 0, 0.55);
@@ -205,7 +228,7 @@ class Human {
     b('thighL').rotation.x = -sw * amp; b('thighR').rotation.x = sw * amp;
     b('shinL').rotation.x = Math.max(0, cw) * amp * 1.3 + 0.05; b('shinR').rotation.x = Math.max(0, -cw) * amp * 1.3 + 0.05;
     b('footL').rotation.x = -Math.max(0, -sw) * amp * 0.4; b('footR').rotation.x = -Math.max(0, sw) * amp * 0.4;
-    b('hips').position.y = 0.95 - Math.abs(cw) * 0.035 * walk - run * 0.05;
+    b('hips').position.y = this.hipRest.y - Math.abs(cw) * 0.035 * walk - run * 0.05;
     b('hips').rotation.y = sw * 0.12 * walk; b('chest').rotation.y = -sw * 0.18 * walk;
     b('spine').rotation.x = 0.05 * walk + 0.15 * run + breath;
     let armL = sw * amp * 0.9, armR = -sw * amp * 0.9, foreL = -0.25 - 0.5 * run, foreR = -0.25 - 0.5 * run;
@@ -244,7 +267,7 @@ class Human {
 Human.prototype.seated = function (dt, t, b) {
   this.react = (this.react || 0) * Math.pow(0.35, dt);
   const cheer = Math.max(0, this.react), slump = Math.max(0, -this.react);
-  b('hips').position.y = 0.53;
+  b('hips').position.y = 0.53 + (this.hipRest.y - 0.95) * 0.3;
   b('thighL').rotation.set(-1.5, 0, 0.08); b('thighR').rotation.set(-1.5, 0, -0.08);
   b('shinL').rotation.set(1.42, 0, 0); b('shinR').rotation.set(1.42, 0, 0);
   b('footL').rotation.x = 0.1; b('footR').rotation.x = 0.1;
@@ -340,3 +363,40 @@ function itemProp(kind, color) {
   beam.position.y = 7; root.add(beam);
   return root;
 }
+
+// Realistic people: MakeHuman CC0 bodies, clothes and hair built by tools/people-build.py into
+// assets/people/<look>.{bin,jpg,_n.jpg,_a.png}. Streamed after boot; stand-ins show until they load.
+const PEOPLE = {
+  enabled: true, cache: {}, bases: null,
+  async fetchBin(path) {
+    for (const b of this.bases) { try { const r = await fetch(b + path); if (r.ok) return await r.arrayBuffer(); } catch (_) { } }
+    throw new Error('people asset unavailable: ' + path);
+  },
+  get(look) {
+    if (!this.enabled) return Promise.resolve(null);
+    this.bases = this.bases || assetBases();
+    if (!this.bases.length) return Promise.resolve(null);
+    return this.cache[look] || (this.cache[look] = this.load(look).catch(e => { console.info('Realistic people unavailable, keeping stand-ins.', e?.message); return null; }));
+  },
+  async load(look) {
+    const tl = new THREE.TextureLoader();
+    const tex = p => loadWithFallback(tl, p, this.bases);
+    const [buf, map, normalMap, alphaMap] = await Promise.all([this.fetchBin(`people/${look}.bin`), tex(`people/${look}.jpg`), tex(`people/${look}_n.jpg`), tex(`people/${look}_a.png`)]);
+    map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 4;
+    const dv = new DataView(buf), hl = dv.getUint32(4, true), head = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 8, hl)));
+    let o = 8 + hl;
+    const take = (T, n, bytes) => { const a = new T(buf, o, n); o += Math.ceil(n * bytes / 4) * 4; return a; };
+    const nV = head.nV, q = take(Int16Array, nV * 3, 2), n8 = take(Int8Array, nV * 4, 1), uv = take(Uint16Array, nV * 2, 2), si = take(Uint8Array, nV * 4, 1), sw = take(Uint8Array, nV * 4, 1), ix = take(Uint16Array, head.nI, 2);
+    const pos = new Float32Array(nV * 3), nor = new Float32Array(nV * 3);
+    for (let i = 0; i < nV; i++) { pos[i * 3] = q[i * 3] / 1000; pos[i * 3 + 1] = q[i * 3 + 1] / 1000; pos[i * 3 + 2] = q[i * 3 + 2] / 1000; nor[i * 3] = n8[i * 4] / 127; nor[i * 3 + 1] = n8[i * 4 + 1] / 127; nor[i * 3 + 2] = n8[i * 4 + 2] / 127; }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    g.setAttribute('uv', new THREE.BufferAttribute(uv, 2, true));
+    g.setAttribute('skinIndex', new THREE.BufferAttribute(Uint16Array.from(si), 4)); g.setAttribute('skinWeight', new THREE.BufferAttribute(sw, 4, true));
+    g.setIndex(new THREE.BufferAttribute(ix, 1)); g.computeBoundingSphere();
+    const material = new THREE.MeshStandardMaterial({ map, normalMap, normalScale: new THREE.Vector2(0.8, 0.8), alphaMap, alphaTest: 0.45, roughness: 0.68, metalness: 0, side: THREE.DoubleSide });
+    material.alphaToCoverage = !!PEOPLE.msaa;
+    material.name = 'person-' + look;
+    return { geometry: g, material, joints: head.joints, height: head.height };
+  },
+};

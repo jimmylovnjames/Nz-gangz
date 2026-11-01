@@ -8,10 +8,11 @@ const PHOTO = {
   asphalt: ['asphalt_02', 3.0], patch: ['asphalt_02', 3.0], chipseal: ['tarred_gravel', 2.2],
   concrete: ['concrete_pavement', 1.8], kerb: ['concrete_floor_02', 2.0], path: ['concrete_floor_02', 2.0],
   pavers: ['herringbone_brick', 1.8], plazaPavers: ['herringbone_brick', 1.8],
-  brick: ['brick_wall_02', 2.0], plaster: ['beige_wall_002', 3.0, false, 1.15], weatherboard: ['distressed_painted_planks', 1.6, true, 1.9],
+  brick: ['brick_wall_02', 2.0], plaster: ['beige_wall_002', 3.0, false, 1.15], weatherboard: ['white_planks_clean', 2.0, true, 1.0],
   corrugated: ['corrugated_iron', 1.12], corrugatedRust: ['worn_corrugated_iron', 1.8],
   grass: ['leafy_grass', 2.0], gravel: ['gravel_floor', 2.25], yard: ['gravel_floor', 2.25],
   roller: ['painted_metal_shutter', 2.0], wood: ['weathered_brown_planks', 1.8, true], bark: ['bark_willow', 1.0],
+  kerbTop: ['concrete_floor_02', 2.0], block: ['concrete_block_wall', 2.0], roofTile: ['grey_roof_tiles', 2.4, false, 1.6],
 };
 
 function assetBases() {

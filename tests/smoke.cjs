@@ -77,6 +77,8 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   await advanceUntil(page, () => !window.__auStory.prologue, 60);
   await page.waitForTimeout(1500);
   check('offering to collect sends you onto the street', (await state(page)).stage === 'debt-find', (await state(page)).objective);
+  // Movement checks on the open carriageway of Roscommon Road (Clendon), clear of fences and parked cars.
+  await walkTo(page, -1214, 235);
   let s0 = await state(page);
   await page.evaluate(() => window.__auGame.face(0));
   await page.waitForTimeout(300);
@@ -171,7 +173,7 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   // Crew chapter (unchanged from Run 11).
   T = await page.evaluate(() => window.__auGame.targets());
   const c0 = T.contacts[0];
-  await walkTo(page, c0.x * 0.9, c0.z * 0.9); await page.evaluate(() => window.__auGame.talk());
+  await walkTo(page, c0.x + 1.2, c0.z); await page.evaluate(() => window.__auGame.talk());
   check('a crew contact accepts you', (await state(page)).stage === 'faction-choice', (await state(page)).chosen);
   await page.evaluate(() => window.__auGame.talk());
   check('initiation choice dialog opens', await page.evaluate(() => getComputedStyle(document.getElementById('choicePanel')).display) === 'flex');
@@ -239,7 +241,7 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   await phone.page.click('#pauseButton'); await phone.page.click('#restart');
   check('restarting from pause leaves the lounge', await phone.page.evaluate(() => !window.__auStory.prologue && !document.body.classList.contains('prologue')));
   // Pausing saves the current game, so inject the street save only after leaving the prologue.
-  await phone.page.evaluate(() => localStorage.setItem('aotearoa-underworld-v2', JSON.stringify({ version: 2, stage: 'recruit', hometown: 'Kaikohe', originRegion: 'Northland', chosen: 'Independent', rep: 15, hp: 100, cash: 50, defeated: 0, missionRoute: '', stamina: 100, x: 0, z: 8, yaw: 0, pitch: 0 })));
+  await phone.page.evaluate(() => localStorage.setItem('aotearoa-underworld-v2', JSON.stringify({ version: 2, map: 'manurewa-1', stage: 'recruit', hometown: 'Kaikohe', originRegion: 'Northland', chosen: 'Independent', rep: 15, hp: 100, cash: 50, defeated: 0, missionRoute: '', stamina: 100, x: -1214, z: 235, yaw: 0, pitch: 0 })));
   await phone.page.reload();
   await phone.page.waitForFunction(() => document.documentElement.dataset.engine === 'ready', null, { timeout: 300000 });
   await phone.page.tap('#continue');

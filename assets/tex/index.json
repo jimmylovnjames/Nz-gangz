@@ -76,17 +76,6 @@
    "nor"
   ]
  },
- "distressed_painted_planks": {
-  "dims": [
-   1599.9999046325684,
-   1599.9999046325684
-  ],
-  "maps": [
-   "arm",
-   "diff",
-   "nor"
-  ]
- },
  "corrugated_iron": {
   "dims": [
    1120.0000047683716,
@@ -163,5 +152,29 @@
    "diff",
    "nor"
   ]
+ },
+ "grey_roof_tiles": {
+  "dims": [
+   2000,
+   2000
+  ],
+  "source": "https://polyhaven.com/a/grey_roof_tiles",
+  "license": "CC0"
+ },
+ "concrete_block_wall": {
+  "dims": [
+   2000,
+   2000
+  ],
+  "source": "https://polyhaven.com/a/concrete_block_wall",
+  "license": "CC0"
+ },
+ "white_planks_clean": {
+  "dims": [
+   2000,
+   2000
+  ],
+  "source": "https://polyhaven.com/a/white_planks_clean",
+  "license": "CC0"
  }
 }
