@@ -292,6 +292,22 @@ def recolour(img, rule):
     out = a * (1 - mask) + (lum * target / max(target.mean(), 1e-3) * rule.get('k', 0.6) if rule.get('keep') else target * (0.55 + 0.45 * lum)) * mask
     return Image.fromarray(np.clip(out * 255, 0, 255).astype(np.uint8))
 
+def delogo(img):
+    # The CC0 tees carry the MakeHuman logo (orange): find it, grow the mask, and inpaint from the
+    # surrounding fabric with a normalised blur so the shirt reads plain.
+    from PIL import ImageFilter
+    a = np.asarray(img.convert('RGB'), dtype=np.float32) / 255
+    mx, mn = a.max(2), a.min(2); sat = (mx - mn) / np.maximum(mx, 1e-6)
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    m = ((r > g) & (g > b) & (sat > 0.3) & (mx > 0.3) & ((r - g) > 0.1)).astype(np.uint8) * 255
+    if m.sum() == 0: return img
+    M = np.asarray(Image.fromarray(m).filter(ImageFilter.MaxFilter(25)), dtype=np.float32)[..., None] / 255
+    keep = 1 - M
+    num = np.asarray(Image.fromarray(np.clip(a * keep * 255, 0, 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(18)), dtype=np.float32) / 255
+    den = np.asarray(Image.fromarray(np.clip(keep[..., 0] * 255, 0, 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(18)), dtype=np.float32)[..., None] / 255
+    out = a * keep + num / np.maximum(den, 1e-3) * M
+    return Image.fromarray(np.clip(out * 255, 0, 255).astype(np.uint8))
+
 def atlas(name, spec, proxies):
     A = Image.new('RGB', ATLAS, (128, 128, 128)); Nm = Image.new('RGB', (ATLAS[0] // 2, ATLAS[1] // 2), (128, 128, 255)); Al = Image.new('L', ATLAS, 255)
     def put(img, region, normal=None, alpha=None):
@@ -306,7 +322,7 @@ def atlas(name, spec, proxies):
         img = Image.open(d)
         alpha = img.getchannel('A') if img.mode in ('RGBA', 'LA') else None
         rgb = img.convert('RGB')
-        if k == 'cloth': rgb = recolour(rgb, spec.get('clothColour'))
+        if k == 'cloth': rgb = recolour(delogo(rgb), spec.get('clothColour'))
         if k == 'hair' and spec.get('hairTint'): rgb = Image.fromarray(np.clip(np.asarray(rgb, np.float32) * np.array(spec['hairTint']), 0, 255).astype(np.uint8))
         if k == 'brow': rgb = Image.new('RGB', rgb.size, tuple(spec.get('browRGB', (28, 20, 16))))
         put(rgb, REG['region' if False else {'brow': 'brow'}.get(k, k)], Image.open(nm) if nm and os.path.exists(nm) else None, alpha)
@@ -332,7 +348,7 @@ CAST = {
     'shorty': dict(gender=1, age=0.56, muscle=0.62, weight=1.0, height=0.5, race=POLY_RACE, skin=POLY_MID, cloth=C('male_casualsuit03'), shoes=C('shoes03'), hair=H('short01')),
     'darren': dict(gender=1, age=0.5, muscle=0.45, weight=0.38, height=0.5, race={'caucasian': 0.9, 'african': 0.05, 'asian': 0.05}, skin=PAKEHA, cloth=C('male_casualsuit05'), shoes=C('shoes04'), hair=H('short02'), hairTint=[0.8, 0.7, 0.6], browRGB=(70, 52, 36), eyeColour='bluegreen'),
     'kev':    dict(gender=1, age=0.62, muscle=0.78, weight=0.7, height=0.62, race=POLY_RACE, skin=POLY_MID, skinTint=[0.95, 0.92, 0.9], cloth=C('male_worksuit01'), shoes=C('shoes03'), hair=H('short04')),
-    'mikey':  dict(gender=1, age=0.42, muscle=0.4, weight=0.3, height=0.45, race={'asian': 0.45, 'african': 0.25, 'caucasian': 0.3}, skin=[(POLY[0][0], 0.35), (POLY[1][0], 0.65)], cloth=C('male_casualsuit06'), shoes=C('shoes06'), hair=H('short02'), hairTint=[0.35, 0.3, 0.28]),
+    'mikey':  dict(gender=1, age=0.42, muscle=0.4, weight=0.3, height=0.45, race={'asian': 0.45, 'african': 0.25, 'caucasian': 0.3}, skin=[(POLY[0][0], 0.35), (POLY[1][0], 0.65)], cloth=C('male_casualsuit06'), clothColour={'to': [0.5, 0.08, 0.1]}, shoes=C('shoes06'), hair=H('short02'), hairTint=[0.35, 0.3, 0.28]),
     'pita':   dict(gender=1, age=0.84, muscle=0.4, weight=0.72, height=0.45, race=POLY_RACE, skin=POLY_OLD, cloth=C('male_casualsuit01'), shoes=C('shoes04'), hair=H('short01'), hairTint=[1.9, 1.9, 1.9], browRGB=(150, 145, 140)),
     'crewA':  dict(gender=1, age=0.5, muscle=0.7, weight=0.8, height=0.6, race=POLY_RACE, skin=POLY, cloth=C('male_casualsuit06'), clothColour={'to': [0.12, 0.12, 0.13]}, shoes=C('shoes04'), hair=H('short04')),
     'crewB':  dict(gender=1, age=0.55, muscle=0.6, weight=0.65, height=0.55, race=POLY_RACE, skin=POLY_MID, cloth=C('male_casualsuit05'), shoes=C('shoes03'), hair=H('short01')),

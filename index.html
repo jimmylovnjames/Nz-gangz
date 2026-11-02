@@ -5111,7 +5111,7 @@ function createGame(world) {
       h.speed = sp; h.mode = guardingNow || hostiles().length ? 'guard' : 'idle'; h.update(dt, t);
       _f.set(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch)); _r.set(Math.cos(yaw), 0, -Math.sin(yaw));
       _head.copy(eye.position).y -= 0.05;
-      _want.copy(_head).addScaledVector(_r, 0.55).addScaledVector(_f, -2.9); _want.y += 0.3;
+      _want.copy(_head).addScaledVector(_r, 0.7).addScaledVector(_f, -3.7); _want.y += 0.45;
       // Pull the camera in rather than through walls and fences.
       let k = 1; for (let i = 1; i <= 10; i++) { const f = i / 10, x = lerp(_head.x, _want.x, f), z = lerp(_head.z, _want.z, f); if (collision.collides(x, z, 0.22)) { k = Math.max(0.15, (i - 1) / 10); break; } }
       _want.lerpVectors(_head, _want, k); _want.y = Math.max(_want.y, groundHeight(_want.x, _want.z) + 0.35);
