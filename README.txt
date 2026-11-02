@@ -1,4 +1,4 @@
-AOTEAROA: UNDERWORLD | RUN 18 (COPS, BETTER CARS, PEDESTRIANS, CHAPTER ONE)
+AOTEAROA: UNDERWORLD | RUN 19 (HOW IT PLAYS: MOVEMENT, FIGHTING, THIRD PERSON, SOUND)
 
 Extract this ZIP and keep the voice folder next to index.html. Open index.html on your phone with internet on.
 Give the progress bar a few seconds on first load, then tap NEW GAME.
@@ -9,6 +9,13 @@ The map is real Manurewa and Clendon Park (OpenStreetMap): real streets and name
 Southmall with the Norfolk pine, the station, the Clendon shops and Clendon skate park. The HUD shows the street you're on.
 
 RUN is a toggle: tap it once (it lights up) and steer with your other thumb; it switches off when you stop.
+
+NEW IN RUN 19
+- PAUSE > VIEW switches to THIRD PERSON (over the shoulder, you can see yourself). PAUSE > SOUND turns sound off.
+- Fights: they circle and take turns swinging; your hits stagger them; health bars over their heads.
+  Tap BLOCK while moving to DODGE (can't be hit during it). Aim assist turns you onto the nearest one.
+- Movement has momentum and real speeds. Footsteps, punches, the till and your phone all make sound.
+- A light beacon marks your objective. Banners show what you earned. Get knocked out or busted and you get another go.
 
 NEW IN RUN 18
 - HEAT: hit randoms, run people over, ram cop cars or brawl in public and the cops come (stars on the HUD).

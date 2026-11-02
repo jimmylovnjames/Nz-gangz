@@ -30,6 +30,7 @@ class Phone {
       this.toast.textContent = `📱 ${CONTACTS[m.from] || m.from}: ${m.text}`; this.toast.classList.add('show');
       clearTimeout(this.toastT); this.toastT = setTimeout(() => this.toast.classList.remove('show'), 3800);
       try { navigator.vibrate?.(120); } catch (_) { }
+      SFX.play('buzz');
     }
   }
   renderMsg(m) {

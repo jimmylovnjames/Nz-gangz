@@ -51,7 +51,7 @@ class Shops {
   }
   buy(it, price) {
     const api = this.api; if (api.cash() < price) return;
-    api.spend(price);
+    api.spend(price); SFX.play('cash');
     if (it.hp) api.heal(it.hp); if (it.energy) api.energy(it.energy, it.boost || 0); if (it.rep) api.rep(it.rep); if (it.train) api.train();
     api.say(it.train ? `Good session. Punch power ${api.strength()}.` : `${it.name}: sweet as.`);
     this.render();

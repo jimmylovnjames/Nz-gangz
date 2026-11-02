@@ -37,7 +37,7 @@ async function boot() {
   const photo = new PhotoAssets(renderer, lib, q);
   // Realistic people need texture detail (MEDIUM and up); LOW keeps the light stand-in bodies.
   PEOPLE.enabled = q.tex >= 1024 && new URLSearchParams(location.search).get('people') !== 'off'; PEOPLE.msaa = q.msaa > 0;
-  for (const look of ['manu', 'darren', 'shorty', 'kev', 'mikey', 'pita', 'crewA', 'crewB', 'crewC', 'pedF1', 'pedF2', 'pedF3', 'pedM1', 'pedM2']) PEOPLE.get(look);
+  for (const look of ['manu', 'darren', 'shorty', 'kev', 'mikey', 'pita', 'crewA', 'crewB', 'crewC', 'pedF1', 'pedF2', 'pedF3', 'pedM1', 'pedM2', 'player']) PEOPLE.get(look);
   sky.photo = photo;
 
   setLoad(0.28, 'Building the district…');

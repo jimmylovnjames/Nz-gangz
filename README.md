@@ -1,10 +1,22 @@
-# AOTEAROA: UNDERWORLD, Run 18 (cops, better cars, pedestrians, Chapter One)
+# AOTEAROA: UNDERWORLD, Run 19 (gameplay feel: movement, fighting, third person, sound)
 
 Open `index.html` in a modern browser with internet access (Three.js loads from jsDelivr). On the phone: extract the ZIP and open `index.html`. For best results on a computer, serve the folder with `python -m http.server 8000` and visit `http://localhost:8000`.
 
 Desktop: WASD or arrow keys to move, mouse to look (click to lock), click or HIT to punch, hold Q or right mouse to block, Shift (hold) to sprint, E to talk / shop / get in or out of a car, Space handbrake, Escape to pause. Phone: touch the lower-left circle and slide to walk, swipe the right side to look, tap TALK/HIT, hold BLOCK, tap RUN to toggle running (it lights up, and switches off when you stop). Tap the radar to collapse it. Saves stay in the device's browser storage; PAUSE has EXPORT/IMPORT SAVE FILE for moving between phones.
 
 The streets are real; the crews, characters and events are invented. Run 12 replaced the real gang names used in earlier runs with fictional crews; old saves are converted automatically.
+
+## Run 19: how it plays
+
+- **Movement has weight.** Real speeds (4.4 m/s jog, 7.8 m/s sprint, a shuffle while blocking) with acceleration and easing to a stop, instead of snapping at 7 and 12 m/s. Sprint lasts about 7 seconds. Footsteps are audible.
+- **Dodge.** Tap BLOCK while moving for a quick sidestep: nothing can hit you during it (costs 20 energy).
+- **Brawls play like brawls.** Opponents close in, hold their distance and circle you; only one steps in to swing at a time, so three-on-one is hard but fair. Your hits stagger them and cancel the punch they were winding up. Health bars show over everyone you're fighting.
+- **Hits land.** A tiny freeze-frame on every connect (longer on heavies), impact and whoosh sounds, aim assist that turns you onto the nearest opponent, and a moment of slow motion when the last one drops.
+- **Third person.** PAUSE → VIEW (or V on a keyboard) switches between first person and an over-the-shoulder camera with your own character on screen. The camera pulls in instead of going through walls. The setting is remembered.
+- **Missions are easier to follow.** A tall light beacon marks where you need to go when it's far away. Payouts pop up as banners (JOB DONE / HUSTLE DONE / CHAPTER COMPLETE with the cash and rep). Getting knocked out or busted shows what it cost.
+- **Failing isn't a dead end.** Get knocked out mid-fight and they're waiting at full health for round two; get busted with Tipene's parcel and the cops keep it, so Rawiri gives you another.
+- **Rep has titles:** NOBODY, KNOWN (50), RESPECTED (150), SOLID (300), FEARED (600), shown next to your rep.
+- **Sound.** Synthesised effects (no downloads): punches, blocks, hurt, knockouts, footsteps, the till at shops, the phone buzzing, plus street ambience (birds by day, crickets at night, distant traffic). PAUSE → SOUND switches it off.
 
 ## Run 18: cops, cars, people, Chapter One
 

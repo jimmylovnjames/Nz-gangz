@@ -22,6 +22,9 @@ const EYE = 1.62;
 
 function createGame(world) {
   const { scene, camera, collision, charMaterial, fists, renderer, dialogue: dlg, prologue, phone, places } = world;
+  // The player is `eye` (head position + look direction); the render camera follows it in first person
+  // or trails it over the shoulder in third person (see the end of update()).
+  const eye = new THREE.Object3D(); eye.rotation.order = 'YXZ';
   const mobile = matchMedia('(pointer:coarse)').matches;
   const collides = (x, z, r = 0.55) => collision.collides(x, z, r);
   function slideMove(p, dx, dz, r = 0.55) {
@@ -103,7 +106,7 @@ function createGame(world) {
   }
 
   // ---- input -----------------------------------------------------------------------------
-  camera.position.set(world.cousinHome.spawn.pos.x, ROAD.kerbH + EYE, world.cousinHome.spawn.pos.z);
+  eye.position.set(world.cousinHome.spawn.pos.x, ROAD.kerbH + EYE, world.cousinHome.spawn.pos.z);
   let yaw = 0, pitch = 0;
   const keys = {}, move = {};
   addEventListener('keydown', e => { keys[e.code] = true; if (e.code === 'KeyE') talk(); });
@@ -141,7 +144,13 @@ function createGame(world) {
   select.innerHTML = Object.entries(ORIGINS).map(([region, towns]) => `<optgroup label="${region}">${towns.map(t => `<option value="${t}" data-region="${region}">${t}</option>`).join('')}</optgroup>`).join('');
   function originUpdate() { hometown = select.value; originRegion = select.selectedOptions[0].dataset.region; }
   $('factions').innerHTML = FACTIONS.map((f, i) => `<button data-f="${i}">${f}</button>`).join('');
-  let stamina = 100; const STAMINA_DRAIN = 24, STAMINA_RECOVERY = 17;
+  let stamina = 100; const STAMINA_DRAIN = 15, STAMINA_RECOVERY = 17;
+  // Feel: momentum, dodge, hit-stop, slow-mo on the last knockout, fight token, view mode.
+  const vel = new THREE.Vector2(); let dodgeT = 0, dodgeCD = 0, prevBlock = false, hitStop = 0, slowMo = 0, stepDist = 0, fightToken = null, tokenT = 0;
+  let thirdPerson = (() => { try { return localStorage.getItem('au-view') === '3'; } catch (_) { return false; } })(), bodyYaw = 0, guardingNow = false;
+  let bnCash = 0, bnRep = 0;
+  const REP_TITLES = [[600, 'FEARED'], [300, 'SOLID'], [150, 'RESPECTED'], [50, 'KNOWN'], [0, 'NOBODY']];
+  const repTitle = () => REP_TITLES.find(([n]) => rep >= n)[1];
   // Run 17 mechanics: punch power from the gym, energy-drink sprint, regen, combos, driving, shops, hustles.
   let strength = 0, boostT = 0, lastHurt = -1e9, lastPunch = -1e9, combo = 0, rmb = false;
   const drive = new PlayerCars(world), traffic = new Traffic(world, world.trafficCount || 0), shops = new Shops(world.city);
@@ -186,7 +195,7 @@ function createGame(world) {
     pita: { name: 'UNCLE PITA', amount: 150, spot: { ...pHome, place: pHome.address }, npc: person(0, 0, { look: 'pita', seed: 61, skin: 0x7a4b31, top: 0x5a4a3a, topCell: ATLAS.knit, pants: 0x4a4a4a, pantsCell: ATLAS.canvas, face: ATLAS.faceC, beanie: 0x8a8a8a, pose: 'relaxed', scale: 0.96 }) },
   };
   let jobState = { kev: 'open', mikey: 'open', pita: 'open' }, shortyTimer = 0;
-  const kevRun = { hp: 4, down: false, attackT: 0 }, mikeyRun = { fleeing: false, burst: 0, tired: 0, escapedT: 0, barked: false };
+  const kevRun = { hp: 4, maxHp: 4, down: false, attackT: 0 }, mikeyRun = { fleeing: false, burst: 0, tired: 0, escapedT: 0, barked: false };
   const shortyMarker = new THREE.Mesh(new THREE.OctahedronGeometry(0.2), markerMat(0x9fd86a)); shortyMarker.position.y = 2.45; shorty.add(shortyMarker);
   for (const j of Object.values(JOBS)) { j.marker = new THREE.Mesh(new THREE.OctahedronGeometry(0.18), markerMat(0x9fd86a)); j.marker.position.y = 2.2; j.npc.add(j.marker); }
   function placeJobs() {
@@ -213,7 +222,7 @@ function createGame(world) {
       phone.receive(TEXTS.shortyDone, phoneVars());
     }
   }
-  const dist = p => Math.hypot(camera.position.x - p.x, camera.position.z - p.z);
+  const dist = p => Math.hypot(eye.position.x - p.x, eye.position.z - p.z);
   function objective() {
     if (stage === 'prologue') return ['Finish your game with Manu.', null];
     if (stage === 'debt-find') return [`Find Darren ${hangout.label} and collect Manu's $400.`, darren.position];
@@ -245,8 +254,9 @@ function createGame(world) {
     return [`Chapter complete: ${hometown} / ${chosen} / ${missionRoute} route.`, null];
   }
   function updateHUD() {
-    $('status').textContent = `HP ${Math.ceil(hp)} | ENERGY ${Math.ceil(stamina)}${boostT > 0 ? '⚡' : ''} | $${cash} | REP ${rep}${strength ? ' | PWR ' + strength : ''}${heat.level > 0 ? ' | HEAT ' + '★'.repeat(heat.stars) : ''} | ${chosen.toUpperCase()}`;
-    const [goal, target] = objective(); $('quest').textContent = goal; $('status').setAttribute('title', `${hometown} | ${originRegion}`);
+    bnCash = Math.min(bnCash, cash);
+    $('status').textContent = `HP ${Math.ceil(hp)} | ENERGY ${Math.ceil(stamina)}${boostT > 0 ? '⚡' : ''} | $${cash} | REP ${rep} ${repTitle()}${strength ? ' | PWR ' + strength : ''}${heat.level > 0 ? ' | HEAT ' + '★'.repeat(heat.stars) : ''} | ${chosen.toUpperCase()}`;
+    const [goal, target] = objective(); $('quest').textContent = goal; beaconTarget = target || (hustle && hustle.state !== 'done' ? hustle.npc.position : null); $('status').setAttribute('title', `${hometown} | ${originRegion}`);
     const side = hustle && hustle.state !== 'done' ? ` · HUSTLE ${hustle.name} ${Math.round(dist(hustle.npc.position))}m` : '';
     if (target) $('missionDistance').textContent = `OBJECTIVE ${Math.round(dist(target))}m away${side}`;
     else $('missionDistance').textContent = (stage === 'mission-brawl' ? 'Find hostiles on the outskirts' : 'Story branch recorded') + side;
@@ -254,7 +264,7 @@ function createGame(world) {
   function store() {
     if (!saveAllowed || !started) return;
     try {
-      const data = { version: 2, map: MAP_VERSION, strength, stage, hometown, originRegion, chosen, rep, hp, cash, defeated, missionRoute, stamina, debtRoute, debtCash, jobs: jobState, phone: phone.log.slice(-40), enemyHP: enemies.map(e => e.hp), enemyAlive: enemies.map(e => e.alive), enemyPositions: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z })), x: drive.car ? drive.car.x : camera.position.x, z: drive.car ? drive.car.z : camera.position.z, yaw, pitch };
+      const data = { version: 2, map: MAP_VERSION, strength, stage, hometown, originRegion, chosen, rep, hp, cash, defeated, missionRoute, stamina, debtRoute, debtCash, jobs: jobState, phone: phone.log.slice(-40), enemyHP: enemies.map(e => e.hp), enemyAlive: enemies.map(e => e.alive), enemyPositions: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z })), x: drive.car ? drive.car.x : eye.position.x, z: drive.car ? drive.car.z : eye.position.z, yaw, pitch };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data)); $('saveState').textContent = 'Saved on this device';
     } catch (e) { $('saveState').textContent = 'Local save unavailable in this browser'; }
   }
@@ -319,11 +329,11 @@ function createGame(world) {
   function startPrologue() {
     $('panel').style.display = 'none'; $('choicePanel').style.display = 'none'; $('pausePanel').style.display = 'none';
     pauseOpen = false; started = false; inPrologue = true;
-    CHIP.ensure();
+    CHIP.ensure(); SFX.ensure(); bnCash = cash; bnRep = rep;
     prologue.start(storyVars(), () => {
       inPrologue = false; stage = 'debt-find';
       const sp = home.spawn;
-      camera.position.set(sp.pos.x, groundHeight(sp.pos.x, sp.pos.z) + EYE, sp.pos.z); yaw = sp.rot + Math.PI; pitch = 0;
+      eye.position.set(sp.pos.x, groundHeight(sp.pos.x, sp.pos.z) + EYE, sp.pos.z); yaw = sp.rot + Math.PI; pitch = 0;
       closeMenus(); say(`Darren owes Manu $400. Find him ${hangout.label}.`); store();
     });
   }
@@ -344,7 +354,7 @@ function createGame(world) {
     // Saves from before the real map (Run 15 and earlier) used the fictional grid: put the player outside Manu's.
     const sameMap = s.map === MAP_VERSION, hs = home.spawn.pos;
     const p = sameMap && Number.isFinite(s.x) && Number.isFinite(s.z) ? safeSpawn(clamp(s.x, MAP_BOUNDS.x0, MAP_BOUNDS.x1), clamp(s.z, MAP_BOUNDS.z0, MAP_BOUNDS.z1)) : { x: hs.x, z: hs.z };
-    camera.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z);
+    eye.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z);
     yaw = Number.isFinite(s.yaw) ? s.yaw : 0; pitch = Number.isFinite(s.pitch) ? s.pitch : 0;
     enemies.forEach((e, i) => {
       e.hp = Number.isFinite(s.enemyHP?.[i]) ? s.enemyHP[i] : 3; e.alive = s.enemyAlive?.[i] !== false; e.dyingT = 0; e.p.userData.human.reset();
@@ -355,11 +365,21 @@ function createGame(world) {
     });
     select.value = hometown;
     heat.level = 0; police.clear(); c1.timer = stage === 'c1-wait' ? 20 : 25; placeChapterOne();
+    bnCash = cash; bnRep = rep; SFX.ensure();
     if (stage === 'prologue') { startPrologue(); return; }
     closeMenus(); say(`Welcome back to ${hometown}. Your ${chosen} story continues.`);
   }
-  function advance(next, message) { stage = next; say(message); updateHUD(); store(); }
-  const faceEachOther = p => { p.rotation.y = Math.atan2(camera.position.x - p.position.x, camera.position.z - p.position.z); };
+  function banner(title, sub = '') {
+    const el = $('banner'); el.innerHTML = '<b></b><span></span>'; el.children[0].textContent = title; el.children[1].textContent = sub;
+    el.classList.remove('show'); void el.offsetWidth; el.classList.add('show'); SFX.play(title === 'BUSTED' || title === 'KNOCKED OUT' ? 'ko' : 'banner');
+  }
+  function rewardCheck(title = 'JOB DONE') {
+    const dc = cash - bnCash, dr = rep - bnRep;
+    if (dc > 0 || dr > 0) { banner(title, [dc > 0 && `+$${dc}`, dr > 0 && `+${dr} REP`].filter(Boolean).join(' · ')); if (dc > 0) SFX.play('cash'); }
+    bnCash = cash; bnRep = rep;
+  }
+  function advance(next, message) { stage = next; say(message); rewardCheck(next === 'complete' || next === 'c1-done' ? 'CHAPTER COMPLETE' : 'JOB DONE'); updateHUD(); store(); }
+  const faceEachOther = p => { p.rotation.y = Math.atan2(eye.position.x - p.position.x, eye.position.z - p.position.z); };
   function talk() {
     if (dlg.active) { dlg.advance(); return; }
     if (!started || pauseOpen) return;
@@ -450,7 +470,7 @@ function createGame(world) {
         faceEachOther(lead.p); CAST.rival.name = rivalCrew().toUpperCase();
         dlg.run('c1Rivals', {}, r => {
           if (r === 'talk' && rep >= 160) dlg.run('c1RivalsBackOff', {}, () => { c1.rivals.slice(0, 3).forEach(x => { x.alive = false; x.p.visible = false; }); rep += 10; c1.timer = 20; advance('c1-wait', 'They backed off. Aunty Lani\'s sorted.'); });
-          else dlg.run('c1RivalsFight', {}, () => { c1.rivals.slice(0, 3).forEach(x => { if (x.alive) x.hostile = true; }); peds.scare(camera.position.x, camera.position.z); say('Three on one. Block, step back, hit back.'); });
+          else dlg.run('c1RivalsFight', {}, () => { c1.rivals.slice(0, 3).forEach(x => { if (x.alive) x.hostile = true; }); peds.scare(eye.position.x, eye.position.z); say('Three on one. Block, step back, hit back.'); });
         });
         return;
       }
@@ -458,8 +478,8 @@ function createGame(world) {
     if (stage === 'c1-manu' && dist(manu.position) < 4.5 && !c1.rivals.slice(3).some(r => r.alive)) { faceEachOther(manu); manu.userData.human.reset(); dlg.run('c1ManuDown', { rival: rivalCrew() }, () => advance('c1-home', 'Get Manu into a car and take him home.')); return; }
     if (stage === 'c1-done' || stage === 'complete') { if (dist(manu.position) < 4.5) { faceEachOther(manu); dlg.run('manuAfter', storyVars(), null); return; } }
     if (hustle && dist(hustle.npc.position) < 4.5 && hustle.npc.visible) { talkHustle(); return; }
-    const shop = shops.nearest(camera.position); if (shop) { openShop(shop); return; }
-    const car = drive.nearest(camera.position); if (car) { enterCar(car); return; }
+    const shop = shops.nearest(eye.position); if (shop) { openShop(shop); return; }
+    const car = drive.nearest(eye.position); if (car) { enterCar(car); return; }
     if (stage === 'complete') { say(`Chapter complete. ${hometown} → ${chosen} → ${missionRoute}. Try a different origin and route for a different ending.`); return; }
     say(`Follow your current objective. ${objective()[0]}`);
   }
@@ -472,7 +492,7 @@ function createGame(world) {
   }
   function exitCar() {
     const p = drive.exit(); if (!p) return;
-    camera.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z); pitch = 0;
+    eye.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z); pitch = 0;
     document.body.classList.remove('driving'); $('speedo').style.display = 'none'; store();
   }
   // ---- shops ---------------------------------------------------------------------------
@@ -528,14 +548,14 @@ function createGame(world) {
     const house = near[Math.floor(rnd() * near.length)], amount = [120, 150, 200, 250, 300, 400, 500][Math.floor(rnd() * 7)];
     const npc = debtors[Math.floor(rnd() * debtors.length)]; debtors.forEach(d => { d.visible = false; });
     const p = safeSpawn(house.pos.x, house.pos.z); npc.position.set(p.x, groundHeight(p.x, p.z), p.z); npc.rotation.y = house.rot; npc.visible = true; npc.userData.human.reset();
-    hustle = { name: HUSTLE_NAMES[Math.floor(rnd() * HUSTLE_NAMES.length)], amount, street: house.address, npc, type: rnd() < (amount >= 300 ? 0.6 : 0.3) ? 'fights' : 'pays', state: 'open', hp: 3 + amount / 200, attackT: 1, windup: 0 };
+    hustle = { name: HUSTLE_NAMES[Math.floor(rnd() * HUSTLE_NAMES.length)], amount, street: house.address, npc, type: rnd() < (amount >= 300 ? 0.6 : 0.3) ? 'fights' : 'pays', state: 'open', hp: 3 + amount / 200, maxHp: 3 + amount / 200, attackT: 1, windup: 0 };
     phone.receive(TEXTS.hustleNew, { name: hustle.name, amount: '$' + amount, street: hustle.street }, () => refreshJobs());
     refreshJobs();
   }
   function endHustle(reset) { if (hustle && reset) hustle.npc.visible = false; if (reset) hustle = null; hustleTimer = reset ? 90 : 150 + rnd() * 90; refreshJobs?.(); }
   function hustlePaid(extraRep = 0) {
     const cut = Math.round(hustle.amount * 0.25); cash += cut; rep += 4 + extraRep; hustle.state = 'done';
-    phone.receive(TEXTS.hustlePaid, { cut: '$' + cut }); say(`${hustle.name} paid up. Shorty's flicking you $${cut}.`);
+    phone.receive(TEXTS.hustlePaid, { cut: '$' + cut }); say(`${hustle.name} paid up. Shorty's flicking you $${cut}.`); rewardCheck('HUSTLE DONE');
     endHustle(false); updateHUD(); store(); refreshJobs();
   }
   function talkHustle() {
@@ -557,22 +577,33 @@ function createGame(world) {
     const now = performance.now(); if (now - lastPunch < 300) return;
     combo = now - lastPunch < 900 ? combo + 1 : 1; lastPunch = now;
     const heavy = combo % 3 === 0, dmg = (heavy ? 2 : 1) * (1 + strength * 0.25), push = heavy ? 0.9 : 0.45, cone = mobile ? 0.3 : 0.45;
-    fists.swing();
-    const forward = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
-    const landed = () => { world.shake = heavy ? 0.32 : 0.18; if (heavy) say('Heavy hit!'); };
+    fists.swing(); playerBody.userData.human.punch(); SFX.play('whoosh');
+    // Aim assist: turn toward the nearest opponent in a wide cone so swings connect on a phone.
+    {
+      let best = null, bd = 3.9;
+      for (const [p] of hostiles()) { const dx = p.position.x - eye.position.x, dz = p.position.z - eye.position.z, d = Math.hypot(dx, dz); if (d > bd) continue; const want = Math.atan2(-dx, -dz); let da = want - yaw; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) < 1.25) { best = da; bd = d; } }
+      if (best != null) { yaw += best * 0.85; pitch = lerp(pitch, -0.05, 0.6); eye.rotation.set(pitch, yaw, 0); }
+    }
+    const forward = new THREE.Vector3(0, 0, -1).applyEuler(eye.rotation);
+    const landed = st => {
+      world.shake = heavy ? 0.32 : 0.18; hitStop = heavy ? 0.1 : 0.055; SFX.play(heavy ? 'heavy' : 'hit');
+      if (st) { st.stagger = heavy ? 0.75 : 0.28; st.windup = 0; }
+      if (heavy) say('Heavy hit!');
+      setTimeout(() => { if (!hostiles().length) { slowMo = 0.7; SFX.play('ko'); } }, 0);
+    };
     if (hustle && hustle.state === 'fight') {
-      const n = hustle.npc, delta = n.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position), d = delta.length();
+      const n = hustle.npc, delta = n.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length();
       if (d < 4 && delta.normalize().dot(forward) > cone) {
-        hustle.hp -= dmg; bloodAt(n.position); slideMove(n.position, forward.x * push, forward.z * push, 0.4); n.userData.human.hit(); landed();
+        hustle.hp -= dmg; bloodAt(n.position); slideMove(n.position, forward.x * push, forward.z * push, 0.4); n.userData.human.hit(); landed(hustle);
         if (hustle.hp <= 0) { hustle.state = 'down'; n.userData.human.knockDown(); setTimeout(() => { CAST.debtor.name = hustle.name; dlg.run('hustleBeaten', {}, () => { n.userData.human.reset(); hustlePaid(3); }); }, 1300); }
         return;
       }
     }
     if (stage === 'debt-fight' && !darrenState.down) {
-      const delta = darren.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position), d = delta.length();
+      const delta = darren.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length();
       if (d < 4 && delta.normalize().dot(forward) > cone) {
         darrenState.hp -= dmg; bloodAt(darren.position); slideMove(darren.position, forward.x * push, forward.z * push, 0.4);
-        landed(); darren.userData.human.hit();
+        landed(darrenState); darren.userData.human.hit();
         if (darrenState.hp <= 0) {
           darrenState.down = true; darrenState.hostile = false; darren.userData.human.knockDown(); rep += 5;
           say('Darren is down.');
@@ -585,10 +616,10 @@ function createGame(world) {
       }
     }
     if (jobState.kev === 'fight' && !kevRun.down) {
-      const kev = JOBS.kev.npc, delta = kev.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position), d = delta.length();
+      const kev = JOBS.kev.npc, delta = kev.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length();
       if (d < 4 && delta.normalize().dot(forward) > cone) {
         kevRun.hp -= dmg; bloodAt(kev.position); slideMove(kev.position, forward.x * push * 0.8, forward.z * push * 0.8, 0.4);
-        landed(); kev.userData.human.hit();
+        landed(kevRun); kev.userData.human.hit();
         if (kevRun.hp <= 0) {
           kevRun.down = true; kev.userData.human.knockDown(); rep += 8; say('Kev is down.');
           setTimeout(() => dlg.run('kevBeaten', storyVars(), () => { kev.userData.human.reset(); kevRun.down = false; jobState.kev = 'paid'; say('Kev paid $600.'); updateHUD(); store(); checkJobs(); }), 1400);
@@ -599,27 +630,27 @@ function createGame(world) {
     let target = null, score = 99;
     for (const e of enemies) {
       if (!e.alive) continue;
-      const delta = e.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position), d = delta.length();
+      const delta = e.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length();
       if (d < 4 && delta.normalize().dot(forward) > cone && d < score) { target = e; score = d; }
     }
     // Chapter One rivals.
     for (const r of c1.rivals) {
       if (!r.alive || !r.p.visible) continue;
-      const delta = r.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position), d = delta.length();
+      const delta = r.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length();
       if (d < 4 && delta.normalize().dot(forward) > cone) {
-        r.hostile = true; r.hp -= dmg; bloodAt(r.p.position); slideMove(r.p.position, forward.x * push, forward.z * push, 0.4); r.p.userData.human.hit(); landed();
+        r.hostile = true; r.hp -= dmg; bloodAt(r.p.position); slideMove(r.p.position, forward.x * push, forward.z * push, 0.4); r.p.userData.human.hit(); landed(r);
         if (r.hp <= 0) { r.alive = false; r.p.userData.human.knockDown(); rep += 4; heat.add(0.5); peds.scare(r.p.position.x, r.p.position.z); }
         updateHUD(); return;
       }
     }
     if (!target) {
       // Innocent bystanders: they go down, everyone else scatters, and the cops hear about it.
-      const ped = peds.near(camera.position.x, camera.position.z, 3.5).find(a => { const v = a.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(camera.position).normalize(); return v.dot(forward) > cone; });
-      if (ped) { peds.knock(ped); bloodAt(ped.p.position); landed(); heat.add(1); peds.scare(camera.position.x, camera.position.z); say('You just laid out a random. Someone\'s calling the cops.'); updateHUD(); }
+      const ped = peds.near(eye.position.x, eye.position.z, 3.5).find(a => { const v = a.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position).normalize(); return v.dot(forward) > cone; });
+      if (ped) { peds.knock(ped); bloodAt(ped.p.position); landed(null); heat.add(1); peds.scare(eye.position.x, eye.position.z); say('You just laid out a random. Someone\'s calling the cops.'); updateHUD(); }
       return;
     }
     target.hp -= dmg; bloodAt(target.p.position); slideMove(target.p.position, forward.x * push, forward.z * push, 0.4);
-    landed(); target.p.userData.human.hit();
+    landed(target); target.p.userData.human.hit();
     if (target.hp <= 0) {
       target.alive = false; target.dyingT = 0.0001; target.p.userData.human.knockDown(); rep += 5; heat.add(0.4); peds.scare(target.p.position.x, target.p.position.z);
       if (stage === 'mission-brawl') { defeated++; if (defeated >= 3) { advance('mission-return', `You won the fights. Your ${hometown} fixer wants to see you.`); return; } }
@@ -662,7 +693,7 @@ function createGame(world) {
     if (!started) return;
     const [, target] = objective();
     if (!target || dist(target) <= 6) { $('waypoint').textContent = ''; return; }
-    const dx = target.x - camera.position.x, dz = target.z - camera.position.z;
+    const dx = target.x - eye.position.x, dz = target.z - eye.position.z;
     let angle = Math.atan2(dx, -dz) + yaw; angle = Math.atan2(Math.sin(angle), Math.cos(angle));
     const arrow = Math.abs(angle) < 0.4 ? '↑' : Math.abs(angle) > 2.7 ? '↓' : angle > 0 ? '→' : '←';
     $('waypoint').textContent = arrow + ' ' + Math.round(dist(target)) + 'm';
@@ -687,7 +718,7 @@ function createGame(world) {
   const roadGrid = new Map();
   world.city.map.roadInfo.forEach((r, ri) => { if (!r.name) return; for (let i = 0; i + 1 < r.pts.length; i++) { const a = r.pts[i], b = r.pts[i + 1]; for (let t = 0; t <= 1; t += 0.25) { const k = Math.floor((a[0] + (b[0] - a[0]) * t) / 50) + ',' + Math.floor((a[1] + (b[1] - a[1]) * t) / 50); if (!roadGrid.has(k)) roadGrid.set(k, new Set()); roadGrid.get(k).add(ri * 1000 + i); } } });
   function locate() {
-    const x = camera.position.x, z = camera.position.z, cx = Math.floor(x / 50), cz = Math.floor(z / 50); let best = 1e9, name = '';
+    const x = eye.position.x, z = eye.position.z, cx = Math.floor(x / 50), cz = Math.floor(z / 50); let best = 1e9, name = '';
     for (let i = cx - 1; i <= cx + 1; i++) for (let j = cz - 1; j <= cz + 1; j++) for (const id of roadGrid.get(i + ',' + j) || []) { const r = world.city.map.roadInfo[Math.floor(id / 1000)], k = id % 1000, a = r.pts[k], b = r.pts[k + 1]; const d = segDist2(x, z, a[0], a[1], b[0], b[1]); if (d < best) { best = d; name = r.name; } }
     here.street = name; here.suburb = x < -480 ? 'Clendon Park' : z < -760 && x < 700 ? 'Homai' : 'Manurewa';
     $('location').textContent = `${name ? name + ', ' : ''}${here.suburb}`;
@@ -697,8 +728,8 @@ function createGame(world) {
     c.clearRect(0, 0, w, h); c.fillStyle = '#092321'; c.fillRect(0, 0, w, h);
     c.save(); c.translate(w / 2, h / 2); c.rotate(yaw);
     const k = scale / MAP_PX;
-    c.drawImage(mapCanvas, (C0.x0 - camera.position.x) * scale, (C0.z0 - camera.position.z) * scale, mapCanvas.width * k, mapCanvas.height * k);
-    const dot = (x, z, color, r) => { const dx = (x - camera.position.x) * scale, dz = (z - camera.position.z) * scale; if (Math.abs(dx) > w || Math.abs(dz) > h) return; c.fillStyle = color; c.beginPath(); c.arc(dx, dz, r, 0, TAU); c.fill(); };
+    c.drawImage(mapCanvas, (C0.x0 - eye.position.x) * scale, (C0.z0 - eye.position.z) * scale, mapCanvas.width * k, mapCanvas.height * k);
+    const dot = (x, z, color, r) => { const dx = (x - eye.position.x) * scale, dz = (z - eye.position.z) * scale; if (Math.abs(dx) > w || Math.abs(dz) > h) return; c.fillStyle = color; c.beginPath(); c.arc(dx, dz, r, 0, TAU); c.fill(); };
     for (const contact of contacts) dot(contact.p.position.x, contact.p.position.z, '#76b1fa', 2.5);
     for (const enemy of enemies) if (enemy.alive) dot(enemy.p.position.x, enemy.p.position.z, '#e96666', 2.5);
     const target = objective()[1]; if (target) dot(target.x, target.z, '#f6d766', 5);
@@ -714,28 +745,81 @@ function createGame(world) {
   const KO_ENEMY = KO_HOME, KO_DARREN = { at: () => home.spawn.pos, msg: 'Darren dropped you. You came to outside Manu\'s place.', rep: 0 };
   const KO_KEV = { at: () => sHome.spawn.pos, msg: 'Kev dropped you. You came to outside Shorty\'s.', rep: 0 };
   function hurtPlayer(dmg, ko) {
-    if (blocking() && stamina > 5) { dmg *= 0.15; stamina = Math.max(0, stamina - 14); world.shake = Math.max(world.shake, 0.06); }
-    else { world.hurt = 1; world.shake = Math.max(world.shake, 0.15); }
+    if (dodgeT > 0) return; // slipped it
+    if (blocking() && stamina > 5) { dmg *= 0.15; stamina = Math.max(0, stamina - 14); world.shake = Math.max(world.shake, 0.06); SFX.play('block'); }
+    else { world.hurt = 1; world.shake = Math.max(world.shake, 0.15); SFX.play('hurt'); playerBody.userData.human.hit(); }
     hp = Math.max(0, hp - dmg); lastHurt = performance.now();
     if (hp <= 0) {
       const lost = Math.round(cash * 0.1); cash -= lost; hp = 100; rep = Math.max(0, rep - (ko.rep || 0));
       if (drive.car) exitCar();
-      const p = ko.at(); camera.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z);
+      const p = ko.at(); eye.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z);
       say(`${ko.msg}${lost ? ` You got rolled for $${lost} while you were out.` : ''}${ko.rep ? ` Reputation -${ko.rep}.` : ''}`);
+      banner('KNOCKED OUT', lost ? `-$${lost}` : 'Back on your feet'); bnCash = cash; bnRep = rep;
+      // Retry: whoever beat you is back to full and still there.
+      for (const r of c1.rivals) if (r.alive) { r.hp = 3; r.stagger = 0; }
+      if (hustle && hustle.state === 'fight') hustle.hp = hustle.maxHp || hustle.hp;
+      darrenState.hp = Math.max(darrenState.hp, 3); kevRun.hp = Math.max(kevRun.hp, 4);
       updateHUD(); store();
     }
   }
   function meleeAI(st, h, d, dmg, ko, dt) {
-    if (st.windup > 0) { st.windup -= dt; if (st.windup <= 0) { st.attackT = 0.8 + rnd() * 0.7; if (d < 2.1) hurtPlayer(dmg, ko); } return; }
+    st.lastSeen = performance.now(); st.inFight = d < 10;
+    if (st.stagger > 0) return;
+    if (st.windup > 0) { st.windup -= dt; if (st.windup <= 0) { st.attackT = 0.9 + rnd() * 0.8; SFX.play('whoosh', 0.7); if (d < 2.1) hurtPlayer(dmg, ko); if (fightToken === st) tokenT = Math.min(tokenT, 0.4); } return; }
     st.attackT = (st.attackT ?? 0.6) - dt;
-    if (d < 1.95 && st.attackT <= 0) { st.windup = 0.42; h.punch(); }
+    if (d < 1.95 && st.attackT <= 0 && (fightToken === st || !fightToken)) { st.windup = 0.42; h.punch(); }
+  }
+  // Fighters close in, hold at range and circle; only the token holder steps in to swing.
+  function brawlerMove(pos, st, d, dt, sp) {
+    if (d < 0.01) return 0;
+    const ux = (eye.position.x - pos.x) / d, uz = (eye.position.z - pos.z) / d;
+    if ((st.circleT = (st.circleT ?? 0) - dt) <= 0) { st.circle = rnd() < 0.5 ? 1 : -1; st.circleT = 1.2 + rnd() * 2; }
+    const attacker = fightToken === st || !fightToken, want = attacker ? 1.55 : 2.8;
+    let fwd = d > want + 0.25 ? 1 : d < want - 0.35 ? -0.7 : 0, side = attacker ? (d < 2.2 ? 0.25 : 0) : 0.7;
+    if (d > 6) { fwd = 1; side = 0; }
+    if (st.stagger > 0) { st.stagger -= dt; fwd = -0.9; side = 0; }
+    const vx = (ux * fwd - uz * (st.circle || 1) * side) * sp, vz = (uz * fwd + ux * (st.circle || 1) * side) * sp;
+    const b0x = pos.x, b0z = pos.z; slideMove(pos, vx * dt, vz * dt, 0.4);
+    return Math.hypot(pos.x - b0x, pos.z - b0z) / Math.max(dt, 1e-4);
+  }
+  function hostiles() {
+    const out = [];
+    for (const e of enemies) if (e.alive && e.p.parent) out.push([e.p, e]);
+    if (darrenState.hostile && !darrenState.down) out.push([darren, darrenState]);
+    if (jobState.kev === 'fight' && !kevRun.down) out.push([JOBS.kev.npc, kevRun]);
+    if (hustle && hustle.state === 'fight') out.push([hustle.npc, hustle]);
+    for (const r of c1.rivals) if (r.alive && r.hostile && r.p.visible) out.push([r.p, r]);
+    return out.filter(([p]) => dist(p.position) < 12);
+  }
+  function fightDirector(dt) {
+    const list = hostiles();
+    if ((tokenT -= dt) <= 0 || !list.some(([, st]) => st === fightToken)) {
+      const near = list.filter(([p]) => dist(p.position) < 5).sort((a, b) => dist(a[0].position) - dist(b[0].position));
+      fightToken = near.length ? near[Math.floor(rnd() * Math.min(2, near.length))][1] : list[0]?.[1] || null; tokenT = 1.4 + rnd() * 1.2;
+    }
+    // Health bars over everyone you're fighting.
+    for (const [p, st] of list) {
+      if (!st._bar) {
+        const g = new THREE.Group(), bg = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.07), new THREE.MeshBasicMaterial({ color: 0x111111, transparent: true, opacity: 0.7, depthTest: false, toneMapped: false })), fg = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.05), new THREE.MeshBasicMaterial({ color: 0xe04040, depthTest: false, toneMapped: false }));
+        fg.position.z = 0.001; bg.renderOrder = 20; fg.renderOrder = 21; g.add(bg, fg); scene.add(g); st._bar = { g, fg };
+        st.maxHp = st.maxHp || Math.max(st.hp, 3);
+      }
+      const b = st._bar, f = clamp(st.hp / st.maxHp, 0, 1);
+      b.g.visible = true; b.g.position.set(p.position.x, p.position.y + 2.12, p.position.z); b.g.quaternion.copy(camera.quaternion);
+      b.fg.scale.x = Math.max(0.001, f); b.fg.position.x = -0.3 * (1 - f); b.st = st; b.seen = performance.now();
+    }
+    for (const st of [...enemies, darrenState, kevRun, hustle, ...c1.rivals]) if (st && st._bar && !list.some(([, s2]) => s2 === st)) st._bar.g.visible = false;
   }
   function busted() {
     const lost = Math.round(cash * 0.3); cash -= lost; heat.level = 0; police.clear();
     if (drive.car) exitCar();
     if (c1.manuInCar) manuOut(home.pos.x, home.pos.z);
-    const p = police.station; camera.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z);
-    say(`Busted. A night in the cells at Manurewa station and a $${lost} fine.`); updateHUD(); store();
+    const p = police.station; eye.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z);
+    say(`Busted. A night in the cells at Manurewa station and a $${lost} fine.`);
+    banner('BUSTED', lost ? `-$${lost} fine` : 'A night in the cells'); bnCash = cash;
+    // Busted on the parcel run: the cops keep it, Rawiri has one more.
+    if (stage === 'c1-deliver') { stage = 'c1-pickup'; rawiri.visible = true; say('Busted. The cops took the parcel. Rawiri\'s got one more: back to Southmall, and drive like a nana this time.'); }
+    updateHUD(); store();
   }
   // ---- Chapter One per-frame logic ---------------------------------------------------------
   function chapterOne(dt) {
@@ -760,7 +844,7 @@ function createGame(world) {
       if (stage === 'c1-manu' && d < 30) r.hostile = true;
       if (!r.hostile) { h.speed = 0; h.mode = 'idle'; continue; }
       let sp = 0;
-      if (d < 30 && d > 1.9) { const b0 = r.p.position.clone(); slideMove(r.p.position, (camera.position.x - r.p.position.x) / d * dt * 1.6, (camera.position.z - r.p.position.z) / d * dt * 1.6, 0.4); sp = b0.distanceTo(r.p.position) / Math.max(dt, 1e-4); }
+      if (d < 30) sp = brawlerMove(r.p.position, r, d, dt, 1.75);
       faceEachOther(r.p); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle'; r.p.position.y = groundHeight(r.p.position.x, r.p.position.z);
       if (!dlg.active && !drive.car) meleeAI(r, h, d, 9, KO_HOME, dt);
     }
@@ -783,7 +867,7 @@ function createGame(world) {
     if (lookTouchId === null && !document.pointerLockElement) orbit *= Math.exp(-dt * 1.4); else orbit *= Math.exp(-dt * 0.3);
     yaw = car.h + Math.PI + orbit; lastDriveYaw = yaw; pitch = lerp(pitch, -0.14, 1 - Math.exp(-dt * 2));
     const fx = Math.sin(car.h + orbit), fz = Math.cos(car.h + orbit), k = 1 - Math.exp(-dt * 7);
-    camera.position.x = lerp(camera.position.x, car.x - fx * 7, k); camera.position.z = lerp(camera.position.z, car.z - fz * 7, k); camera.position.y = lerp(camera.position.y, car.y + 2.6, k);
+    eye.position.x = lerp(eye.position.x, car.x - fx * 7, k); eye.position.z = lerp(eye.position.z, car.z - fz * 7, k); eye.position.y = lerp(eye.position.y, car.y + 2.6, k);
     $('speedo').style.display = 'block'; $('speedo').innerHTML = `${Math.round(Math.abs(car.v) * 3.6)}<small>km/h</small>`;
   }
   let hintT = 0;
@@ -792,15 +876,62 @@ function createGame(world) {
     if (!talking && !dlg.active) {
       if (drive.car) t = Math.abs(drive.car.v) < 1 ? 'TALK / E: get out' : '';
       else if (hustle && hustle.state === 'open' && dist(hustle.npc.position) < 4.5) t = `TALK: ${hustle.name}`;
-      else { const sh = shops.nearest(camera.position); if (sh) t = `TALK: ${sh.name}`; else if (drive.nearest(camera.position)) t = 'TALK / E: get in'; }
+      else { const sh = shops.nearest(eye.position); if (sh) t = `TALK: ${sh.name}`; else if (drive.nearest(eye.position)) t = 'TALK / E: get in'; }
     }
     el.textContent = t; el.style.display = t ? 'block' : 'none';
   }
+
+  // ---- camera: first person at the eye, or over the shoulder with your own body on screen -------
+  const playerBody = person(0, 0, { look: 'player', seed: 4321, top: 0x2f3236, topCell: ATLAS.cotton, pants: 0x3a4a66, pantsCell: ATLAS.denim, face: ATLAS.faceC, shoes: 0xeeeeee, pose: 'relaxed' });
+  playerBody.visible = false;
+  const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 90, 12, 1, true), new THREE.MeshBasicMaterial({ color: 0xffd860, transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide, toneMapped: false, blending: THREE.AdditiveBlending }));
+  beacon.visible = false; scene.add(beacon);
+  let beaconTarget = null;
+  const _f = new THREE.Vector3(), _r = new THREE.Vector3(), _head = new THREE.Vector3(), _want = new THREE.Vector3();
+  function syncCamera(dt, t) {
+    const tp = thirdPerson && !drive.car && !inPrologue;
+    playerBody.visible = tp && started;
+    if (!tp) { camera.position.copy(eye.position); camera.quaternion.copy(eye.quaternion); }
+    else {
+      if (fists.group) fists.group.visible = false;
+      const pb = playerBody, h = pb.userData.human, sp = vel.length();
+      pb.position.set(eye.position.x, groundHeight(eye.position.x, eye.position.z), eye.position.z);
+      let want = bodyYaw;
+      if (guardingNow || performance.now() - lastPunch < 650 || hostiles().length) want = yaw + Math.PI; else if (sp > 0.4) want = Math.atan2(vel.x, vel.y);
+      let da = want - bodyYaw; da = Math.atan2(Math.sin(da), Math.cos(da)); bodyYaw += da * Math.min(1, dt * 12); pb.rotation.y = bodyYaw;
+      h.speed = sp; h.mode = guardingNow || hostiles().length ? 'guard' : 'idle'; h.update(dt, t);
+      _f.set(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch)); _r.set(Math.cos(yaw), 0, -Math.sin(yaw));
+      _head.copy(eye.position).y -= 0.05;
+      _want.copy(_head).addScaledVector(_r, 0.55).addScaledVector(_f, -2.9); _want.y += 0.3;
+      // Pull the camera in rather than through walls and fences.
+      let k = 1; for (let i = 1; i <= 10; i++) { const f = i / 10, x = lerp(_head.x, _want.x, f), z = lerp(_head.z, _want.z, f); if (collision.collides(x, z, 0.22)) { k = Math.max(0.15, (i - 1) / 10); break; } }
+      _want.lerpVectors(_head, _want, k); _want.y = Math.max(_want.y, groundHeight(_want.x, _want.z) + 0.35);
+      if (camera.position.distanceTo(_want) > 6) camera.position.copy(_want); else camera.position.lerp(_want, 1 - Math.exp(-dt * 16));
+      camera.quaternion.copy(eye.quaternion);
+    }
+    // Objective beacon: a tall light over wherever you need to go.
+    const tg = beaconTarget, show = !!tg && started && !dlg.active && Math.hypot(tg.x - eye.position.x, tg.z - eye.position.z) > 18;
+    beacon.visible = show; if (show) { beacon.position.set(tg.x, (tg.y || 0) + 45, tg.z); beacon.material.opacity = 0.14 + 0.06 * Math.sin(t * 2.5); }
+  }
+  function setView(third) {
+    thirdPerson = third; try { localStorage.setItem('au-view', third ? '3' : '1'); } catch (_) { }
+    $('viewToggle').textContent = third ? 'VIEW: THIRD PERSON' : 'VIEW: FIRST PERSON'; $('viewToggle').classList.toggle('on', third);
+    document.body.classList.toggle('thirdperson', third);
+  }
+  $('viewToggle').onclick = () => setView(!thirdPerson);
+  addEventListener('keydown', e => { if (e.code === 'KeyV' && started) setView(!thirdPerson); });
+  setView(thirdPerson);
+  const soundToggle = on => { SFX.setOn(on); try { localStorage.setItem('au-sound', on ? '1' : '0'); } catch (_) { } $('soundToggle').textContent = on ? 'SOUND: ON' : 'SOUND: OFF'; $('soundToggle').classList.toggle('on', on); };
+  $('soundToggle').onclick = () => soundToggle(!SFX.on);
+  soundToggle((() => { try { return localStorage.getItem('au-sound') !== '0'; } catch (_) { return true; } })());
 
   // ---- per-frame simulation ---------------------------------------------------------------
   let lastHud = 0, bobT = 0;
   const forward = new THREE.Vector3();
   function update(dt, now, t) {
+    if (hitStop > 0) { hitStop -= dt; dt *= 0.08; }
+    if (slowMo > 0) { slowMo -= world.realDt || dt; dt *= 0.35; }
+    SFX.ambience(world.realDt || dt, G.uNight.value);
     if (started) {
       const talking = dlg.active;
       const joy = talking ? { x: 0, y: 0 } : (window.AUControls || { x: 0, y: 0 });
@@ -816,19 +947,27 @@ function createGame(world) {
       if (boostT > 0) { boostT -= dt; stamina = 100; }
       stamina = clamp(stamina + (sprinting ? -STAMINA_DRAIN : STAMINA_RECOVERY * (guarding ? 0.3 : 1)) * dt, 0, 100);
       if (now - lastHurt > 6000 && hp < 60) hp = Math.min(60, hp + 2.5 * dt);
-      const speed = (sprinting ? 12 : guarding ? 3.2 : 7) * dt;
+      // Momentum: jog 4.4 m/s, sprint 7.8, guard shuffle 2.2; accelerate and ease to a stop.
+      const topSpeed = sprinting ? 7.8 : guarding ? 2.2 : 4.4;
       let dx = talking ? 0 : right, dz = talking ? 0 : back; const len = Math.hypot(dx, dz);
       if (len > 1) { dx /= len; dz /= len; }
-      const mx = (dx * Math.cos(yaw) + dz * Math.sin(yaw)) * speed, mz = (-dx * Math.sin(yaw) + dz * Math.cos(yaw)) * speed;
+      const wx = (dx * Math.cos(yaw) + dz * Math.sin(yaw)) * topSpeed, wz = (-dx * Math.sin(yaw) + dz * Math.cos(yaw)) * topSpeed;
+      // Dodge: hit BLOCK while moving for a quick sidestep (you can't be hit during it; costs energy).
+      const blockEdge = guarding && !prevBlock; prevBlock = guarding; guardingNow = guarding; dodgeCD -= dt;
+      if (blockEdge && len > 0.5 && stamina >= 20 && dodgeCD <= 0 && !drive.car) { const k = 9.5 / Math.max(0.01, Math.hypot(wx, wz)); dodgeT = 0.26; dodgeCD = 0.7; stamina -= 20; vel.set(wx * k, wz * k); SFX.play('dodge'); }
+      if (dodgeT > 0) dodgeT -= dt;
+      else { const acc = (Math.hypot(wx, wz) > vel.length() ? 24 : 32) * dt, ex = wx - vel.x, ez = wz - vel.y, el = Math.hypot(ex, ez); if (el <= acc) vel.set(wx, wz); else vel.set(vel.x + ex / el * acc, vel.y + ez / el * acc); }
+      const mx = vel.x * dt, mz = vel.y * dt;
+      if (!drive.car && (stepDist += Math.hypot(mx, mz)) > (sprinting ? 1.5 : 0.9)) { stepDist = 0; SFX.play('step', isCarriageway(eye.position.x, eye.position.z) ? 2 : 1); }
       if (drive.car) driveFrame(dt, talking ? 0 : clamp(-back, -1, 1), talking ? 0 : clamp(right, -1, 1));
       else {
-        slideMove(camera.position, mx, mz);
+        slideMove(eye.position, mx, mz);
         bobT += dt * (moving ? (sprinting ? 13 : 9) * Math.min(1, len) : 0);
-        const ground = groundHeight(camera.position.x, camera.position.z) + EYE + (moving ? Math.sin(bobT) * 0.035 : 0);
-        camera.position.y = lerp(camera.position.y, ground, 1 - Math.exp(-dt * 12));
+        const ground = groundHeight(eye.position.x, eye.position.z) + EYE + (moving ? Math.sin(bobT) * 0.035 : 0);
+        eye.position.y = lerp(eye.position.y, ground, 1 - Math.exp(-dt * 12));
       }
-      traffic.update(dt, drive.car ? { x: drive.car.x, z: drive.car.z } : camera.position, drive.car);
-      const me = drive.car ? { x: drive.car.x, z: drive.car.z } : camera.position;
+      traffic.update(dt, drive.car ? { x: drive.car.x, z: drive.car.z } : eye.position, drive.car);
+      const me = drive.car ? { x: drive.car.x, z: drive.car.z } : eye.position;
       peds.update(dt, me.x, me.z, (pp, dx, dz) => slideMove(pp, dx, dz, 0.35));
       heat.update(dt, policeSeen);
       const pr = police.update(dt, t, heat, me, !!drive.car);
@@ -837,12 +976,13 @@ function createGame(world) {
       if (pr.caught) busted();
       chapterOne(dt);
       // Traffic that reaches you on foot clips you (they normally stop in time).
-      if (!drive.car) for (const o of traffic.obstacles()) if (o.car.v > 4 && Math.hypot(o.x - camera.position.x, o.z - camera.position.z) < 1.3) { hurtPlayer(12, KO_HOME); o.car.v = 0; say('Watch the road, egg.'); }
-      window.__auTelemetry = { engine: 'three', started, paused: pauseOpen, x: camera.position.x, z: camera.position.z, joyX: joy.x, joyY: joy.y };
-      window.AUControls?.setPosition?.(camera.position.x, camera.position.z, 'THREE');
-      if (Math.abs(joy.x) + Math.abs(joy.y) > 0.1) $('joyReadout').textContent = `${Math.round(camera.position.x)},${Math.round(camera.position.z)}`;
+      if (!drive.car) for (const o of traffic.obstacles()) if (o.car.v > 4 && Math.hypot(o.x - eye.position.x, o.z - eye.position.z) < 1.3) { hurtPlayer(12, KO_HOME); o.car.v = 0; say('Watch the road, egg.'); }
+      window.__auTelemetry = { engine: 'three', started, paused: pauseOpen, x: eye.position.x, z: eye.position.z, joyX: joy.x, joyY: joy.y };
+      window.AUControls?.setPosition?.(eye.position.x, eye.position.z, 'THREE');
+      if (Math.abs(joy.x) + Math.abs(joy.y) > 0.1) $('joyReadout').textContent = `${Math.round(eye.position.x)},${Math.round(eye.position.z)}`;
       const guardUp = enemies.some(e => e.alive && dist(e.p.position) < 8) || (darrenState.hostile && dist(darren.position) < 8) || (jobState.kev === 'fight' && dist(JOBS.kev.npc.position) < 8);
       fists.update(dt, moving, sprinting, (guardUp || guarding) && !drive.car);
+      fightDirector(dt);
       if (drive.car) fists.group.visible = false;
       // Interaction hints.
       if ((hintT -= dt) <= 0) { hintT = 0.25; showHint(talking); }
@@ -852,22 +992,17 @@ function createGame(world) {
       if (hustle && hustle.state === 'fight') {
         const n = hustle.npc, h = n.userData.human, d = dist(n.position);
         let sp = 0;
-        if (d < 25 && d > 1.9) { const b0 = n.position.clone(); slideMove(n.position, (camera.position.x - n.position.x) / d * dt * 1.6, (camera.position.z - n.position.z) / d * dt * 1.6, 0.4); sp = b0.distanceTo(n.position) / Math.max(dt, 1e-4); }
+        if (d < 25) sp = brawlerMove(n.position, hustle, d, dt, 1.7);
         faceEachOther(n); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle'; n.position.y = groundHeight(n.position.x, n.position.z);
         if (!talking && !drive.car) meleeAI(hustle, h, d, 9, KO_HOME, dt);
       }
       for (const e of enemies) {
         if (!e.alive) continue;
         const h = e.p.userData.human;
-        const d = Math.hypot(camera.position.x - e.p.position.x, camera.position.z - e.p.position.z);
+        const d = Math.hypot(eye.position.x - e.p.position.x, eye.position.z - e.p.position.z);
         let sp = 0;
-        if (d < 15 && d > 2) {
-          const vx = (camera.position.x - e.p.position.x) / d, vz = (camera.position.z - e.p.position.z) / d;
-          const before = e.p.position.clone();
-          slideMove(e.p.position, vx * dt * 1.4, vz * dt * 1.4, 0.4);
-          sp = before.distanceTo(e.p.position) / Math.max(dt, 1e-4);
-        }
-        if (d < 15) e.p.rotation.y = Math.atan2(camera.position.x - e.p.position.x, camera.position.z - e.p.position.z);
+        if (d < 15) sp = brawlerMove(e.p.position, e, d, dt, 1.7);
+        if (d < 15) e.p.rotation.y = Math.atan2(eye.position.x - e.p.position.x, eye.position.z - e.p.position.z);
         h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle';
         e.p.position.y = groundHeight(e.p.position.x, e.p.position.z);
         if (!drive.car) meleeAI(e, h, d, 8, KO_ENEMY, dt);
@@ -877,11 +1012,7 @@ function createGame(world) {
         const h = darren.userData.human, d = dist(darren.position);
         if (darrenState.hostile && !darrenState.down) {
           let sp = 0;
-          if (d < 20 && d > 1.9) {
-            const before = darren.position.clone();
-            slideMove(darren.position, (camera.position.x - darren.position.x) / d * dt * 1.7, (camera.position.z - darren.position.z) / d * dt * 1.7, 0.4);
-            sp = before.distanceTo(darren.position) / Math.max(dt, 1e-4);
-          }
+          if (d < 20) sp = brawlerMove(darren.position, darrenState, d, dt, 1.8);
           faceEachOther(darren); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle';
           darren.position.y = groundHeight(darren.position.x, darren.position.z);
           if (!talking && !drive.car) meleeAI(darrenState, h, d, 10, KO_DARREN, dt);
@@ -895,7 +1026,7 @@ function createGame(world) {
       if (jobState.kev === 'fight' && !kevRun.down) {
         const kev = JOBS.kev.npc, h = kev.userData.human, d = dist(kev.position);
         let sp = 0;
-        if (d < 22 && d > 1.9) { const b0 = kev.position.clone(); slideMove(kev.position, (camera.position.x - kev.position.x) / d * dt * 1.5, (camera.position.z - kev.position.z) / d * dt * 1.5, 0.45); sp = b0.distanceTo(kev.position) / Math.max(dt, 1e-4); }
+        if (d < 22) sp = brawlerMove(kev.position, kevRun, d, dt, 1.6);
         faceEachOther(kev); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle'; kev.position.y = groundHeight(kev.position.x, kev.position.z);
         if (!talking && !drive.car) meleeAI(kevRun, h, d, 14, KO_KEV, dt);
       }
@@ -908,9 +1039,9 @@ function createGame(world) {
         else if (!mikeyRun.fleeing && d < 11) { mikeyRun.fleeing = true; mikeyRun.burst = 4.5; mikeyRun.tired = 0; if (!mikeyRun.barked) { mikeyRun.barked = true; dlg.bark('mikeyRuns'); } }
         if (mikeyRun.fleeing && mikeyRun.escapedT <= 0) {
           let speed;
-          if (mikeyRun.burst > 0) { mikeyRun.burst -= dt; speed = 9.2; if (mikeyRun.burst <= 0) mikeyRun.tired = 2.4; }
-          else { mikeyRun.tired -= dt; speed = 3.2; if (mikeyRun.tired <= 0) mikeyRun.burst = 3.5; }
-          const ax = (mk.position.x - camera.position.x) / d, az = (mk.position.z - camera.position.z) / d, b0 = mk.position.clone();
+          if (mikeyRun.burst > 0) { mikeyRun.burst -= dt; speed = 8.3; if (mikeyRun.burst <= 0) mikeyRun.tired = 2.4; }
+          else { mikeyRun.tired -= dt; speed = 3.0; if (mikeyRun.tired <= 0) mikeyRun.burst = 3.5; }
+          const ax = (mk.position.x - eye.position.x) / d, az = (mk.position.z - eye.position.z) / d, b0 = mk.position.clone();
           slideMove(mk.position, ax * speed * dt, az * speed * dt, 0.4);
           if (b0.distanceTo(mk.position) < speed * dt * 0.3) slideMove(mk.position, -az * speed * dt, ax * speed * dt, 0.4); // cornered: dodge sideways
           h.speed = b0.distanceTo(mk.position) / Math.max(dt, 1e-4); mk.rotation.y = Math.atan2(mk.position.x - b0.x, mk.position.z - b0.z) || mk.rotation.y;
@@ -924,7 +1055,7 @@ function createGame(world) {
     for (const e of enemies) if (!e.alive && e.dyingT > 0) { e.dyingT += dt; if (e.dyingT > 4.5 && e.p.parent) { scene.remove(e.p); e.dyingT = 0; } }
     // Crew contacts and the fixer turn their heads to watch the player.
     for (const c of [...contacts.map(c => c.p), fixer, manu, shorty, JOBS.pita.npc, rawiri, lani, ...(darrenState.hostile ? [] : [darren]), ...(jobState.kev === 'fight' ? [] : [JOBS.kev.npc])]) {
-      const h = c.userData.human, dx = camera.position.x - c.position.x, dz = camera.position.z - c.position.z, d = Math.hypot(dx, dz);
+      const h = c.userData.human, dx = eye.position.x - c.position.x, dz = eye.position.z - c.position.z, d = Math.hypot(dx, dz);
       const want = d < 9 ? Math.atan2(dx, dz) - c.rotation.y : 0;
       h.lookYaw = lerp(h.lookYaw, Math.atan2(Math.sin(want), Math.cos(want)), 1 - Math.exp(-dt * 4));
       if (c.userData.marker) { c.userData.marker.position.y = 2.25 + Math.sin(t * 2 + c.position.x) * 0.06; c.userData.marker.material.opacity = clamp((d - 1.5) / 5, 0.12, 0.9); }
@@ -937,13 +1068,14 @@ function createGame(world) {
     fixerMarker.visible = !['debt-find', 'debt-fight', 'debt-return', 'prologue', 'shorty-wait', 'shorty-meet', 'shorty-jobs', 'shorty-return'].includes(stage);
     storyMarker(shortyMarker, stage === 'shorty-meet' || stage === 'shorty-return', 2.45);
     for (const [k, j] of Object.entries(JOBS)) storyMarker(j.marker, stage === 'shorty-jobs' && !jobDone(k) && !(k === 'kev' && jobState.kev === 'fight'), 2.2);
-    camera.rotation.order = 'YXZ';
+    eye.rotation.order = 'YXZ';
     const sh = world.shake || 0; world.shake = Math.max(0, sh - dt);
-    camera.rotation.set(pitch + (Math.random() - 0.5) * sh * 0.12, yaw + (Math.random() - 0.5) * sh * 0.12, 0);
+    eye.rotation.set(pitch + (Math.random() - 0.5) * sh * 0.12, yaw + (Math.random() - 0.5) * sh * 0.12, 0);
+    syncCamera(dt, t);
     // Animate characters near the camera every frame, distant ones at a lower rate.
     for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.map(e => e.p), ...debtors, ...peds.people, rawiri, lani, ...c1.rivals.map(r => r.p)]) {
       if (!p.parent || !p.visible) continue;
-      const d = p.position.distanceTo(camera.position);
+      const d = p.position.distanceTo(eye.position);
       const h = p.userData.human;
       if (d < 45 || (h.skip = (h.skip || 0) + 1) % 4 === 0) h.update(d < 45 ? dt : dt * 4, t);
     }
@@ -955,16 +1087,18 @@ function createGame(world) {
   $('start').disabled = false; $('continue').disabled = false; $('start').title = ''; $('continue').title = '';
   // Test/diagnostic hooks.
   window.__auGame = {
-    state: () => ({ stage, hp, rep, cash, chosen, defeated, started, x: camera.position.x, z: camera.position.z, yaw, objective: objective()[0] }),
-    teleport(x, z) { camera.position.set(x, groundHeight(x, z) + EYE, z); },
+    state: () => ({ stage, hp, rep, cash, chosen, defeated, started, x: eye.position.x, z: eye.position.z, yaw, objective: objective()[0] }),
+    teleport(x, z) { eye.position.set(x, groundHeight(x, z) + EYE, z); },
     face(y) { yaw = y; }, talk, hit, collides,
     drive: () => drive.car ? { x: drive.car.x, z: drive.car.z, v: drive.car.v, h: drive.car.h } : null,
-    nearestCar: () => { let b = null, bd = 1e9; for (const c of world.city.cars) { if (c.taken) continue; const d = Math.hypot(c.x - camera.position.x, c.z - camera.position.z); if (d < bd) { bd = d; b = c; } } return b && { x: b.x, z: b.z }; },
+    nearestCar: () => { let b = null, bd = 1e9; for (const c of world.city.cars) { if (c.taken) continue; const d = Math.hypot(c.x - eye.position.x, c.z - eye.position.z); if (d < bd) { bd = d; b = c; } } return b && { x: b.x, z: b.z }; },
     shopsList: () => shops.list.map(s => ({ kind: s.kind, name: s.name, x: s.x, z: s.z })),
     buy: i => { const b = document.querySelectorAll('#shopItems button')[i]; b?.click(); return !!b; }, closeShop: () => shops.close(),
     setHp: v => { hp = v; }, setCash: v => { cash = v; }, strength: () => strength, traffic: () => traffic.cars.length,
     hustle: () => hustle && { name: hustle.name, amount: hustle.amount, state: hustle.state, type: hustle.type, x: hustle.npc.position.x, z: hustle.npc.position.z },
     startHustle: type => { hustleTimer = 0; startHustle(); if (hustle && type) hustle.type = type; return !!hustle; },
+    view: v => { if (v != null) setView(!!v); return thirdPerson; }, feel: () => ({ vel: vel.length(), dodgeT, token: !!fightToken, beacon: beacon.visible, bars: [...enemies, darrenState, kevRun, ...c1.rivals].filter(s => s && s._bar && s._bar.g.visible).length }),
+    dodge: () => { prevBlock = false; move.block = true; setTimeout(() => { move.block = false; }, 120); },
     pedDebug: () => peds.agents.map(a => ({ active: a.active, x: Math.round(a.p.position.x), z: Math.round(a.p.position.z), flee: a.flee, down: a.down, vis: a.p.visible })),
     heat: () => heat.level, addHeat: n => heat.add(n), clearHeat: () => { heat.level = 0; police.clear(); }, police: () => police.cars.map(c => ({ x: c.x, z: c.z })), peds: () => peds.agents.filter(a => a.active).length,
     carTo: (x, z) => { if (drive.car) { drive.car.x = x; drive.car.z = z; drive.car.v = 0; } },

@@ -347,6 +347,8 @@ CAST.update({
     'pedM1': dict(gender=1, age=0.7, muscle=0.45, weight=0.62, height=0.5, race={'caucasian': 0.95, 'asian': 0.05}, skin=[('skins/middleage_caucasian_male/middleage_lightskinned_male_diffuse.png', 1.0)], cloth=C('male_casualsuit02'), shoes=C('shoes02'), hair=H('short03'), hairTint=[1.4, 1.35, 1.3], browRGB=(110, 100, 90), eyeColour='blue'),
     'pedM2': dict(gender=1, age=0.38, muscle=0.55, weight=0.55, height=0.55, race=POLY_RACE, skin=POLY, cloth=C('male_casualsuit06'), clothColour={'to': [0.6, 0.09, 0.09]}, shoes=C('shoes06'), hair=H('short04')),
 })
+# You (third-person view): young Polynesian guy, charcoal tee, jeans, white sneakers.
+CAST['player'] = dict(gender=1, age=0.44, muscle=0.62, weight=0.62, height=0.58, race=POLY_RACE, skin=POLY, skinTint=[1.0, 0.96, 0.92], cloth=C('male_casualsuit06'), clothColour={'to': [0.2, 0.21, 0.23]}, shoes=C('shoes05'), hair=H('short02'), hairTint=[0.4, 0.36, 0.34])
 ONLY = [x for x in os.environ.get('PEOPLE_ONLY', '').split(',') if x]
 for nm, sp in CAST.items():
     if ONLY and nm not in ONLY: continue

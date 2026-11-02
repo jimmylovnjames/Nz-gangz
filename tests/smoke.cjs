@@ -287,6 +287,8 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice));
   await page.evaluate(() => window.__auStory.choose(1));
   await advanceUntil(page, () => !window.__auStory.active);
+  await page.waitForFunction(() => window.__auGame.feel().bars > 0, null, { timeout: 20000 }).catch(() => { });
+  check('health bars show over the people you fight', (await page.evaluate(() => window.__auGame.feel().bars)) > 0);
   const brawl = async () => {
     for (let k = 0; k < 40; k++) {
       const alive = (await page.evaluate(() => window.__auGame.c1().rivals)).filter(r => r.alive);
@@ -316,6 +318,17 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   await advanceUntil(page, () => !window.__auStory.active);
   check('driving Manu home completes Chapter One', (await state(page)).stage === 'c1-done', (await state(page)).objective);
   if (await page.evaluate(() => !!window.__auGame.drive())) await page.evaluate(() => window.__auGame.talk());
+  // Run 19: third-person view, objective beacon.
+  await page.evaluate(() => window.__auGame.view(true));
+  await page.waitForTimeout(1500);
+  const boom = await page.evaluate(() => { const c = window.__auDebug.camera.position, s = window.__auGame.state(); return Math.hypot(c.x - s.x, c.z - s.z); });
+  check('third-person view puts the camera behind you', boom > 1.2, `camera ${boom.toFixed(2)}m back`);
+  await page.evaluate(() => window.__auGame.view(false));
+  await page.waitForTimeout(800);
+  check('first-person view puts it back at your eyes', (await page.evaluate(() => { const c = window.__auDebug.camera.position, s = window.__auGame.state(); return Math.hypot(c.x - s.x, c.z - s.z); })) < 0.3);
+  await page.evaluate(() => window.__auGame.startHustle('pays'));
+  await page.waitForFunction(() => window.__auGame.feel().beacon, null, { timeout: 20000 }).catch(() => { });
+  check('a light beacon marks the objective', await page.evaluate(() => window.__auGame.feel().beacon));
   await page.click('#pauseButton'); await page.click('#saveNow');
   for (const sel of ['[data-time="night"]', '[data-rain="2"]', '[data-gfx="medium"]', '[data-time="golden"]', '[data-gfx="low"]']) { await page.click(sel); await page.waitForTimeout(400); }
   check('graphics settings switch without errors', errors.length === 0, errors.slice(0, 3).join(' | '));
