@@ -397,8 +397,8 @@ def build_fparms(spec):
         for b, M in Ms.items():
             w = bone_w(b)
             if w.any(): P += (apply(M, V) - V) * w[:, None]
-        arm = sum(bone_w(b) for b in [f'upperarm01.{side}', f'upperarm02.{side}', f'lowerarm01.{side}', f'lowerarm02.{side}', f'wrist.{side}'] + [f'metacarpal{k}.{side}' for k in range(1, 5)] + [f'finger{f}-{k}.{side}' for f in range(1, 6) for k in (1, 2, 3)])
-        sel = arm > 0.5
+        arm = sum(bone_w(b) for b in [f'upperarm02.{side}', f'lowerarm01.{side}', f'lowerarm02.{side}', f'wrist.{side}'] + [f'metacarpal{k}.{side}' for k in range(1, 5)] + [f'finger{f}-{k}.{side}' for f in range(1, 6) for k in (1, 2, 3)])
+        sel = arm > 0.75
         faces = [f for f in base_F if f[2] == 'body' and all(sel[v] for v in f[0])]
         E, Wr = bone_head(V, f'lowerarm01.{side}') * 0.1, bone_head(V, f'wrist.{side}') * 0.1
         A = (Wr - E) / np.linalg.norm(Wr - E); up = np.array([0.0, 1.0, 0.0]); B = up - np.dot(up, A) * A; B /= np.linalg.norm(B)
