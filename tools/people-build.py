@@ -365,8 +365,76 @@ CAST.update({
 })
 # You (third-person view): young Polynesian guy, charcoal tee, jeans, white sneakers.
 CAST['player'] = dict(gender=1, age=0.44, muscle=0.62, weight=0.62, height=0.58, race=POLY_RACE, skin=POLY, skinTint=[1.0, 0.96, 0.92], cloth=C('male_casualsuit06'), clothColour={'to': [0.2, 0.21, 0.23]}, shoes=C('shoes05'), hair=H('short02'), hairTint=[0.4, 0.36, 0.34])
+# First-person arms: the player's own forearms and hands with the fingers curled into fists (posed with
+# MakeHuman's finger bones), each in the viewmodel frame the game expects: knuckles toward -y, forearm
+# running back along +y, back of the hand toward -z, origin at the middle of the fist. Uses player.jpg.
+def bone_w(name):
+    w = np.zeros(NV)
+    for vi, x in wdata.get(name, []): w[vi] += x
+    return w
+def rodrigues(axis, ang):
+    k = axis / np.linalg.norm(axis); K = np.array([[0, -k[2], k[1]], [k[2], 0, -k[0]], [-k[1], k[0], 0]])
+    return np.eye(3) + np.sin(ang) * K + (1 - np.cos(ang)) * K @ K
+def build_fparms(spec):
+    V = morph(spec)
+    down = np.array([0.0, -1.0, 0.0])
+    out = {}
+    for side in ('L', 'R'):
+        P = V.copy()
+        for f in range(1, 6):
+            chain = [f'finger{f}-{k}.{side}' for k in (1, 2, 3)]
+            M = np.eye(4); angs = [0.55, 0.5, 0.35] if f == 1 else [1.35, 1.5, 1.2]
+            for b, ang in zip(chain, angs):
+                head, tail = apply(M, bone_head(V, b)[None])[0], apply(M, bone_tail(V, b)[None])[0]
+                d = tail - head; d /= np.linalg.norm(d)
+                pn = down - np.dot(down, d) * d; pn /= np.linalg.norm(pn)
+                if f == 1: pn = pn * 0.6 + (bone_head(V, f'finger2-1.{side}') - head) / np.linalg.norm(bone_head(V, f'finger2-1.{side}') - head) * 0.4
+                M = affine(rodrigues(np.cross(d, pn), ang), head, M)
+                w = bone_w(b)
+                out.setdefault(side + 'M', {})[b] = M.copy()
+        # Skin each vertex with its finger-bone transforms (vertices outside the fingers stay put).
+        Ms = out[side + 'M']; P = V.copy()
+        for b, M in Ms.items():
+            w = bone_w(b)
+            if w.any(): P += (apply(M, V) - V) * w[:, None]
+        arm = sum(bone_w(b) for b in [f'upperarm01.{side}', f'upperarm02.{side}', f'lowerarm01.{side}', f'lowerarm02.{side}', f'wrist.{side}'] + [f'metacarpal{k}.{side}' for k in range(1, 5)] + [f'finger{f}-{k}.{side}' for f in range(1, 6) for k in (1, 2, 3)])
+        sel = arm > 0.5
+        faces = [f for f in base_F if f[2] == 'body' and all(sel[v] for v in f[0])]
+        E, Wr = bone_head(V, f'lowerarm01.{side}') * 0.1, bone_head(V, f'wrist.{side}') * 0.1
+        A = (Wr - E) / np.linalg.norm(Wr - E); up = np.array([0.0, 1.0, 0.0]); B = up - np.dot(up, A) * A; B /= np.linalg.norm(B)
+        yl, zl = -A, -B; xl = np.cross(yl, zl); O = Wr + A * 0.075
+        P = P * 0.1
+        N = np.zeros_like(P)
+        for vs, ts, g in faces:
+            for k in range(1, len(vs) - 1):
+                a, b2, c = P[vs[0]], P[vs[k]], P[vs[k + 1]]; n = np.cross(b2 - a, c - a); N[vs[0]] += n; N[vs[k]] += n; N[vs[k + 1]] += n
+        N /= np.maximum(np.linalg.norm(N, axis=1, keepdims=True), 1e-9)
+        UV = region_uv(base_T, REG['skin'], ATLAS)
+        key, pos, nor, uv, idx = {}, [], [], [], []
+        for vs, ts, g in faces:
+            loc = []
+            for v, t in zip(vs, ts):
+                if (v, t) not in key:
+                    key[(v, t)] = len(pos); q = P[v] - O
+                    pos.append([q @ xl, q @ yl, q @ zl]); n = N[v]; nor.append([n @ xl, n @ yl, n @ zl]); uv.append(UV[max(t, 0)])
+                loc.append(key[(v, t)])
+            for k in range(1, len(loc) - 1): idx.append((loc[0], loc[k], loc[k + 1]))
+        out[side] = (np.array(pos, np.float32), np.array(nor, np.float32), np.clip(np.array(uv), 0, 1), np.array(idx))
+    head = {}; blobs = []
+    for side in ('L', 'R'):
+        pos, nor, uv, idx = out[side]
+        head[side] = {'nV': len(pos), 'nI': idx.size}
+        blobs += [pos.astype('<f4').tobytes(), np.clip(np.round(nor * 127), -127, 127).astype('i1').tobytes(), np.round(uv * 65535).astype('<u2').tobytes(), idx.astype('<u2').reshape(-1).tobytes()]
+    hj = json.dumps(head).encode(); hj += b' ' * ((4 - len(hj) % 4) % 4)
+    with open(os.path.join(OUT, 'fparms.bin'), 'wb') as f:
+        f.write(b'AUFP'); f.write(struct.pack('<I', len(hj))); f.write(hj)
+        for bl in blobs: f.write(bl); f.write(b'\0' * ((4 - len(bl) % 4) % 4))
+    print('fparms', {k: v for k, v in head.items()})
+
 ONLY = [x for x in os.environ.get('PEOPLE_ONLY', '').split(',') if x]
 for nm, sp in CAST.items():
     if ONLY and nm not in ONLY: continue
     sp.setdefault('brow', BROW); sp.setdefault('eyes', EYES)
     build(nm, sp)
+if not ONLY or 'fparms' in ONLY:
+    sp = dict(CAST['player']); sp.setdefault('brow', BROW); sp.setdefault('eyes', EYES); build_fparms(sp)

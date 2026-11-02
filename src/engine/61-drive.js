@@ -55,7 +55,7 @@ class PlayerCars {
       const g = new THREE.Group(), body = new THREE.Mesh(P.body, paint), rest = new THREE.Mesh(P.rest, K.rest);
       body.castShadow = rest.castShadow = true; body.receiveShadow = true; g.add(body, rest);
       this.world.scene.add(g);
-      car = { group: g, x: c.x, z: c.z, y: c.y || 0, h: c.rot, v: 0, steer: 0, type: c.type, col: c.col, pitch: 0 };
+      car = { group: g, x: c.x, z: c.z, y: c.y || 0, h: c.rot, v: 0, steer: 0, type: c.type, col: c.col, pitch: 0, health: 100 };
       this.own.push(car);
     }
     if (car.col) car.col.off = true;
@@ -64,7 +64,7 @@ class PlayerCars {
   }
   exit() {
     const car = this.car; if (!car) return null;
-    this.car = null; car.v = 0; this.audio.set(false, 0, 0);
+    this.car = null; car.v = 0; car.vx = car.vz = 0; car.w = 0; this.drifting = false; this.audio.set(false, 0, 0);
     // Re-solidify where it stopped.
     const D = CAR_DIM[car.type];
     car.col = this.world.collision.addOBB(car.x, car.z, 0.95, D.L / 2, -car.h, 'car');
@@ -76,7 +76,7 @@ class PlayerCars {
     return { x: car.x + rx * 1.7, z: car.z + rz * 1.7 };
   }
   place(car) {
-    _q.setFromEuler(new THREE.Euler(car.pitch, car.h, 0, 'YXZ'));
+    _q.setFromEuler(new THREE.Euler(car.pitch + (car.dive || 0), car.h, car.roll || 0, 'YXZ'));
     car.group.position.set(car.x, car.y, car.z); car.group.quaternion.copy(_q);
   }
   blocked(car, x, z, h, others) {
@@ -88,35 +88,82 @@ class PlayerCars {
     }
     return x < MAP_BOUNDS.x0 || x > MAP_BOUNDS.x1 || z < MAP_BOUNDS.z0 || z > MAP_BOUNDS.z1;
   }
-  // throttle -1..1 (forward positive), steer -1..1 (right positive), brake = handbrake.
+  // Handling with weight: the car carries momentum, tyres only grip so hard, the handbrake breaks the
+  // rear loose (drift), the body rolls in corners and dives under braking. Impacts cost health; below
+  // 40% it smokes, at 0 the engine dies.
   update(dt, throttle, steer, brake, others) {
     const car = this.car; if (!car) return;
-    const D = CAR_DIM[car.type], vmax = 24, back = -7;
-    car.steer = lerp(car.steer, steer, 1 - Math.exp(-dt * 6));
+    const D = CAR_DIM[car.type], vmax = 26;
+    if (car.vx == null) { car.vx = Math.sin(car.h) * car.v; car.vz = Math.cos(car.h) * car.v; car.w = 0; car.health = car.health ?? 100; car.roll = 0; car.dive = 0; }
+    if (car.health <= 0) throttle = Math.min(0, throttle) * 0; // engine's dead
+    const fx = Math.sin(car.h), fz = Math.cos(car.h), rx = -fz, rz = fx;
+    let vf = car.vx * fx + car.vz * fz, vr = car.vx * rx + car.vz * rz;
+    car.steer = lerp(car.steer, steer, 1 - Math.exp(-dt * 7));
     let a = 0;
-    if (throttle > 0.05) a = car.v < -0.3 ? 14 * throttle : 6.5 * throttle * (1 - Math.max(0, car.v) / vmax);
-    else if (throttle < -0.05) a = car.v > 0.3 ? 14 * throttle : 4 * throttle * (1 - Math.max(0, -car.v) / -back);
-    car.v += a * dt;
-    const drag = 0.9 + 0.004 * car.v * car.v + (brake ? 16 : 0);
-    if (Math.abs(throttle) < 0.05 || brake) car.v -= Math.sign(car.v) * Math.min(Math.abs(car.v), drag * dt);
-    car.v = clamp(car.v, back, vmax);
-    const maxSteer = 0.6 / (1 + Math.abs(car.v) / 11);
-    const steps = Math.max(1, Math.ceil(Math.abs(car.v) * dt / 0.4));
+    if (throttle > 0.05) a = vf < -0.5 ? 15 * throttle : 7.2 * throttle * (1 - Math.max(0, vf) / vmax);
+    else if (throttle < -0.05) a = vf > 0.5 ? 15 * throttle : 4.5 * throttle * (1 + Math.min(0, vf) / 8);
+    vf += a * dt;
+    const roll = 0.6 + 0.0035 * vf * vf;
+    if (Math.abs(throttle) < 0.05) vf -= Math.sign(vf) * Math.min(Math.abs(vf), roll * dt);
+    if (brake) vf -= Math.sign(vf) * Math.min(Math.abs(vf), 7 * dt);
+    // Tyre grip: lateral speed bleeds off fast normally, slowly with the handbrake on (slide).
+    const grip = brake ? 1.4 : 7.5 + Math.max(0, 4 - Math.abs(vf) * 0.15);
+    vr *= Math.exp(-grip * dt);
+    // Yaw with inertia; the handbrake swings the tail round.
+    const maxSteer = 0.62 / (1 + Math.abs(vf) / 13);
+    const wTarget = -vf * Math.tan(car.steer * maxSteer) / D.wb * (brake && Math.abs(vf) > 5 ? 1.7 : 1);
+    car.w = lerp(car.w, wTarget, 1 - Math.exp(-dt * (brake ? 3 : 6.5)));
+    const nh = car.h + car.w * dt, nfx = Math.sin(nh), nfz = Math.cos(nh), nrx = -nfz, nrz = nfx;
+    car.vx = nfx * vf + nrx * vr; car.vz = nfz * vf + nrz * vr; car.v = vf;
+    // Integrate with substeps; on impact bounce, lose speed, take damage.
+    const speed = Math.hypot(car.vx, car.vz), steps = Math.max(1, Math.ceil(speed * dt / 0.4));
+    let h = car.h;
     for (let k = 0; k < steps; k++) {
-      const sdt = dt / steps, nh = car.h - car.v * Math.tan(car.steer * maxSteer) / D.wb * sdt;
-      const nx = car.x + Math.sin(nh) * car.v * sdt, nz = car.z + Math.cos(nh) * car.v * sdt;
-      if (this.blocked(car, nx, nz, nh, others)) {
-        if (Math.abs(car.v) > 6) this.world.shake = Math.min(0.5, Math.abs(car.v) * 0.03);
-        this.lastImpact = Math.abs(car.v); car.v *= -0.25; break;
+      const sdt = dt / steps; h += car.w * sdt;
+      const nx = car.x + car.vx * sdt, nz = car.z + car.vz * sdt;
+      if (this.blocked(car, nx, nz, h, others)) {
+        const imp = Math.hypot(car.vx, car.vz);
+        if (imp > 6) this.world.shake = Math.min(0.55, imp * 0.03);
+        this.lastImpact = imp; if (imp > 4) { car.health = Math.max(0, car.health - (imp - 4) * 4.5); SFX.play(imp > 10 ? 'heavy' : 'hit', 0.8); }
+        car.vx *= -0.22; car.vz *= -0.22; car.w *= 0.3; car.v = -car.v * 0.22; break;
       }
-      car.x = nx; car.z = nz; car.h = nh;
+      car.x = nx; car.z = nz;
     }
-    // Ride over kerbs: height from the front and back wheels, pitch from the difference.
-    const fx = Math.sin(car.h), fz = Math.cos(car.h), half = D.wb / 2;
-    const yf = groundHeight(car.x + fx * half, car.z + fz * half), yb = groundHeight(car.x - fx * half, car.z - fz * half);
+    car.h = h;
+    // Ride: kerb bumps pitch the car; cornering rolls it; braking and accelerating dive/squat it.
+    const half = D.wb / 2, yf = groundHeight(car.x + Math.sin(car.h) * half, car.z + Math.cos(car.h) * half), yb = groundHeight(car.x - Math.sin(car.h) * half, car.z - Math.cos(car.h) * half);
     car.y = lerp(car.y, (yf + yb) / 2, 1 - Math.exp(-dt * 12)); car.pitch = lerp(car.pitch, Math.atan2(yb - yf, D.wb), 1 - Math.exp(-dt * 10));
+    car.roll = lerp(car.roll, clamp(car.w * vf * 0.012 + vr * 0.02, -0.09, 0.09), 1 - Math.exp(-dt * 5));
+    car.dive = lerp(car.dive, clamp(-a * 0.004, -0.05, 0.05), 1 - Math.exp(-dt * 5));
+    this.drifting = Math.abs(vr) > 3.5 && Math.abs(vf) > 6;
     this.place(car);
-    this.audio.set(true, car.v, throttle);
+    this.audio.set(car.health > 0, vf, car.health > 0 ? throttle : 0);
+    this.smokeFx(dt, car);
+  }
+  // Damage smoke from the bonnet (and tyre smoke when drifting).
+  smokeFx(dt, car) {
+    if (!this.smoke) {
+      const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 2, 32, 32, 30);
+      gr.addColorStop(0, 'rgba(255,255,255,0.8)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+      const tex = new THREE.CanvasTexture(c);
+      this.smoke = Array.from({ length: 28 }, () => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: 0x777777, transparent: true, opacity: 0, depthWrite: false })); sp.visible = false; this.world.scene.add(sp); return { sp, life: 0 }; });
+      this.smokeT = 0;
+    }
+    const D = CAR_DIM[car.type], fx = Math.sin(car.h), fz = Math.cos(car.h);
+    const engine = car.health < 40, tyres = this.drifting;
+    if ((engine || tyres) && (this.smokeT -= dt) <= 0) {
+      this.smokeT = engine ? (car.health <= 0 ? 0.05 : 0.12) : 0.06;
+      const p = this.smoke.find(q => q.life <= 0); if (p) {
+        const front = engine && (!tyres || Math.random() < 0.5);
+        const off = front ? D.L / 2 - 0.5 : -D.L / 2 + 0.6, y = front ? 1.0 : 0.25;
+        p.sp.position.set(car.x + fx * off + (Math.random() - 0.5) * 0.6, car.y + y, car.z + fz * off + (Math.random() - 0.5) * 0.6);
+        p.life = 1; p.vy = front ? 1.2 : 0.4; p.sp.visible = true; p.sp.material.color.set(front && car.health <= 0 ? 0x2a2a2a : front ? 0x6a6a6a : 0xcfcfcf); p.sp.scale.setScalar(0.6);
+      }
+    }
+    for (const p of this.smoke) {
+      if (p.life <= 0) { p.sp.visible = false; continue; }
+      p.life -= dt * 0.7; p.sp.position.y += p.vy * dt; p.sp.scale.setScalar(0.6 + (1 - p.life) * 2.4); p.sp.material.opacity = Math.max(0, p.life) * 0.5;
+    }
   }
 }
 

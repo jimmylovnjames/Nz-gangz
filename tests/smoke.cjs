@@ -87,7 +87,7 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   let s1 = await state(page);
   check('W moves the player forward (-z at yaw 0)', s1.z < s0.z - 0.2 && Number.isFinite(s1.x), `z ${s0.z.toFixed(2)} -> ${s1.z.toFixed(2)}`);
   await page.evaluate(() => window.__auGame.face(Math.PI / 2));
-  await page.waitForTimeout(300);
+  await page.waitForFunction(() => window.__auGame.feel().vel < 0.05, null, { timeout: 20000 }).catch(() => { }); // let momentum settle
   s0 = await state(page);
   await holdUntil(page, 'KeyW', x0 => window.__auGame.state().x < x0 - 0.2, s0.x);
   s1 = await state(page);
@@ -329,6 +329,50 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   await page.evaluate(() => window.__auGame.startHustle('pays'));
   await page.waitForFunction(() => window.__auGame.feel().beacon, null, { timeout: 20000 }).catch(() => { });
   check('a light beacon marks the objective', await page.evaluate(() => window.__auGame.feel().beacon));
+  // Run 20: jump, climb a fence, grab and throw, weapons, car damage.
+  await page.evaluate(() => { window.__auGame.teleport(-1214, 235); window.__auGame.clearHeat(); });
+  await page.waitForTimeout(500);
+  const y0 = await page.evaluate(() => window.__auGame.y());
+  const j = await page.evaluate(() => window.__auGame.jumpTest());
+  await page.waitForFunction(y0 => window.__auGame.y() > y0 + 0.15, y0, { timeout: 20000 }).catch(() => { });
+  check('JUMP leaves the ground', j.air && (await page.evaluate(() => window.__auGame.y())) > y0 + 0.15);
+  await page.waitForFunction(() => !window.__auGame.airborne(), null, { timeout: 30000 }).catch(() => { });
+  const fence = await page.evaluate(() => { const g = window.__auGame; const f0 = g.nearFence(); return f0; });
+  if (fence) {
+    const mx = (fence.ax + fence.bx) / 2, mz = (fence.az + fence.bz) / 2, L = Math.hypot(fence.bx - fence.ax, fence.bz - fence.az), nx = -(fence.bz - fence.az) / L, nz = (fence.bx - fence.ax) / L;
+    let start = null;
+    for (const sgn of [1, -1]) { const sx = mx + nx * 0.75 * sgn, sz = mz + nz * 0.75 * sgn; if (!(await page.evaluate(([x, z]) => window.__auGame.collides(x, z, 0.5), [sx, sz]))) { start = [sx, sz, sgn]; break; } }
+    if (start) {
+      await page.evaluate(([x, z, fx, fz]) => { const g = window.__auGame; g.teleport(x, z); g.face(Math.atan2(-(fx - x), -(fz - z))); }, [start[0], start[1], mx, mz]);
+      await page.waitForTimeout(400);
+      const c = await page.evaluate(() => window.__auGame.jumpTest());
+      await page.waitForFunction(() => !window.__auGame.airborne(), null, { timeout: 40000 }).catch(() => { });
+      const st2 = await state(page), side = (st2.x - mx) * nx + (st2.z - mz) * nz;
+      check('JUMP at a fence climbs over it', c.climb && Math.sign(side) === -start[2], `fence ${fence.top.toFixed(1)}m, side ${side.toFixed(2)}`);
+    } else check('JUMP at a fence climbs over it', false, 'no clear spot beside the fence');
+  } else check('JUMP at a fence climbs over it', false, 'no fence found');
+  await page.evaluate(() => window.__auGame.startHustle('fights'));
+  let H = await page.evaluate(() => window.__auGame.hustle());
+  await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 1.5, z); g.face(Math.atan2(1.5, 0)); g.talk(); }, [H.x, H.z]);
+  await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice));
+  await page.evaluate(() => window.__auStory.choose(0));
+  await advanceUntil(page, () => !window.__auStory.active);
+  H = await page.evaluate(() => window.__auGame.hustle());
+  await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 1.2, z); g.face(Math.atan2(1.2, 0)); g.setHp(100); g.talk(); }, [H.x, H.z]);
+  check('TALK next to someone you are fighting grabs them', await page.evaluate(() => window.__auGame.grabbed()));
+  await page.waitForTimeout(350); await page.evaluate(() => window.__auGame.hit());
+  await page.waitForTimeout(350); await page.evaluate(() => window.__auGame.talk());
+  check('TALK again throws them', !(await page.evaluate(() => window.__auGame.grabbed())));
+  const pk = (await page.evaluate(() => window.__auGame.pickups()))[0];
+  await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 0.6, z); }, [pk.x, pk.z]);
+  await page.waitForTimeout(300);
+  for (let i = 0; i < 3 && !(await page.evaluate(() => window.__auGame.weapon())); i++) { await page.evaluate(() => window.__auGame.talk()); await page.waitForTimeout(200); }
+  check('bats and pipes can be picked up', !!(await page.evaluate(() => window.__auGame.weapon())), pk.kind);
+  await page.evaluate(() => window.__auGame.talk());
+  const carW = await page.evaluate(() => window.__auGame.nearestCar());
+  await page.evaluate(([x, z]) => { window.__auGame.teleport(x + 2.2, z); window.__auGame.talk(); }, [carW.x, carW.z]);
+  check('cars have health', (await page.evaluate(() => window.__auGame.carHealth())) === 100);
+  if (await page.evaluate(() => !!window.__auGame.drive())) await page.evaluate(() => window.__auGame.talk());
   await page.click('#pauseButton'); await page.click('#saveNow');
   for (const sel of ['[data-time="night"]', '[data-rain="2"]', '[data-gfx="medium"]', '[data-time="golden"]', '[data-gfx="low"]']) { await page.click(sel); await page.waitForTimeout(400); }
   check('graphics settings switch without errors', errors.length === 0, errors.slice(0, 3).join(' | '));

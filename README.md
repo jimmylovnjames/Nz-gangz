@@ -1,10 +1,19 @@
-# AOTEAROA: UNDERWORLD, Run 19 (gameplay feel: movement, fighting, third person, sound)
+# AOTEAROA: UNDERWORLD, Run 20 (jump and climb, grab and throw, weapons, real hands, car handling)
 
 Open `index.html` in a modern browser with internet access (Three.js loads from jsDelivr). On the phone: extract the ZIP and open `index.html`. For best results on a computer, serve the folder with `python -m http.server 8000` and visit `http://localhost:8000`.
 
-Desktop: WASD or arrow keys to move, mouse to look (click to lock), click or HIT to punch, hold Q or right mouse to block, Shift (hold) to sprint, E to talk / shop / get in or out of a car, Space handbrake, Escape to pause. Phone: touch the lower-left circle and slide to walk, swipe the right side to look, tap TALK/HIT, hold BLOCK, tap RUN to toggle running (it lights up, and switches off when you stop). Tap the radar to collapse it. Saves stay in the device's browser storage; PAUSE has EXPORT/IMPORT SAVE FILE for moving between phones.
+Desktop: WASD or arrow keys to move, mouse to look (click to lock), click or HIT to punch, hold Q or right mouse to block, Space to jump or climb (handbrake in a car), Shift (hold) to sprint, E to talk / shop / grab / pick up / get in or out of a car, Escape to pause. Phone: touch the lower-left circle and slide to walk, swipe the right side to look, tap TALK/HIT, hold BLOCK, tap RUN to toggle running (it lights up, and switches off when you stop). Tap the radar to collapse it. Saves stay in the device's browser storage; PAUSE has EXPORT/IMPORT SAVE FILE for moving between phones.
 
 The streets are real; the crews, characters and events are invented. Run 12 replaced the real gang names used in earlier runs with fictional crews; old saves are converted automatically.
+
+## Run 20: climb, grab, swing, drift
+
+- **Jump and climb.** JUMP (phone) or Space (keyboard) jumps. In front of a fence, wall, hedge, parked car, letterbox or skate ramp up to about 2.3 m, the same button vaults it (low ones) or climbs over (head-high paling and corrugated-iron fences). House walls and poles are too tall. People chasing you can't follow over fences.
+- **Grab and throw.** In a fight, TALK when you're next to them grabs them; HIT knees them while you hold on, TALK (or the third knee, or a couple of seconds) throws them. Throw someone into a fence or wall and it hurts more. Thrown people go down for a moment, then get back up.
+- **Finishers.** The blow that drops someone who's already staggered or on the ground is a finisher: harder knockback, slow motion, +3 rep.
+- **Weapons.** Cricket bats (backyards everywhere), softball bats and steel pipes lie around: at the skate park, the car parks, the station, Te Matariki and in yards. TALK to pick one up, TALK with nothing else around to drop it. They hit harder and reach further but swing slower, break after a while (pipes last longest), and bring more heat. You see the bat in first person and in your hand in third person.
+- **First-person hands.** Your own forearms and fists from the player model (fingers curled into fists from MakeHuman's finger bones), instead of the old blocky fists.
+- **Cars handle with weight.** Momentum and tyre grip: brake before corners or slide wide, the handbrake (Space) kicks the tail out for drifts (DRIFT shows on the speedo, tyres smoke), the body rolls in corners and dives under braking. Crashes cost health (shown next to the speed); under 40% the bonnet smokes, at 0 the engine's dead and you need another car.
 
 ## Run 19: how it plays
 

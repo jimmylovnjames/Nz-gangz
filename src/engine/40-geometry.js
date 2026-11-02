@@ -183,11 +183,11 @@ class CollisionGrid {
       for (let j = Math.floor(z0 / c); j <= Math.floor(z1 / c); j++) { const k = this.key(i, j); let a = this.cells.get(k); if (!a) this.cells.set(k, a = []); a.push(o); }
     return o;
   }
-  add(x, z, w, d, tag) { return this.insert({ t: 0, x, z, w, d, tag, mark: 0 }, x - w / 2, z - d / 2, x + w / 2, z + d / 2); }
-  addCircle(x, z, r, tag) { return this.insert({ t: 1, x, z, r, tag, mark: 0 }, x - r, z - r, x + r, z + r); }
-  addSeg(ax, az, bx, bz, th, tag) { return this.insert({ t: 2, ax, az, bx, bz, th, tag, mark: 0 }, Math.min(ax, bx) - th, Math.min(az, bz) - th, Math.max(ax, bx) + th, Math.max(az, bz) + th); }
-  addOBB(x, z, hw, hd, ang, tag) { const c = Math.cos(ang), s = Math.sin(ang), ex = Math.abs(c * hw) + Math.abs(s * hd), ez = Math.abs(s * hw) + Math.abs(c * hd); return this.insert({ t: 3, x, z, hw, hd, c, s, tag, mark: 0 }, x - ex, z - ez, x + ex, z + ez); }
-  addPoly(ring, tag) { let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (const p of ring) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); } return this.insert({ t: 4, ring, tag, mark: 0, x: (x0 + x1) / 2, z: (z0 + z1) / 2, w: x1 - x0, d: z1 - z0 }, x0, z0, x1, z1); }
+  add(x, z, w, d, tag, top = 99) { return this.insert({ t: 0, x, z, w, d, tag, top, mark: 0 }, x - w / 2, z - d / 2, x + w / 2, z + d / 2); }
+  addCircle(x, z, r, tag, top = 99) { return this.insert({ t: 1, x, z, r, tag, top, mark: 0 }, x - r, z - r, x + r, z + r); }
+  addSeg(ax, az, bx, bz, th, tag, top = 99) { return this.insert({ t: 2, ax, az, bx, bz, th, tag, top, mark: 0 }, Math.min(ax, bx) - th, Math.min(az, bz) - th, Math.max(ax, bx) + th, Math.max(az, bz) + th); }
+  addOBB(x, z, hw, hd, ang, tag, top = 99) { const c = Math.cos(ang), s = Math.sin(ang), ex = Math.abs(c * hw) + Math.abs(s * hd), ez = Math.abs(s * hw) + Math.abs(c * hd); return this.insert({ t: 3, x, z, hw, hd, c, s, tag, top, mark: 0 }, x - ex, z - ez, x + ex, z + ez); }
+  addPoly(ring, tag) { let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (const p of ring) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); } return this.insert({ t: 4, ring, tag, top: 99, mark: 0, x: (x0 + x1) / 2, z: (z0 + z1) / 2, w: x1 - x0, d: z1 - z0 }, x0, z0, x1, z1); }
   hit(o, x, z, r) {
     switch (o.t) {
       case 0: return Math.abs(x - o.x) < o.w / 2 + r && Math.abs(z - o.z) < o.d / 2 + r;
@@ -205,14 +205,16 @@ class CollisionGrid {
       }
     }
   }
-  collides(x, z, r = 0.55) {
+  // feet: height of the mover's feet above local ground; anything whose top is below them is cleared.
+  collides(x, z, r = 0.55, feet = -1e9) { return !!this.first(x, z, r, feet); }
+  first(x, z, r = 0.55, feet = -1e9) {
     const c = this.cell, st = ++this.stamp;
     for (let i = Math.floor((x - r) / c); i <= Math.floor((x + r) / c); i++)
       for (let j = Math.floor((z - r) / c); j <= Math.floor((z + r) / c); j++) {
         const a = this.cells.get(this.key(i, j)); if (!a) continue;
-        for (const o of a) { if (o.mark === st) continue; o.mark = st; if (!o.off && this.hit(o, x, z, r)) return true; }
+        for (const o of a) { if (o.mark === st) continue; o.mark = st; if (!o.off && (o.top ?? 99) > feet + 0.05 && this.hit(o, x, z, r)) return o; }
       }
-    return false;
+    return null;
   }
 }
 function segDist2(px, pz, ax, az, bx, bz) {

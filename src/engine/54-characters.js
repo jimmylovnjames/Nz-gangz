@@ -255,6 +255,10 @@ class Human {
     b('head').rotation.y = clamp(this.lookYaw, -1.1, 1.1) * 0.75; b('neck').rotation.y = clamp(this.lookYaw, -1.1, 1.1) * 0.25;
     b('head').rotation.x = Math.sin(t * 0.7 + this.idleSeed) * 0.04;
     if (this.pose === 'seated') this.seated(dt, t, b);
+    // Jumping and climbing (the player's own body in third person).
+    if (this.air) { b('thighL').rotation.x = -0.75; b('thighR').rotation.x = -0.45; b('shinL').rotation.x = 1.1; b('shinR').rotation.x = 0.8; b('armL').rotation.z = 0.55; b('armR').rotation.z = -0.55; }
+    if (this.climbing) { b('armL').rotation.x = -2.7; b('armR').rotation.x = -2.7; b('foreL').rotation.x = -0.4; b('foreR').rotation.x = -0.4; b('thighL').rotation.x = -1.1; b('shinL').rotation.x = 1.3; }
+    if (this.weapon && this.mode === 'guard') { b('armR').rotation.x = -0.6; b('foreR').rotation.x = -1.4; }
     if (this.hitT > 0) {
       this.hitT = Math.max(0, this.hitT - dt);
       const h = Math.sin(this.hitT / 0.35 * Math.PI);
@@ -309,6 +313,12 @@ class Fists {
       return g;
     });
     this.punch = [0, 0]; this.next = 0; this.bob = 0;
+    PEOPLE.fparms().then(r => {
+      if (!r) return;
+      for (const g of this.hands) { const m = g.children[0]; m.geometry = r[g.userData.side > 0 ? 'R' : 'L']; m.material = r.material; }
+    }).catch(() => { });
+    // A held weapon (cricket bat, softball bat, pipe) on the right, swung with the punch.
+    this.weapon = new THREE.Group(); this.weapon.visible = false; this.group.add(this.weapon);
     this.m = new THREE.Matrix4(); this.E = new THREE.Vector3(); this.B = new THREE.Vector3(); this.X = new THREE.Vector3(); this.Z = new THREE.Vector3();
   }
   round(geo, half, r) { // soften a box into a rounded block
@@ -323,7 +333,19 @@ class Fists {
   }
   swing() { const i = this.next; this.punch[i] = 1; this.next = 1 - i; this.raised = 1.2; }
   // Hands stay out of view until you swing or a fight is on; they slide up from below the frame.
+  setWeapon(kind) {
+    this.weapon.clear(); this.weaponKind = kind || null;
+    if (kind) { const m = weaponMesh(kind); m.traverse(o => { if (o.isMesh) { o.renderOrder = 11; o.frustumCulled = false; } }); this.weapon.add(m); }
+    this.weapon.visible = !!kind;
+  }
   update(dt, moving, sprint, guard) {
+    if (this.weaponKind) {
+      // Bat held up off the right shoulder; a swing sweeps it across the view.
+      const p = this.punch[0] > this.punch[1] ? this.punch[0] : this.punch[1], sw = p > 0 ? Math.sin((1 - p) * Math.PI) : 0;
+      this.weapon.position.set(lerp(0.26, -0.05, sw), lerp(-0.32, -0.12, sw), lerp(-0.45, -0.7, sw));
+      this.weapon.rotation.set(lerp(0.25, -1.1, sw), lerp(-0.3, 0.8, sw), lerp(-0.35, 1.25, sw));
+      guard = true;
+    }
     this.raised = Math.max(guard ? 1 : 0, (this.raised || 0) - dt);
     this.show = lerp(this.show || 0, this.raised > 0 ? 1 : 0, 1 - Math.exp(-dt * 10));
     this.group.visible = this.show > 0.02; this.group.position.y = (1 - this.show) * -0.35;
@@ -366,8 +388,35 @@ function itemProp(kind, color) {
 
 // Realistic people: MakeHuman CC0 bodies, clothes and hair built by tools/people-build.py into
 // assets/people/<look>.{bin,jpg,_n.jpg,_a.png}. Streamed after boot; stand-ins show until they load.
+// Weapon meshes shared by the first-person view, the third-person body and pickups on the ground.
+const WEAPON_DEF = { cricket: { name: 'cricket bat', dmg: 2.6, reach: 2.7, uses: 14 }, bat: { name: 'softball bat', dmg: 2.4, reach: 2.6, uses: 18 }, pipe: { name: 'steel pipe', dmg: 2.8, reach: 2.5, uses: 24 } };
+function weaponMesh(kind) {
+  const g = new THREE.Group(), wood = new THREE.MeshStandardMaterial({ color: 0xc8a46a, roughness: 0.6 }), grip = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 }), alu = new THREE.MeshStandardMaterial({ color: 0x9aa4ac, metalness: 0.85, roughness: 0.35 });
+  if (kind === 'cricket') { const blade = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.56, 0.05), wood); blade.position.y = 0.42; const h = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.28, 8), grip); h.position.y = 0.0; g.add(blade, h); }
+  else if (kind === 'bat') { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.014, 0.76, 10), alu); b.position.y = 0.3; const h = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.16, 8), grip); h.position.y = -0.1; g.add(b, h); }
+  else { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.85, 8), new THREE.MeshStandardMaterial({ color: 0x6b6f72, metalness: 0.8, roughness: 0.5 })); p.position.y = 0.3; g.add(p); }
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; } });
+  return g;
+}
 const PEOPLE = {
   enabled: true, cache: {}, bases: null,
+  // Realistic first-person forearms/fists (tools/people-build.py -> people/fparms.bin), textured with the player atlas.
+  fparms() {
+    if (this._fp) return this._fp;
+    return (this._fp = (async () => {
+      const pl = await this.get('player'); if (!pl) return null;
+      const buf = await this.fetchBin('people/fparms.bin'), dv = new DataView(buf), hl = dv.getUint32(4, true), head = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 8, hl)));
+      let o = 8 + hl; const take = (T, n, bytes) => { const a = new T(buf, o, n); o += Math.ceil(n * bytes / 4) * 4; return a; };
+      const out = { material: new THREE.MeshStandardMaterial({ map: pl.material.map, normalMap: pl.material.normalMap, roughness: 0.62, metalness: 0 }) };
+      for (const side of ['L', 'R']) {
+        const h = head[side], pos = take(Float32Array, h.nV * 3, 4), n8 = take(Int8Array, h.nV * 3, 1), uv = take(Uint16Array, h.nV * 2, 2), ix = take(Uint16Array, h.nI, 2);
+        const g = new THREE.BufferGeometry(), nor = new Float32Array(h.nV * 3); for (let i = 0; i < nor.length; i++) nor[i] = n8[i] / 127;
+        g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.BufferAttribute(new Uint16Array(uv), 2, true));
+        g.setIndex(new THREE.BufferAttribute(new Uint16Array(ix), 1)); g.computeBoundingSphere(); out[side] = g;
+      }
+      return out;
+    })().catch(e => { console.info('First-person arms unavailable', e?.message); return null; }));
+  },
   async fetchBin(path) {
     for (const b of this.bases) { try { const r = await fetch(b + path); if (r.ok) return await r.arrayBuffer(); } catch (_) { } }
     throw new Error('people asset unavailable: ' + path);

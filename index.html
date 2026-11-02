@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>AOTEAROA UNDERWORLD | RUN 19</title><style>body{margin:0;background:#080b0d;color:white;font:14px system-ui;overflow:hidden}canvas{display:block}#hud{position:absolute;top:12px;left:12px;text-shadow:0 2px 4px black;pointer-events:none}#panel{position:absolute;inset:0;background:#071014ed;display:grid;place-items:center;z-index:5}#menu{max-width:520px;padding:25px}h1{font-size:32px;margin:0;color:#e8ba55}button{background:#b88a35;color:#111;border:0;border-radius:8px;padding:12px;margin:5px;font-weight:bold}#notice{position:absolute;bottom:95px;left:50%;transform:translateX(-50%);background:#111c;padding:10px;border-radius:7px;text-align:center;max-width:85%}#cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:23px;pointer-events:none}#touch{position:absolute;bottom:15px;width:100%;display:flex;justify-content:space-between;pointer-events:none}#touch button{pointer-events:auto;opacity:.8;min-width:56px}#mapcredit{position:absolute;bottom:2px;right:5px;font-size:10px;color:#ddd}small{color:#bbb}
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>AOTEAROA UNDERWORLD | RUN 20</title><style>body{margin:0;background:#080b0d;color:white;font:14px system-ui;overflow:hidden}canvas{display:block}#hud{position:absolute;top:12px;left:12px;text-shadow:0 2px 4px black;pointer-events:none}#panel{position:absolute;inset:0;background:#071014ed;display:grid;place-items:center;z-index:5}#menu{max-width:520px;padding:25px}h1{font-size:32px;margin:0;color:#e8ba55}button{background:#b88a35;color:#111;border:0;border-radius:8px;padding:12px;margin:5px;font-weight:bold}#notice{position:absolute;bottom:95px;left:50%;transform:translateX(-50%);background:#111c;padding:10px;border-radius:7px;text-align:center;max-width:85%}#cross{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:23px;pointer-events:none}#touch{position:absolute;bottom:15px;width:100%;display:flex;justify-content:space-between;pointer-events:none}#touch button{pointer-events:auto;opacity:.8;min-width:56px}#mapcredit{position:absolute;bottom:2px;right:5px;font-size:10px;color:#ddd}small{color:#bbb}
 #panel{overflow-y:auto;align-items:start}#menu{width:min(560px,calc(100vw - 36px));margin:auto;box-sizing:border-box}#factions{max-height:180px;overflow:auto;padding:4px;background:#15201b}#factions button{font-size:11px;padding:8px;margin:3px}#factions button.selected{outline:2px solid #fff3a5}#hud{max-width:72%;line-height:1.45}#hud b{color:#f3d98c}#missionDistance{color:#b8f5e1}#notice{bottom:104px;min-width:180px;z-index:2}#pauseButton{position:absolute;right:8px;top:8px;z-index:3;background:#19231c;color:white;border:1px solid #829688}#choicePanel,#pausePanel{position:absolute;inset:0;z-index:8;background:#02080be8;display:none;align-items:center;justify-content:center;padding:18px;box-sizing:border-box}#choicePanel .dialog,#pausePanel .dialog{max-width:520px;width:100%;background:#17201f;border:1px solid #8c7650;border-radius:14px;padding:20px;box-sizing:border-box}#choicePanel button,#pausePanel button{display:block;width:100%;margin:9px 0;padding:15px;text-align:left}#saveState{font-size:12px;color:#b8f5e1}#continue{display:none;background:#52795f;color:white}#touch button{touch-action:none}#cross{color:#ffedac}#quest{color:#f6e2af}#waypoint{position:absolute;top:33%;left:50%;transform:translateX(-50%);font-weight:bold;text-shadow:0 2px 4px black;color:#f5da6c;pointer-events:none}#location{font-size:12px;color:#eee}@media(max-width:600px){#hud{top:8px;left:8px;font-size:12px;max-width:80%}#pauseButton{padding:8px;margin:3px}#notice{font-size:12px;bottom:115px}#touch button{min-width:50px;padding:11px;margin:2px}#mapcredit{display:none}}
 #miniMap{position:absolute;right:10px;bottom:143px;width:142px;height:142px;background:#081b19d9;border:1px solid #b7d2ae88;border-radius:10px;z-index:3;box-shadow:0 4px 18px #0009;touch-action:manipulation}#miniMap.compact{width:66px;height:66px;opacity:.8}@media(max-width:600px){#miniMap{right:7px;bottom:132px;width:112px;height:112px}}
 
@@ -7,7 +7,7 @@
 #joyBase{position:absolute;width:112px;height:112px;border:1px solid #ffffff65;border-radius:50%;background:#121c2190;box-shadow:0 0 0 7px #1116;display:block;transform:translate(-50%,-50%);pointer-events:none}
 #controlStatus{position:absolute;bottom:6px;left:0;width:100%;text-align:center;font:10px system-ui;color:#e4d9b7;pointer-events:none;text-shadow:0 1px 3px #000}#joyReadout{position:absolute;left:50%;top:8px;transform:translateX(-50%);font:10px system-ui;color:#c6d2d6;pointer-events:none}#joyThumb{position:absolute;left:50%;top:50%;width:49px;height:49px;border-radius:50%;background:#e5d6b9aa;border:2px solid #fff8;transform:translate(-50%,-50%)}
 #touch{width:auto;right:10px;left:auto;bottom:calc(20px + env(safe-area-inset-bottom));z-index:4}
-#actions{display:flex;align-items:flex-end;gap:6px}
+#actions{display:grid;grid-template-columns:repeat(3,auto);grid-template-areas:"block sprint jump" "interact . attack";align-items:end;justify-items:center;gap:6px}#actions #block{grid-area:block}#actions #sprint{grid-area:sprint}#actions #jump{grid-area:jump}#actions #interact{grid-area:interact}#actions #attack{grid-area:attack}
 #actions button{border-radius:50%;width:58px;height:58px;min-width:0!important;padding:0!important;margin:0!important;font-size:12px;background:#182323b8;color:#f3e4c4;border:1px solid #c8b89099;backdrop-filter:blur(5px)}
 #actions #attack{width:70px;height:70px;border-color:#d5a458;background:#a87535c9}
 #actions #sprint.on{background:#e8ba55;color:#111;border-color:#fff3a5;box-shadow:0 0 12px #e8ba5599}
@@ -72,7 +72,7 @@ body.prologue.mg #dialogue{bottom:auto;top:calc(10px + env(safe-area-inset-top))
 #toast.show{transform:translate(-50%,0)}
 body.prologue :is(#phoneBtn,#phone){display:none!important}
 #hitFlash{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,transparent 45%,#7a0a0a 120%);opacity:0;transition:opacity .35s}
-</style><canvas id="miniMap" class="compact" width="180" height="180" aria-label="District minimap, tap to collapse" title="Tap to collapse minimap"></canvas><div id="panel"><div id="menu"><h1>AOTEAROA: UNDERWORLD</h1><p>CHAPTER ZERO: NOBODY KNOWS YOUR NAME</p><p>Friday night on your cousin Manu's couch. A busted old console, a few cans, and a debt somebody needs to collect. Fourteen crews are watching who steps up. Your hometown and your choices change how it plays out.</p><label for="hometown">CHOOSE YOUR HOMETOWN</label><select id="hometown" style="display:block;width:100%;padding:12px;margin:10px 0;background:#152320;color:white;border:1px solid #879b83"></select><p id="originStory"></p><div id="factions"></div><button id="independent">INDEPENDENT / NO FACTION</button><p><small>Choose a crew to approach after the prologue, or stay independent.</small></p><p><small>Playable vertical slice. Fictional characters and story. Desktop: WASD, mouse look, click to punch, hold Q or right mouse to block (tap it while moving to dodge), V first/third person, Shift sprint, E talk / shop / get in a car, Space handbrake, Esc pause. Phone: floating left joystick, drag right side to look, HIT, BLOCK, TALK, RUN toggle, pause button. Save is device-local.</small></p><div id="loadState" aria-live="polite">Loading 3D engine…</div><div id="loadBar"><i></i></div><button id="start" disabled title="Loading 3D engine">NEW GAME</button><button id="continue" disabled title="Loading 3D engine">CONTINUE SAVED GAME</button><div id="saveState" aria-live="polite"></div></div></div><div id="hud"><small style="opacity:.65">R19 • GAMEPLAY</small><b id="status">HEALTH 100 | REP 0</b><div id="quest">Find your hometown contact</div><div id="missionDistance"></div><div id="location">CLENDON PARK</div></div><div id="cross">+</div><div id="waypoint" aria-live="off"></div><button id="pauseButton" aria-label="Pause game">Ⅱ</button><div id="notice">Find the yellow diamond above your hometown contact. Press E or TALK nearby.</div><div id="joystick" aria-label="Floating movement joystick"><div id="joyBase"><div id="joyThumb"></div><span id="joyReadout" aria-live="off">MOVE</span></div><span id="controlStatus" aria-live="off">ENGINE WAIT</span></div><div id="touch"><div id="actions"><button id="interact">TALK</button><button id="attack">HIT</button><button data-m="block" id="block" aria-label="Hold to block">BLOCK</button><button data-m="sprint" id="sprint" aria-label="Toggle run" aria-pressed="false">RUN</button></div></div><div id="choicePanel" role="dialog" aria-modal="true"><div class="dialog"><h2 id="choiceTitle">Choose your path</h2><p id="choiceText"></p><button id="routeCourier">The quiet job: collect the package</button><button id="routeBrawl">The loud job: win three fights</button><button id="choiceBack">Not yet</button></div></div><div id="pausePanel" role="dialog" aria-modal="true"><div class="dialog"><h2>PAUSED</h2><p>Progress saves automatically on mission changes and periodically on this device.</p><button id="resume">RESUME</button><button id="saveNow">SAVE NOW</button><div id="gfxPanel"><div class="row"><span>GRAPHICS</span><button data-gfx="low">LOW</button><button data-gfx="medium">MEDIUM</button><button data-gfx="high">HIGH</button><button data-gfx="ultra">ULTRA</button></div><div class="row"><span>TIME</span><button data-time="golden">GOLDEN HOUR</button><button data-time="overcast">OVERCAST</button><button data-time="night">NIGHT</button></div><div class="row"><span>WEATHER</span><button data-rain="0">DRY</button><button data-rain="1">DRIZZLE</button><button data-rain="2">RAIN</button></div><div class="row"><span>DISPLAY</span><button id="fpsToggle">SHOW FPS</button><button id="viewToggle">VIEW: FIRST PERSON</button><button id="soundToggle">SOUND: ON</button></div><p id="gfxNote"></p></div><button id="exportSave">EXPORT SAVE FILE</button><button id="importSave">IMPORT SAVE FILE</button><input id="saveFile" type="file" accept=".json,application/json" hidden><p id="transferStatus" role="status" aria-live="polite"></p><button id="restart">NEW GAME (RESTART)</button></div></div><div id="dialogue" role="dialog" aria-live="polite"><div id="dlgWho"></div><div id="dlgText"></div><div id="dlgChoices"></div></div><div id="mgPad"><div><button data-mg="left" aria-label="Move left">◀</button><button data-mg="right" aria-label="Move right">▶</button></div><div><button data-mg="block">BLOCK</button><button data-mg="special">SPECIAL</button><button data-mg="kick">KICK</button><button data-mg="punch">PUNCH</button></div></div><button id="mgSkip">SKIP ▶▶</button><div id="fade"></div><button id="phoneBtn" aria-label="Phone">📱</button><div id="phone" role="dialog" aria-label="Phone"><div class="ph-head"><span>PHONE</span><button id="phClose" aria-label="Close phone">✕</button></div><div class="ph-tabs"><button data-ph="msgs" class="on">MESSAGES</button><button data-ph="jobs">JOBS</button></div><div id="phMsgs"></div><div id="phJobs"></div></div><div id="toast" aria-live="polite"></div><div id="shopPanel" role="dialog" aria-modal="true"><div class="dialog"><small id="shopSub"></small><h2 id="shopTitle"></h2><p id="shopCash"></p><div id="shopItems"></div><button id="shopClose">LEAVE</button></div></div><div id="speedo" aria-live="off"></div><div id="banner" aria-live="polite"></div><div id="hint" aria-live="polite"></div><div id="fps"></div><div id="hitFlash"></div><div id="mapcredit">Map data © OpenStreetMap contributors · LINZ</div><script>
+</style><canvas id="miniMap" class="compact" width="180" height="180" aria-label="District minimap, tap to collapse" title="Tap to collapse minimap"></canvas><div id="panel"><div id="menu"><h1>AOTEAROA: UNDERWORLD</h1><p>CHAPTER ZERO: NOBODY KNOWS YOUR NAME</p><p>Friday night on your cousin Manu's couch. A busted old console, a few cans, and a debt somebody needs to collect. Fourteen crews are watching who steps up. Your hometown and your choices change how it plays out.</p><label for="hometown">CHOOSE YOUR HOMETOWN</label><select id="hometown" style="display:block;width:100%;padding:12px;margin:10px 0;background:#152320;color:white;border:1px solid #879b83"></select><p id="originStory"></p><div id="factions"></div><button id="independent">INDEPENDENT / NO FACTION</button><p><small>Choose a crew to approach after the prologue, or stay independent.</small></p><p><small>Playable vertical slice. Fictional characters and story. Desktop: WASD, mouse look, click to punch, hold Q or right mouse to block (tap it while moving to dodge), Space jump / climb, V first/third person, Shift sprint, E talk / shop / get in a car, Space handbrake, Esc pause. Phone: floating left joystick, drag right side to look, HIT, BLOCK, TALK, RUN toggle, pause button. Save is device-local.</small></p><div id="loadState" aria-live="polite">Loading 3D engine…</div><div id="loadBar"><i></i></div><button id="start" disabled title="Loading 3D engine">NEW GAME</button><button id="continue" disabled title="Loading 3D engine">CONTINUE SAVED GAME</button><div id="saveState" aria-live="polite"></div></div></div><div id="hud"><small style="opacity:.65">R20 • CLIMB · GRAB · DRIFT</small><b id="status">HEALTH 100 | REP 0</b><div id="quest">Find your hometown contact</div><div id="missionDistance"></div><div id="location">CLENDON PARK</div></div><div id="cross">+</div><div id="waypoint" aria-live="off"></div><button id="pauseButton" aria-label="Pause game">Ⅱ</button><div id="notice">Find the yellow diamond above your hometown contact. Press E or TALK nearby.</div><div id="joystick" aria-label="Floating movement joystick"><div id="joyBase"><div id="joyThumb"></div><span id="joyReadout" aria-live="off">MOVE</span></div><span id="controlStatus" aria-live="off">ENGINE WAIT</span></div><div id="touch"><div id="actions"><button id="interact">TALK</button><button id="attack">HIT</button><button data-m="block" id="block" aria-label="Hold to block">BLOCK</button><button data-m="sprint" id="sprint" aria-label="Toggle run" aria-pressed="false">RUN</button><button data-m="jump" id="jump" aria-label="Jump or climb">JUMP</button></div></div><div id="choicePanel" role="dialog" aria-modal="true"><div class="dialog"><h2 id="choiceTitle">Choose your path</h2><p id="choiceText"></p><button id="routeCourier">The quiet job: collect the package</button><button id="routeBrawl">The loud job: win three fights</button><button id="choiceBack">Not yet</button></div></div><div id="pausePanel" role="dialog" aria-modal="true"><div class="dialog"><h2>PAUSED</h2><p>Progress saves automatically on mission changes and periodically on this device.</p><button id="resume">RESUME</button><button id="saveNow">SAVE NOW</button><div id="gfxPanel"><div class="row"><span>GRAPHICS</span><button data-gfx="low">LOW</button><button data-gfx="medium">MEDIUM</button><button data-gfx="high">HIGH</button><button data-gfx="ultra">ULTRA</button></div><div class="row"><span>TIME</span><button data-time="golden">GOLDEN HOUR</button><button data-time="overcast">OVERCAST</button><button data-time="night">NIGHT</button></div><div class="row"><span>WEATHER</span><button data-rain="0">DRY</button><button data-rain="1">DRIZZLE</button><button data-rain="2">RAIN</button></div><div class="row"><span>DISPLAY</span><button id="fpsToggle">SHOW FPS</button><button id="viewToggle">VIEW: FIRST PERSON</button><button id="soundToggle">SOUND: ON</button></div><p id="gfxNote"></p></div><button id="exportSave">EXPORT SAVE FILE</button><button id="importSave">IMPORT SAVE FILE</button><input id="saveFile" type="file" accept=".json,application/json" hidden><p id="transferStatus" role="status" aria-live="polite"></p><button id="restart">NEW GAME (RESTART)</button></div></div><div id="dialogue" role="dialog" aria-live="polite"><div id="dlgWho"></div><div id="dlgText"></div><div id="dlgChoices"></div></div><div id="mgPad"><div><button data-mg="left" aria-label="Move left">◀</button><button data-mg="right" aria-label="Move right">▶</button></div><div><button data-mg="block">BLOCK</button><button data-mg="special">SPECIAL</button><button data-mg="kick">KICK</button><button data-mg="punch">PUNCH</button></div></div><button id="mgSkip">SKIP ▶▶</button><div id="fade"></div><button id="phoneBtn" aria-label="Phone">📱</button><div id="phone" role="dialog" aria-label="Phone"><div class="ph-head"><span>PHONE</span><button id="phClose" aria-label="Close phone">✕</button></div><div class="ph-tabs"><button data-ph="msgs" class="on">MESSAGES</button><button data-ph="jobs">JOBS</button></div><div id="phMsgs"></div><div id="phJobs"></div></div><div id="toast" aria-live="polite"></div><div id="shopPanel" role="dialog" aria-modal="true"><div class="dialog"><small id="shopSub"></small><h2 id="shopTitle"></h2><p id="shopCash"></p><div id="shopItems"></div><button id="shopClose">LEAVE</button></div></div><div id="speedo" aria-live="off"></div><div id="banner" aria-live="polite"></div><div id="hint" aria-live="polite"></div><div id="fps"></div><div id="hitFlash"></div><div id="mapcredit">Map data © OpenStreetMap contributors · LINZ</div><script>
 window.__auEngineReady=false;
 // Render hometown choices even when the external 3D engine cannot be fetched.
 const fallbackHometowns={Northland:['Kaikohe','Kaitaia','Whangārei','Opononi'],Auckland:['South Auckland','West Auckland','Central Auckland','North Shore'],Waikato:['Hamilton','Huntly','Tokoroa'],'Bay of Plenty':['Tauranga','Rotorua','Whakatāne'],'East Coast':['Gisborne','Wairoa'],'Hawke’s Bay':['Napier','Hastings'],'Central North Island':['Taupō','New Plymouth','Whanganui','Palmerston North'],Wellington:['Wellington','Lower Hutt','Porirua'],'Top of South':['Nelson','Blenheim'],Canterbury:['Christchurch','Ashburton','Timaru'],'West Coast':['Greymouth','Hokitika'],Otago:['Dunedin','Queenstown','Wānaka'],Southland:['Invercargill','Bluff'],Islands:['Stewart Island / Rakiura','Chatham Islands']};
@@ -1468,11 +1468,11 @@ class CollisionGrid {
       for (let j = Math.floor(z0 / c); j <= Math.floor(z1 / c); j++) { const k = this.key(i, j); let a = this.cells.get(k); if (!a) this.cells.set(k, a = []); a.push(o); }
     return o;
   }
-  add(x, z, w, d, tag) { return this.insert({ t: 0, x, z, w, d, tag, mark: 0 }, x - w / 2, z - d / 2, x + w / 2, z + d / 2); }
-  addCircle(x, z, r, tag) { return this.insert({ t: 1, x, z, r, tag, mark: 0 }, x - r, z - r, x + r, z + r); }
-  addSeg(ax, az, bx, bz, th, tag) { return this.insert({ t: 2, ax, az, bx, bz, th, tag, mark: 0 }, Math.min(ax, bx) - th, Math.min(az, bz) - th, Math.max(ax, bx) + th, Math.max(az, bz) + th); }
-  addOBB(x, z, hw, hd, ang, tag) { const c = Math.cos(ang), s = Math.sin(ang), ex = Math.abs(c * hw) + Math.abs(s * hd), ez = Math.abs(s * hw) + Math.abs(c * hd); return this.insert({ t: 3, x, z, hw, hd, c, s, tag, mark: 0 }, x - ex, z - ez, x + ex, z + ez); }
-  addPoly(ring, tag) { let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (const p of ring) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); } return this.insert({ t: 4, ring, tag, mark: 0, x: (x0 + x1) / 2, z: (z0 + z1) / 2, w: x1 - x0, d: z1 - z0 }, x0, z0, x1, z1); }
+  add(x, z, w, d, tag, top = 99) { return this.insert({ t: 0, x, z, w, d, tag, top, mark: 0 }, x - w / 2, z - d / 2, x + w / 2, z + d / 2); }
+  addCircle(x, z, r, tag, top = 99) { return this.insert({ t: 1, x, z, r, tag, top, mark: 0 }, x - r, z - r, x + r, z + r); }
+  addSeg(ax, az, bx, bz, th, tag, top = 99) { return this.insert({ t: 2, ax, az, bx, bz, th, tag, top, mark: 0 }, Math.min(ax, bx) - th, Math.min(az, bz) - th, Math.max(ax, bx) + th, Math.max(az, bz) + th); }
+  addOBB(x, z, hw, hd, ang, tag, top = 99) { const c = Math.cos(ang), s = Math.sin(ang), ex = Math.abs(c * hw) + Math.abs(s * hd), ez = Math.abs(s * hw) + Math.abs(c * hd); return this.insert({ t: 3, x, z, hw, hd, c, s, tag, top, mark: 0 }, x - ex, z - ez, x + ex, z + ez); }
+  addPoly(ring, tag) { let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (const p of ring) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[1]); z1 = Math.max(z1, p[1]); } return this.insert({ t: 4, ring, tag, top: 99, mark: 0, x: (x0 + x1) / 2, z: (z0 + z1) / 2, w: x1 - x0, d: z1 - z0 }, x0, z0, x1, z1); }
   hit(o, x, z, r) {
     switch (o.t) {
       case 0: return Math.abs(x - o.x) < o.w / 2 + r && Math.abs(z - o.z) < o.d / 2 + r;
@@ -1490,14 +1490,16 @@ class CollisionGrid {
       }
     }
   }
-  collides(x, z, r = 0.55) {
+  // feet: height of the mover's feet above local ground; anything whose top is below them is cleared.
+  collides(x, z, r = 0.55, feet = -1e9) { return !!this.first(x, z, r, feet); }
+  first(x, z, r = 0.55, feet = -1e9) {
     const c = this.cell, st = ++this.stamp;
     for (let i = Math.floor((x - r) / c); i <= Math.floor((x + r) / c); i++)
       for (let j = Math.floor((z - r) / c); j <= Math.floor((z + r) / c); j++) {
         const a = this.cells.get(this.key(i, j)); if (!a) continue;
-        for (const o of a) { if (o.mark === st) continue; o.mark = st; if (!o.off && this.hit(o, x, z, r)) return true; }
+        for (const o of a) { if (o.mark === st) continue; o.mark = st; if (!o.off && (o.top ?? 99) > feet + 0.05 && this.hit(o, x, z, r)) return o; }
       }
-    return false;
+    return null;
   }
 }
 function segDist2(px, pz, ax, az, bx, bz) {
@@ -1953,7 +1955,7 @@ class City {
         this.b.rect(key, [a[0], kh, a[1]], u, [0, 1, 0], L, hgt, { tint, uv0: [0, 0] });
         if (style === 'wood') for (let s = 0; s <= L; s += 2.4) this.b.box('timber', a[0] + u[0] * s, kh, a[1] + u[2] * s, 0.1, hgt + 0.05, 0.1);
       }
-      this.collision.addSeg(a[0], a[1], b[0], b[1], style === 'hedge' ? 0.4 : 0.1, 'fence');
+      this.collision.addSeg(a[0], a[1], b[0], b[1], style === 'hedge' ? 0.4 : 0.1, 'fence', hgt);
     };
     const FRONT = [[0.25, null, 0], [0.45, 'block', 0.9], [0.6, 'picket', 1.1], [0.72, 'wood', 1.8], [0.82, 'corrugated', 1.8], [0.94, 'hedge', 1.2], [1, 'block', 1.5]];
     m.frontFences.forEach((pts, k) => {
@@ -2004,7 +2006,7 @@ class City {
     this.collision.addCircle(np[0], np[1], 0.8, 'tree');
     this.b.box('white', np[0], kh + 33.5, np[1], 0.25, 3.2, 0.25); this.b.box('white', np[0], kh + 35.4, np[1], 1.8, 0.25, 0.25);
     // Letterboxes at the boundary, parked cars on driveways and kerbside, bins out on the berm.
-    for (let k = 0; k < m.letterboxes.length; k += 3) { const x = m.letterboxes[k], z = m.letterboxes[k + 1]; this.inst('letterbox', { x, y: kh, z, rot: m.letterboxes[k + 2] + Math.PI, v: Math.floor(this.hash(k, 81) * 3) }); this.collision.addCircle(x, z, 0.2, 'letterbox'); }
+    for (let k = 0; k < m.letterboxes.length; k += 3) { const x = m.letterboxes[k], z = m.letterboxes[k + 1]; this.inst('letterbox', { x, y: kh, z, rot: m.letterboxes[k + 2] + Math.PI, v: Math.floor(this.hash(k, 81) * 3) }); this.collision.addCircle(x, z, 0.2, 'letterbox', 1.15); }
     const D = m.drives;
     for (let k = 0; k < D.length; k += 5) {
       const r = this.hash(k, 82);
@@ -2031,7 +2033,7 @@ class City {
     // Bus stops: AT flag pole, shelters on the busier roads.
     for (const [x, z, rot, name, shelter] of MAPDATA.busStops) {
       this.inst('busSign', { x, y: kh, z, rot }); this.collision.addCircle(x, z, 0.1, 'pole');
-      if (shelter) { const sx = x - Math.sin(rot) * -1.4 + Math.cos(rot) * 3, sz = z - Math.cos(rot) * -1.4 - Math.sin(rot) * 3; this.inst('busShelter', { x: sx, y: kh, z: sz, rot }); this.collision.addOBB(sx, sz, 1.8, 0.5, -rot, 'shelter'); }
+      if (shelter) { const sx = x - Math.sin(rot) * -1.4 + Math.cos(rot) * 3, sz = z - Math.cos(rot) * -1.4 - Math.sin(rot) * 3; this.inst('busShelter', { x: sx, y: kh, z: sz, rot }); this.collision.addOBB(sx, sz, 1.8, 0.5, -rot, 'shelter', 2.6); }
     }
     // Signals: four poles round each signalised junction, on the first footpath cell outward.
     for (const [x, z] of MAPDATA.signals) for (let q = 0; q < 4; q++) {
@@ -2081,12 +2083,18 @@ class City {
       this.signs.push({ text, pos: new THREE.Vector3(c[0], y, c[1]) });
     }
   }
+  weapons() {
+    const out = [], spots = [this.places.skatepark, this.places.clendonShops, this.places.southmallCarpark, this.places.station, this.places.teMatariki].filter(Boolean);
+    for (const sp of spots) out.push({ x: sp.pos.x + 3, z: sp.pos.z - 2, kind: out.length % 2 ? 'pipe' : 'bat' });
+    const hs = this.houses; for (let k = 0; k < 40 && hs.length; k++) { const h = hs[Math.floor(this.hash(k, 99) * hs.length)]; out.push({ x: h.pos.x + 1.2, z: h.pos.z + 0.8, kind: this.hash(k, 98) < 0.6 ? 'cricket' : this.hash(k, 97) < 0.5 ? 'bat' : 'pipe' }); }
+    return out;
+  }
   parkCar(x, z, rot, y) {
     const r = this.hash(Math.round(x * 10), Math.round(z * 10));
     // Typical Manurewa mix: hatches and sedans, wagons, double-cab utes, people movers, the odd Hiace.
     const type = r < 0.28 ? 0 : r < 0.5 ? 1 : r < 0.65 ? 2 : r < 0.8 ? 3 : r < 0.92 ? 4 : 5;
     const car = { x, z, y, rot, type, color: this.hash(Math.round(z * 7), 9) };
-    car.col = this.collision.addOBB(x, z, 0.95, CAR_DIM[type].L / 2, -rot, 'car');
+    car.col = this.collision.addOBB(x, z, 0.95, CAR_DIM[type].L / 2, -rot, 'car', type >= 3 ? 1.85 : 1.5);
     this.cars.push(car);
   }
   platforms() {
@@ -2146,7 +2154,7 @@ class City {
         this.wall('skate', deck[1], deck[0], kh, kh + hgt, [0.95, 0.95, 0.95]);
         const c0 = at(u0, -width / 2), c1 = at(u0, width / 2);
         this.b.setTransform(new THREE.Matrix4().makeRotationY(-ang).setPosition((c0[0] + c1[0]) / 2, kh + hgt, (c0[1] + c1[1]) / 2)); this.b.box('steel', 0, -0.03, 0, 0.08, 0.08, width); this.b.setTransform(null);
-        const cc = at(u0 + dir * 0.4, 0); this.collision.addOBB(cc[0], cc[1], depth / 2 + 0.6, width / 2, -ang, 'ramp');
+        const cc = at(u0 + dir * 0.4, 0); this.collision.addOBB(cc[0], cc[1], depth / 2 + 0.6, width / 2, -ang, 'ramp', hgt);
       };
       qp(-len / 2 + 2.2 + 1.6, 1, wid * 0.7, 1.5, 2.2);
       qp(len / 2 - 2.2 - 1.6, -1, wid * 0.6, 1.2, 1.8);
@@ -2159,7 +2167,7 @@ class City {
       this.b.box('darkMetal', 0, 0.35, -wid * 0.3, 5, 0.05, 0.05);
       for (const s of [-2.3, 0, 2.3]) this.b.box('darkMetal', s, 0, -wid * 0.3, 0.05, 0.35, 0.05);
       this.b.setTransform(null);
-      this.collision.addOBB(fb[0], fb[1], fl / 2, fw / 2, -ang, 'ramp');
+      this.collision.addOBB(fb[0], fb[1], fl / 2, fw / 2, -ang, 'ramp', 0.5);
       this.places.skatepark = { pos: new THREE.Vector3(...[at(0, wid * 0.42)].map(p => [p[0], kh, p[1]])[0]), rot: ang };
     }
   }
@@ -2976,6 +2984,10 @@ class Human {
     b('head').rotation.y = clamp(this.lookYaw, -1.1, 1.1) * 0.75; b('neck').rotation.y = clamp(this.lookYaw, -1.1, 1.1) * 0.25;
     b('head').rotation.x = Math.sin(t * 0.7 + this.idleSeed) * 0.04;
     if (this.pose === 'seated') this.seated(dt, t, b);
+    // Jumping and climbing (the player's own body in third person).
+    if (this.air) { b('thighL').rotation.x = -0.75; b('thighR').rotation.x = -0.45; b('shinL').rotation.x = 1.1; b('shinR').rotation.x = 0.8; b('armL').rotation.z = 0.55; b('armR').rotation.z = -0.55; }
+    if (this.climbing) { b('armL').rotation.x = -2.7; b('armR').rotation.x = -2.7; b('foreL').rotation.x = -0.4; b('foreR').rotation.x = -0.4; b('thighL').rotation.x = -1.1; b('shinL').rotation.x = 1.3; }
+    if (this.weapon && this.mode === 'guard') { b('armR').rotation.x = -0.6; b('foreR').rotation.x = -1.4; }
     if (this.hitT > 0) {
       this.hitT = Math.max(0, this.hitT - dt);
       const h = Math.sin(this.hitT / 0.35 * Math.PI);
@@ -3030,6 +3042,12 @@ class Fists {
       return g;
     });
     this.punch = [0, 0]; this.next = 0; this.bob = 0;
+    PEOPLE.fparms().then(r => {
+      if (!r) return;
+      for (const g of this.hands) { const m = g.children[0]; m.geometry = r[g.userData.side > 0 ? 'R' : 'L']; m.material = r.material; }
+    }).catch(() => { });
+    // A held weapon (cricket bat, softball bat, pipe) on the right, swung with the punch.
+    this.weapon = new THREE.Group(); this.weapon.visible = false; this.group.add(this.weapon);
     this.m = new THREE.Matrix4(); this.E = new THREE.Vector3(); this.B = new THREE.Vector3(); this.X = new THREE.Vector3(); this.Z = new THREE.Vector3();
   }
   round(geo, half, r) { // soften a box into a rounded block
@@ -3044,7 +3062,19 @@ class Fists {
   }
   swing() { const i = this.next; this.punch[i] = 1; this.next = 1 - i; this.raised = 1.2; }
   // Hands stay out of view until you swing or a fight is on; they slide up from below the frame.
+  setWeapon(kind) {
+    this.weapon.clear(); this.weaponKind = kind || null;
+    if (kind) { const m = weaponMesh(kind); m.traverse(o => { if (o.isMesh) { o.renderOrder = 11; o.frustumCulled = false; } }); this.weapon.add(m); }
+    this.weapon.visible = !!kind;
+  }
   update(dt, moving, sprint, guard) {
+    if (this.weaponKind) {
+      // Bat held up off the right shoulder; a swing sweeps it across the view.
+      const p = this.punch[0] > this.punch[1] ? this.punch[0] : this.punch[1], sw = p > 0 ? Math.sin((1 - p) * Math.PI) : 0;
+      this.weapon.position.set(lerp(0.26, -0.05, sw), lerp(-0.32, -0.12, sw), lerp(-0.45, -0.7, sw));
+      this.weapon.rotation.set(lerp(0.25, -1.1, sw), lerp(-0.3, 0.8, sw), lerp(-0.35, 1.25, sw));
+      guard = true;
+    }
     this.raised = Math.max(guard ? 1 : 0, (this.raised || 0) - dt);
     this.show = lerp(this.show || 0, this.raised > 0 ? 1 : 0, 1 - Math.exp(-dt * 10));
     this.group.visible = this.show > 0.02; this.group.position.y = (1 - this.show) * -0.35;
@@ -3087,8 +3117,35 @@ function itemProp(kind, color) {
 
 // Realistic people: MakeHuman CC0 bodies, clothes and hair built by tools/people-build.py into
 // assets/people/<look>.{bin,jpg,_n.jpg,_a.png}. Streamed after boot; stand-ins show until they load.
+// Weapon meshes shared by the first-person view, the third-person body and pickups on the ground.
+const WEAPON_DEF = { cricket: { name: 'cricket bat', dmg: 2.6, reach: 2.7, uses: 14 }, bat: { name: 'softball bat', dmg: 2.4, reach: 2.6, uses: 18 }, pipe: { name: 'steel pipe', dmg: 2.8, reach: 2.5, uses: 24 } };
+function weaponMesh(kind) {
+  const g = new THREE.Group(), wood = new THREE.MeshStandardMaterial({ color: 0xc8a46a, roughness: 0.6 }), grip = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 }), alu = new THREE.MeshStandardMaterial({ color: 0x9aa4ac, metalness: 0.85, roughness: 0.35 });
+  if (kind === 'cricket') { const blade = new THREE.Mesh(new THREE.BoxGeometry(0.105, 0.56, 0.05), wood); blade.position.y = 0.42; const h = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.28, 8), grip); h.position.y = 0.0; g.add(blade, h); }
+  else if (kind === 'bat') { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.014, 0.76, 10), alu); b.position.y = 0.3; const h = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.16, 8), grip); h.position.y = -0.1; g.add(b, h); }
+  else { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.85, 8), new THREE.MeshStandardMaterial({ color: 0x6b6f72, metalness: 0.8, roughness: 0.5 })); p.position.y = 0.3; g.add(p); }
+  g.traverse(o => { if (o.isMesh) { o.castShadow = true; } });
+  return g;
+}
 const PEOPLE = {
   enabled: true, cache: {}, bases: null,
+  // Realistic first-person forearms/fists (tools/people-build.py -> people/fparms.bin), textured with the player atlas.
+  fparms() {
+    if (this._fp) return this._fp;
+    return (this._fp = (async () => {
+      const pl = await this.get('player'); if (!pl) return null;
+      const buf = await this.fetchBin('people/fparms.bin'), dv = new DataView(buf), hl = dv.getUint32(4, true), head = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 8, hl)));
+      let o = 8 + hl; const take = (T, n, bytes) => { const a = new T(buf, o, n); o += Math.ceil(n * bytes / 4) * 4; return a; };
+      const out = { material: new THREE.MeshStandardMaterial({ map: pl.material.map, normalMap: pl.material.normalMap, roughness: 0.62, metalness: 0 }) };
+      for (const side of ['L', 'R']) {
+        const h = head[side], pos = take(Float32Array, h.nV * 3, 4), n8 = take(Int8Array, h.nV * 3, 1), uv = take(Uint16Array, h.nV * 2, 2), ix = take(Uint16Array, h.nI, 2);
+        const g = new THREE.BufferGeometry(), nor = new Float32Array(h.nV * 3); for (let i = 0; i < nor.length; i++) nor[i] = n8[i] / 127;
+        g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3)); g.setAttribute('normal', new THREE.BufferAttribute(nor, 3)); g.setAttribute('uv', new THREE.BufferAttribute(new Uint16Array(uv), 2, true));
+        g.setIndex(new THREE.BufferAttribute(new Uint16Array(ix), 1)); g.computeBoundingSphere(); out[side] = g;
+      }
+      return out;
+    })().catch(e => { console.info('First-person arms unavailable', e?.message); return null; }));
+  },
   async fetchBin(path) {
     for (const b of this.bases) { try { const r = await fetch(b + path); if (r.ok) return await r.arrayBuffer(); } catch (_) { } }
     throw new Error('people asset unavailable: ' + path);
@@ -4235,15 +4292,15 @@ function createGame(world) {
   // or trails it over the shoulder in third person (see the end of update()).
   const eye = new THREE.Object3D(); eye.rotation.order = 'YXZ';
   const mobile = matchMedia('(pointer:coarse)').matches;
-  const collides = (x, z, r = 0.55) => collision.collides(x, z, r);
-  function slideMove(p, dx, dz, r = 0.55) {
+  const collides = (x, z, r = 0.55, feet) => collision.collides(x, z, r, feet);
+  function slideMove(p, dx, dz, r = 0.55, feet) {
     if (!Number.isFinite(dx) || !Number.isFinite(dz)) return;
     const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dz)) / 0.45));
     for (let i = 0; i < steps; i++) {
       const nx = clamp(p.x + dx / steps, MAP_BOUNDS.x0, MAP_BOUNDS.x1), nz = clamp(p.z + dz / steps, MAP_BOUNDS.z0, MAP_BOUNDS.z1);
-      if (!collides(nx, nz, r)) { p.x = nx; p.z = nz; continue; }
-      if (!collides(nx, p.z, r)) p.x = nx;
-      if (!collides(p.x, nz, r)) p.z = nz;
+      if (!collides(nx, nz, r, feet)) { p.x = nx; p.z = nz; continue; }
+      if (!collides(nx, p.z, r, feet)) p.x = nx;
+      if (!collides(p.x, nz, r, feet)) p.z = nz;
     }
   }
   function safeSpawn(x, z) {
@@ -4526,6 +4583,7 @@ function createGame(world) {
   function beginNew() {
     saveAllowed = true; stage = 'prologue'; hp = 100; cash = 0; rep = 0; chapter = 0; defeated = 0; missionRoute = ''; stamina = 100; debtRoute = ''; debtCash = 0; strength = 0; endHustle(true);
     if (drive.car) exitCar();
+    grab = null; climb = null; air = false; setWeapon(null);
     heat.level = 0; police.clear(); c1.timer = 25; stage = 'prologue'; placeChapterOne();
     jobState = { kev: 'open', mikey: 'open', pita: 'open' }; phone.clear();
     placeDarren();
@@ -4593,6 +4651,8 @@ function createGame(world) {
     if (dlg.active) { dlg.advance(); return; }
     if (!started || pauseOpen) return;
     if (drive.car) { exitCar(); return; }
+    if (grab) { throwGrab(); return; }
+    if (tryGrab()) return;
     if (stage === 'debt-find' && dist(darren.position) < 4.5) {
       faceEachOther(darren);
       dlg.run('darrenMeet', storyVars(), r => {
@@ -4687,8 +4747,10 @@ function createGame(world) {
     if (stage === 'c1-manu' && dist(manu.position) < 4.5 && !c1.rivals.slice(3).some(r => r.alive)) { faceEachOther(manu); manu.userData.human.reset(); dlg.run('c1ManuDown', { rival: rivalCrew() }, () => advance('c1-home', 'Get Manu into a car and take him home.')); return; }
     if (stage === 'c1-done' || stage === 'complete') { if (dist(manu.position) < 4.5) { faceEachOther(manu); dlg.run('manuAfter', storyVars(), null); return; } }
     if (hustle && dist(hustle.npc.position) < 4.5 && hustle.npc.visible) { talkHustle(); return; }
+    const pk = nearestPickup(); if (pk && !weapon) { scene.remove(pk.g); pickups.splice(pickups.indexOf(pk), 1); setWeapon({ kind: pk.kind, uses: WEAPON_DEF[pk.kind].uses }); say(`Picked up a ${WEAPON_DEF[pk.kind].name}. Hits hard, swings slow, and the cops won't like it. TALK with nothing around to drop it.`); return; }
     const shop = shops.nearest(eye.position); if (shop) { openShop(shop); return; }
     const car = drive.nearest(eye.position); if (car) { enterCar(car); return; }
+    if (weapon) { spawnPickup(weapon.kind, eye.position.x + 0.8, eye.position.z); say(`Dropped the ${WEAPON_DEF[weapon.kind].name}.`); setWeapon(null); return; }
     if (stage === 'complete') { say(`Chapter complete. ${hometown} → ${chosen} → ${missionRoute}. Try a different origin and route for a different ending.`); return; }
     say(`Follow your current objective. ${objective()[0]}`);
   }
@@ -4780,92 +4842,154 @@ function createGame(world) {
     mikeyRun.fleeing = false; faceEachOther(JOBS.mikey.npc);
     dlg.run('mikeyCaught', storyVars(), () => { jobState.mikey = 'paid'; say('Mikey paid $300.'); updateHUD(); store(); checkJobs(); });
   }
+  // ---- fighting: fists, weapons, grabs, throws, finishers --------------------------------------
+  let grab = null, weapon = null;
+  const pickups = [];
+  // Everyone you can hit: current opponents plus the rival boys (hitting them starts it).
+  function targets() { const out = hostiles(); for (const r of c1.rivals) if (r.alive && r.p.visible && !r.hostile) out.push([r.p, r]); return out; }
+  function nearestTarget(forward, reach, cone) {
+    let best = null, bd = reach;
+    for (const [p, st] of targets()) { const delta = p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length(); if (d < bd && delta.normalize().dot(forward) > cone) { best = [p, st]; bd = d; } }
+    return best;
+  }
+  // Knockouts by who it was (story fights move the story on).
+  function koTarget(p, st, finisher) {
+    if (finisher) { slowMo = 1.1; rep += 3; banner('FINISHER', '+3 REP'); }
+    heat.add(0.4); peds.scare(p.position.x, p.position.z);
+    if (st === darrenState) {
+      darrenState.down = true; darrenState.hostile = false; darren.userData.human.knockDown(); rep += 5; say('Darren is down.');
+      setTimeout(() => dlg.run('darrenBeaten', storyVars(), () => { debtCash = 400; darren.userData.human.reset(); darrenState.down = false; advance('debt-return', 'Darren handed over the full $400. Take it to Manu.'); }), 1400);
+    } else if (st === kevRun) {
+      kevRun.down = true; JOBS.kev.npc.userData.human.knockDown(); rep += 8; say('Kev is down.');
+      setTimeout(() => dlg.run('kevBeaten', storyVars(), () => { JOBS.kev.npc.userData.human.reset(); kevRun.down = false; jobState.kev = 'paid'; say('Kev paid $600.'); updateHUD(); store(); checkJobs(); }), 1400);
+    } else if (hustle && st === hustle) {
+      hustle.state = 'down'; const n = hustle.npc; n.userData.human.knockDown();
+      setTimeout(() => { CAST.debtor.name = hustle.name; dlg.run('hustleBeaten', {}, () => { n.userData.human.reset(); hustlePaid(3); }); }, 1300);
+    } else if (c1.rivals.includes(st)) { st.alive = false; p.userData.human.knockDown(); rep += 4; heat.add(0.1); }
+    else if (enemies.includes(st)) {
+      st.alive = false; st.dyingT = 0.0001; p.userData.human.knockDown(); rep += 5;
+      if (stage === 'mission-brawl') { defeated++; if (defeated >= 3) { advance('mission-return', `You won the fights. Your ${hometown} fixer wants to see you.`); return; } }
+      say('Opponent defeated. Reputation +5.');
+    }
+    updateHUD(); store();
+  }
+  function applyHit(p, st, dmg, push, heavy, forward, how = 'punch') {
+    // A finisher: the blow that drops someone who is already staggered or on the ground.
+    const finisher = st.hp <= dmg && (st.stagger > 0 || st.downT > 0);
+    if (c1.rivals.includes(st)) st.hostile = true;
+    st.hp -= dmg; st._p = p; bloodAt(p.position);
+    slideMove(p.position, forward.x * push * (finisher ? 2.2 : 1), forward.z * push * (finisher ? 2.2 : 1), 0.4);
+    p.userData.human.hit();
+    world.shake = heavy || finisher ? 0.34 : 0.18; hitStop = finisher ? 0.16 : heavy ? 0.1 : 0.055; SFX.play(heavy || finisher || how !== 'punch' ? 'heavy' : 'hit');
+    st.stagger = heavy ? 0.75 : how === 'weapon' ? 0.6 : 0.28; st.windup = 0;
+    if (st.hp <= 0) koTarget(p, st, finisher);
+    else { if (heavy) say('Heavy hit!'); else if (st === kevRun) say('Hit landed. Kev is tough.'); }
+    setTimeout(() => { if (!hostiles().length && st.hp <= 0) { slowMo = Math.max(slowMo, 0.7); SFX.play('ko'); } }, 0);
+  }
   function hit() {
     if (drive.car) { drive.audio.horn(); return; }
-    if (!started || pauseOpen || dlg.active || blocking()) return;
-    const now = performance.now(); if (now - lastPunch < 300) return;
+    if (!started || pauseOpen || dlg.active || blocking() || climb) return;
+    const now = performance.now(), def = weapon && WEAPON_DEF[weapon.kind];
+    if (now - lastPunch < (def ? 520 : 300)) return;
     combo = now - lastPunch < 900 ? combo + 1 : 1; lastPunch = now;
-    const heavy = combo % 3 === 0, dmg = (heavy ? 2 : 1) * (1 + strength * 0.25), push = heavy ? 0.9 : 0.45, cone = mobile ? 0.3 : 0.45;
-    fists.swing(); playerBody.userData.human.punch(); SFX.play('whoosh');
+    const heavy = combo % 3 === 0, power = 1 + strength * 0.25, cone = mobile ? 0.3 : 0.45;
+    fists.swing(); playerBody.userData.human.punch(); SFX.play('whoosh', def ? 1.3 : 1);
+    if (grab) { // knee to the body while you hold them
+      const fwd = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+      applyHit(grab.p, grab.st, 1.3 * power, 0, true, fwd, 'knee'); grab.knees++;
+      if (grab.st.hp <= 0) grab = null; else if (grab.knees >= 3) throwGrab();
+      updateHUD(); return;
+    }
     // Aim assist: turn toward the nearest opponent in a wide cone so swings connect on a phone.
     {
-      let best = null, bd = 3.9;
-      for (const [p] of hostiles()) { const dx = p.position.x - eye.position.x, dz = p.position.z - eye.position.z, d = Math.hypot(dx, dz); if (d > bd) continue; const want = Math.atan2(-dx, -dz); let da = want - yaw; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) < 1.25) { best = da; bd = d; } }
+      let best = null, bd = def ? def.reach + 0.6 : 3.9;
+      for (const [p] of targets()) { const dx = p.position.x - eye.position.x, dz = p.position.z - eye.position.z, d = Math.hypot(dx, dz); if (d > bd) continue; const want = Math.atan2(-dx, -dz); let da = want - yaw; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) < 1.25) { best = da; bd = d; } }
       if (best != null) { yaw += best * 0.85; pitch = lerp(pitch, -0.05, 0.6); eye.rotation.set(pitch, yaw, 0); }
     }
     const forward = new THREE.Vector3(0, 0, -1).applyEuler(eye.rotation);
-    const landed = st => {
-      world.shake = heavy ? 0.32 : 0.18; hitStop = heavy ? 0.1 : 0.055; SFX.play(heavy ? 'heavy' : 'hit');
-      if (st) { st.stagger = heavy ? 0.75 : 0.28; st.windup = 0; }
-      if (heavy) say('Heavy hit!');
-      setTimeout(() => { if (!hostiles().length) { slowMo = 0.7; SFX.play('ko'); } }, 0);
-    };
-    if (hustle && hustle.state === 'fight') {
-      const n = hustle.npc, delta = n.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length();
-      if (d < 4 && delta.normalize().dot(forward) > cone) {
-        hustle.hp -= dmg; bloodAt(n.position); slideMove(n.position, forward.x * push, forward.z * push, 0.4); n.userData.human.hit(); landed(hustle);
-        if (hustle.hp <= 0) { hustle.state = 'down'; n.userData.human.knockDown(); setTimeout(() => { CAST.debtor.name = hustle.name; dlg.run('hustleBeaten', {}, () => { n.userData.human.reset(); hustlePaid(3); }); }, 1300); }
-        return;
+    const t = nearestTarget(forward, def ? def.reach + 1.4 : 4, def ? cone - 0.15 : cone);
+    if (t) {
+      const [p, st] = t;
+      applyHit(p, st, (def ? def.dmg : 1) * (heavy ? 2 : 1) * power, def ? 0.8 : heavy ? 0.9 : 0.45, heavy, forward, def ? 'weapon' : 'punch');
+      if (def) { heat.add(0.15); if (--weapon.uses <= 0) { say(`Your ${def.name} snapped.`); SFX.play('heavy'); setWeapon(null); } }
+      updateHUD(); return;
+    }
+    // Innocent bystanders: they go down, everyone else scatters, and the cops hear about it.
+    const ped = peds.near(eye.position.x, eye.position.z, def ? 4 : 3.5).find(a => { const v = a.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position).normalize(); return v.dot(forward) > cone; });
+    if (ped) { peds.knock(ped); bloodAt(ped.p.position); world.shake = 0.18; SFX.play('hit'); heat.add(def ? 1.5 : 1); peds.scare(eye.position.x, eye.position.z); say('You just laid out a random. Someone\'s calling the cops.'); updateHUD(); }
+  }
+  // Grab (TALK next to someone you're fighting): hold them, knee them with HIT, then throw.
+  function tryGrab() {
+    if (grab || weapon || drive.car) return false;
+    const fwd = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+    const t = hostiles().map(([p, st]) => [p, st, dist(p.position)]).filter(([p, st, d]) => d < 2.1 && !(st.downT > 0)).sort((a, b) => a[2] - b[2])[0];
+    if (!t) return false;
+    const [p, st] = t; grab = { p, st, t: 0, knees: 0 }; st._p = p; st.windup = 0; st.stagger = 0.5;
+    SFX.play('block'); say('Got him. HIT to knee, TALK to throw.'); return true;
+  }
+  function throwGrab() {
+    const g = grab; if (!g) return; grab = null;
+    const dir = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), p = g.p, st = g.st;
+    let slammed = false;
+    for (let k = 0; k < 12; k++) { const x0 = p.position.x, z0 = p.position.z; slideMove(p.position, dir.x * 0.28, dir.z * 0.28, 0.4); if (Math.hypot(p.position.x - x0, p.position.z - z0) < 0.1) { slammed = true; break; } }
+    p.position.y = groundHeight(p.position.x, p.position.z);
+    applyHit(p, st, (slammed ? 2.6 : 1.6) * (1 + strength * 0.25), 0, true, dir, 'throw');
+    if (st.hp > 0) { st.downT = 1.5; p.userData.human.knockDown(); }
+    if (slammed) say('Slammed him into the fence.'); heat.add(0.2);
+  }
+  function setWeapon(w) {
+    weapon = w; fists.setWeapon(w ? w.kind : null);
+    const hb = playerBody.userData.human; hb.weapon = !!w;
+    const hand = hb.bones[BONE.handR]; if (hb._wm) { hand.remove(hb._wm); hb._wm = null; }
+    if (w) { const m = weaponMesh(w.kind); m.rotation.x = -Math.PI / 2; m.position.set(0, -0.08, 0.03); hand.add(m); hb._wm = m; }
+  }
+  function spawnPickup(kind, x, z) {
+    const m = weaponMesh(kind); m.rotation.set(Math.PI / 2, 0, rnd() * TAU); const g = new THREE.Group(); g.add(m);
+    const sp = safeSpawn(x, z); g.position.set(sp.x, groundHeight(sp.x, sp.z) + 0.04, sp.z); scene.add(g);
+    pickups.push({ kind, g, x: sp.x, z: sp.z });
+  }
+  for (const w of world.city.weapons()) spawnPickup(w.kind, w.x, w.z);
+  function nearestPickup(r = 2) { let best = null, bd = r; for (const q of pickups) { const d = Math.hypot(q.x - eye.position.x, q.z - eye.position.z); if (d < bd) { bd = d; best = q; } } return best; }
+
+  // ---- jump, vault, climb ------------------------------------------------------------------
+  let vy = 0, air = false, climb = null, prevJump = false;
+  const feetUp = () => eye.position.y - EYE - groundHeight(eye.position.x, eye.position.z);
+  function tryJump() {
+    if (drive.car || climb || dlg.active) return;
+    const f = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), feet = Math.max(0, feetUp());
+    // Something climbable right in front (fences, walls, cars, letterboxes, ramps)? Vault or climb it.
+    for (const s0 of [0.5, 0.85, 1.15]) {
+      const o = collision.first(eye.position.x + f.x * s0, eye.position.z + f.z * s0, 0.3, feet);
+      if (!o) continue;
+      if ((o.top ?? 99) > 2.4) break; // a house wall or a pole: no
+      for (let s = s0 + 0.35; s < 3.6; s += 0.15) {
+        const x = eye.position.x + f.x * s, z = eye.position.z + f.z * s;
+        if (!collision.collides(x, z, 0.45)) { climb = { t: 0, dur: o.top <= 1.25 ? 0.45 : 0.95, fx: eye.position.x, fz: eye.position.z, tx: x, tz: z, top: o.top, y0: eye.position.y }; air = false; vy = 0; SFX.play('step', 2); vel.set(0, 0); return; }
       }
+      break;
     }
-    if (stage === 'debt-fight' && !darrenState.down) {
-      const delta = darren.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length();
-      if (d < 4 && delta.normalize().dot(forward) > cone) {
-        darrenState.hp -= dmg; bloodAt(darren.position); slideMove(darren.position, forward.x * push, forward.z * push, 0.4);
-        landed(darrenState); darren.userData.human.hit();
-        if (darrenState.hp <= 0) {
-          darrenState.down = true; darrenState.hostile = false; darren.userData.human.knockDown(); rep += 5;
-          say('Darren is down.');
-          setTimeout(() => dlg.run('darrenBeaten', storyVars(), () => {
-            debtCash = 400; darren.userData.human.reset(); darrenState.down = false;
-            advance('debt-return', 'Darren handed over the full $400. Take it to Manu.');
-          }), 1400);
-        } else say('Hit landed.');
-        updateHUD(); return;
-      }
-    }
-    if (jobState.kev === 'fight' && !kevRun.down) {
-      const kev = JOBS.kev.npc, delta = kev.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length();
-      if (d < 4 && delta.normalize().dot(forward) > cone) {
-        kevRun.hp -= dmg; bloodAt(kev.position); slideMove(kev.position, forward.x * push * 0.8, forward.z * push * 0.8, 0.4);
-        landed(kevRun); kev.userData.human.hit();
-        if (kevRun.hp <= 0) {
-          kevRun.down = true; kev.userData.human.knockDown(); rep += 8; say('Kev is down.');
-          setTimeout(() => dlg.run('kevBeaten', storyVars(), () => { kev.userData.human.reset(); kevRun.down = false; jobState.kev = 'paid'; say('Kev paid $600.'); updateHUD(); store(); checkJobs(); }), 1400);
-        } else say('Hit landed. Kev is tough.');
-        updateHUD(); return;
-      }
-    }
-    let target = null, score = 99;
-    for (const e of enemies) {
-      if (!e.alive) continue;
-      const delta = e.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length();
-      if (d < 4 && delta.normalize().dot(forward) > cone && d < score) { target = e; score = d; }
-    }
-    // Chapter One rivals.
-    for (const r of c1.rivals) {
-      if (!r.alive || !r.p.visible) continue;
-      const delta = r.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length();
-      if (d < 4 && delta.normalize().dot(forward) > cone) {
-        r.hostile = true; r.hp -= dmg; bloodAt(r.p.position); slideMove(r.p.position, forward.x * push, forward.z * push, 0.4); r.p.userData.human.hit(); landed(r);
-        if (r.hp <= 0) { r.alive = false; r.p.userData.human.knockDown(); rep += 4; heat.add(0.5); peds.scare(r.p.position.x, r.p.position.z); }
-        updateHUD(); return;
-      }
-    }
-    if (!target) {
-      // Innocent bystanders: they go down, everyone else scatters, and the cops hear about it.
-      const ped = peds.near(eye.position.x, eye.position.z, 3.5).find(a => { const v = a.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position).normalize(); return v.dot(forward) > cone; });
-      if (ped) { peds.knock(ped); bloodAt(ped.p.position); landed(null); heat.add(1); peds.scare(eye.position.x, eye.position.z); say('You just laid out a random. Someone\'s calling the cops.'); updateHUD(); }
+    if (!air) { air = true; vy = 5.6; SFX.play('step', 2); }
+  }
+  function verticalFrame(dt, moving) {
+    const h = playerBody.userData.human;
+    if (climb) {
+      const c = climb; c.t += dt; const k = Math.min(1, c.t / c.dur);
+      const along = k < 0.55 ? 0.3 * (k / 0.55) : 0.3 + 0.7 * ((k - 0.55) / 0.45);
+      eye.position.x = lerp(c.fx, c.tx, along); eye.position.z = lerp(c.fz, c.tz, along);
+      const ground = groundHeight(eye.position.x, eye.position.z) + EYE, peak = Math.max(0, c.top + 1.0 - EYE);
+      eye.position.y = lerp(c.y0, ground, k) + Math.sin(k * Math.PI) * peak;
+      h.climbing = true; if (k >= 1) { climb = null; h.climbing = false; SFX.play('step'); }
       return;
     }
-    target.hp -= dmg; bloodAt(target.p.position); slideMove(target.p.position, forward.x * push, forward.z * push, 0.4);
-    landed(target); target.p.userData.human.hit();
-    if (target.hp <= 0) {
-      target.alive = false; target.dyingT = 0.0001; target.p.userData.human.knockDown(); rep += 5; heat.add(0.4); peds.scare(target.p.position.x, target.p.position.z);
-      if (stage === 'mission-brawl') { defeated++; if (defeated >= 3) { advance('mission-return', `You won the fights. Your ${hometown} fixer wants to see you.`); return; } }
-      say('Opponent defeated. Reputation +5.');
-    } else say('Hit landed.');
-    updateHUD(); store();
+    const ground = groundHeight(eye.position.x, eye.position.z) + EYE;
+    if (air) {
+      vy -= 22 * dt; eye.position.y += vy * dt; h.air = true;
+      if (eye.position.y <= ground && vy < 0) { eye.position.y = ground; air = false; vy = 0; h.air = false; SFX.play('step', 2); world.shake = Math.max(world.shake, 0.04); }
+      return;
+    }
+    h.air = false;
+    eye.position.y = lerp(eye.position.y, ground + (moving ? Math.sin(bobT) * 0.035 : 0), 1 - Math.exp(-dt * 12));
+    if (eye.position.y < ground - 0.5 || eye.position.y > ground + 0.6) eye.position.y = ground;
   }
   $('attack').onclick = hit; $('interact').onclick = talk;
   $('routeCourier').onclick = () => { missionRoute = 'courier'; closeMenus(); advance('mission-courier', `${chosen} chose the quiet route. Find the green package.`); };
@@ -4954,7 +5078,8 @@ function createGame(world) {
   const KO_ENEMY = KO_HOME, KO_DARREN = { at: () => home.spawn.pos, msg: 'Darren dropped you. You came to outside Manu\'s place.', rep: 0 };
   const KO_KEV = { at: () => sHome.spawn.pos, msg: 'Kev dropped you. You came to outside Shorty\'s.', rep: 0 };
   function hurtPlayer(dmg, ko) {
-    if (dodgeT > 0) return; // slipped it
+    if (dodgeT > 0 || climb) return; // slipped it
+    if (grab) grab = null;
     if (blocking() && stamina > 5) { dmg *= 0.15; stamina = Math.max(0, stamina - 14); world.shake = Math.max(world.shake, 0.06); SFX.play('block'); }
     else { world.hurt = 1; world.shake = Math.max(world.shake, 0.15); SFX.play('hurt'); playerBody.userData.human.hit(); }
     hp = Math.max(0, hp - dmg); lastHurt = performance.now();
@@ -4973,14 +5098,15 @@ function createGame(world) {
   }
   function meleeAI(st, h, d, dmg, ko, dt) {
     st.lastSeen = performance.now(); st.inFight = d < 10;
-    if (st.stagger > 0) return;
+    if (st.stagger > 0 || st.downT > 0 || (grab && grab.st === st)) return;
     if (st.windup > 0) { st.windup -= dt; if (st.windup <= 0) { st.attackT = 0.9 + rnd() * 0.8; SFX.play('whoosh', 0.7); if (d < 2.1) hurtPlayer(dmg, ko); if (fightToken === st) tokenT = Math.min(tokenT, 0.4); } return; }
     st.attackT = (st.attackT ?? 0.6) - dt;
     if (d < 1.95 && st.attackT <= 0 && (fightToken === st || !fightToken)) { st.windup = 0.42; h.punch(); }
   }
   // Fighters close in, hold at range and circle; only the token holder steps in to swing.
   function brawlerMove(pos, st, d, dt, sp) {
-    if (d < 0.01) return 0;
+    if (d < 0.01 || (grab && grab.st === st)) return 0;
+    if (st.downT > 0) { st.downT -= dt; if (st.downT <= 0 && st._p && st.hp > 0) st._p.userData.human.reset(); return 0; }
     const ux = (eye.position.x - pos.x) / d, uz = (eye.position.z - pos.z) / d;
     if ((st.circleT = (st.circleT ?? 0) - dt) <= 0) { st.circle = rnd() < 0.5 ? 1 : -1; st.circleT = 1.2 + rnd() * 2; }
     const attacker = fightToken === st || !fightToken, want = attacker ? 1.55 : 2.8;
@@ -5077,14 +5203,17 @@ function createGame(world) {
     yaw = car.h + Math.PI + orbit; lastDriveYaw = yaw; pitch = lerp(pitch, -0.14, 1 - Math.exp(-dt * 2));
     const fx = Math.sin(car.h + orbit), fz = Math.cos(car.h + orbit), k = 1 - Math.exp(-dt * 7);
     eye.position.x = lerp(eye.position.x, car.x - fx * 7, k); eye.position.z = lerp(eye.position.z, car.z - fz * 7, k); eye.position.y = lerp(eye.position.y, car.y + 2.6, k);
-    $('speedo').style.display = 'block'; $('speedo').innerHTML = `${Math.round(Math.abs(car.v) * 3.6)}<small>km/h</small>`;
+    $('speedo').style.display = 'block'; $('speedo').innerHTML = `${Math.round(Math.hypot(car.vx || 0, car.vz || 0) * 3.6)}<small>km/h</small>${drive.drifting ? ' <small style="color:#e8ba55">DRIFT</small>' : ''}<small style="color:${car.health > 60 ? '#b8f5e1' : car.health > 30 ? '#e8ba55' : '#ff7070'}"> · ${Math.round(car.health ?? 100)}%</small>`;
+    if (car.health <= 0 && !car.deadSaid) { car.deadSaid = true; say('This car\'s munted. Get out and find another.'); }
   }
   let hintT = 0;
   function showHint(talking) {
     const el = $('hint'); let t = '';
     if (!talking && !dlg.active) {
       if (drive.car) t = Math.abs(drive.car.v) < 1 ? 'TALK / E: get out' : '';
+      else if (hostiles().some(([p]) => dist(p.position) < 2.1) && !weapon) t = grab ? 'HIT: knee · TALK: throw' : 'TALK: grab';
       else if (hustle && hustle.state === 'open' && dist(hustle.npc.position) < 4.5) t = `TALK: ${hustle.name}`;
+      else if (nearestPickup() && !weapon) t = `TALK: pick up ${WEAPON_DEF[nearestPickup().kind].name}`;
       else { const sh = shops.nearest(eye.position); if (sh) t = `TALK: ${sh.name}`; else if (drive.nearest(eye.position)) t = 'TALK / E: get in'; }
     }
     el.textContent = t; el.style.display = t ? 'block' : 'none';
@@ -5170,10 +5299,10 @@ function createGame(world) {
       if (!drive.car && (stepDist += Math.hypot(mx, mz)) > (sprinting ? 1.5 : 0.9)) { stepDist = 0; SFX.play('step', isCarriageway(eye.position.x, eye.position.z) ? 2 : 1); }
       if (drive.car) driveFrame(dt, talking ? 0 : clamp(-back, -1, 1), talking ? 0 : clamp(right, -1, 1));
       else {
-        slideMove(eye.position, mx, mz);
-        bobT += dt * (moving ? (sprinting ? 13 : 9) * Math.min(1, len) : 0);
-        const ground = groundHeight(eye.position.x, eye.position.z) + EYE + (moving ? Math.sin(bobT) * 0.035 : 0);
-        eye.position.y = lerp(eye.position.y, ground, 1 - Math.exp(-dt * 12));
+        const jumpNow = !!(keys.Space || move.jump); if (jumpNow && !prevJump && !talking) tryJump(); prevJump = jumpNow;
+        if (!climb) slideMove(eye.position, mx * (air ? 0.85 : 1), mz * (air ? 0.85 : 1), 0.55, Math.max(0, feetUp()));
+        bobT += dt * (moving && !air ? (sprinting ? 13 : 9) * Math.min(1, len) : 0);
+        verticalFrame(dt, moving);
       }
       traffic.update(dt, drive.car ? { x: drive.car.x, z: drive.car.z } : eye.position, drive.car);
       const me = drive.car ? { x: drive.car.x, z: drive.car.z } : eye.position;
@@ -5192,6 +5321,11 @@ function createGame(world) {
       const guardUp = enemies.some(e => e.alive && dist(e.p.position) < 8) || (darrenState.hostile && dist(darren.position) < 8) || (jobState.kev === 'fight' && dist(JOBS.kev.npc.position) < 8);
       fists.update(dt, moving, sprinting, (guardUp || guarding) && !drive.car);
       fightDirector(dt);
+      if (grab) {
+        grab.t += dt; const g = grab, f = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+        g.p.position.set(eye.position.x + f.x * 0.85, groundHeight(eye.position.x, eye.position.z), eye.position.z + f.z * 0.85); g.p.rotation.y = Math.atan2(-f.x, -f.z);
+        g.st.stagger = 0.4; g.st.windup = 0; if (g.t > 1.8 || !hostiles().some(([, st]) => st === g.st)) throwGrab();
+      }
       if (drive.car) fists.group.visible = false;
       // Interaction hints.
       if ((hintT -= dt) <= 0) { hintT = 0.25; showHint(talking); }
@@ -5306,6 +5440,9 @@ function createGame(world) {
     setHp: v => { hp = v; }, setCash: v => { cash = v; }, strength: () => strength, traffic: () => traffic.cars.length,
     hustle: () => hustle && { name: hustle.name, amount: hustle.amount, state: hustle.state, type: hustle.type, x: hustle.npc.position.x, z: hustle.npc.position.z },
     startHustle: type => { hustleTimer = 0; startHustle(); if (hustle && type) hustle.type = type; return !!hustle; },
+    jumpTest: () => { tryJump(); return { air, climb: !!climb }; }, y: () => eye.position.y, airborne: () => air || !!climb,
+    nearFence: () => { let best = null, bd = 1e9; for (const o of collision.list) { if (o.tag !== 'fence' || o.t !== 2 || o.top > 1.9 || o.top < 0.8) continue; const mx = (o.ax + o.bx) / 2, mz = (o.az + o.bz) / 2, d = Math.hypot(mx - eye.position.x, mz - eye.position.z); if (d < bd && Math.hypot(o.bx - o.ax, o.bz - o.az) > 3) { bd = d; best = o; } } return best && { ax: best.ax, az: best.az, bx: best.bx, bz: best.bz, top: best.top }; },
+    grabbed: () => !!grab, weapon: () => weapon && { ...weapon }, pickups: () => pickups.map(q => ({ kind: q.kind, x: q.x, z: q.z })), carHealth: () => drive.car ? drive.car.health : null,
     view: v => { if (v != null) setView(!!v); return thirdPerson; }, feel: () => ({ vel: vel.length(), dodgeT, token: !!fightToken, beacon: beacon.visible, bars: [...enemies, darrenState, kevRun, ...c1.rivals].filter(s => s && s._bar && s._bar.g.visible).length }),
     dodge: () => { prevBlock = false; move.block = true; setTimeout(() => { move.block = false; }, 120); },
     pedDebug: () => peds.agents.map(a => ({ active: a.active, x: Math.round(a.p.position.x), z: Math.round(a.p.position.z), flee: a.flee, down: a.down, vis: a.p.visible })),
@@ -5377,7 +5514,7 @@ class PlayerCars {
       const g = new THREE.Group(), body = new THREE.Mesh(P.body, paint), rest = new THREE.Mesh(P.rest, K.rest);
       body.castShadow = rest.castShadow = true; body.receiveShadow = true; g.add(body, rest);
       this.world.scene.add(g);
-      car = { group: g, x: c.x, z: c.z, y: c.y || 0, h: c.rot, v: 0, steer: 0, type: c.type, col: c.col, pitch: 0 };
+      car = { group: g, x: c.x, z: c.z, y: c.y || 0, h: c.rot, v: 0, steer: 0, type: c.type, col: c.col, pitch: 0, health: 100 };
       this.own.push(car);
     }
     if (car.col) car.col.off = true;
@@ -5386,7 +5523,7 @@ class PlayerCars {
   }
   exit() {
     const car = this.car; if (!car) return null;
-    this.car = null; car.v = 0; this.audio.set(false, 0, 0);
+    this.car = null; car.v = 0; car.vx = car.vz = 0; car.w = 0; this.drifting = false; this.audio.set(false, 0, 0);
     // Re-solidify where it stopped.
     const D = CAR_DIM[car.type];
     car.col = this.world.collision.addOBB(car.x, car.z, 0.95, D.L / 2, -car.h, 'car');
@@ -5398,7 +5535,7 @@ class PlayerCars {
     return { x: car.x + rx * 1.7, z: car.z + rz * 1.7 };
   }
   place(car) {
-    _q.setFromEuler(new THREE.Euler(car.pitch, car.h, 0, 'YXZ'));
+    _q.setFromEuler(new THREE.Euler(car.pitch + (car.dive || 0), car.h, car.roll || 0, 'YXZ'));
     car.group.position.set(car.x, car.y, car.z); car.group.quaternion.copy(_q);
   }
   blocked(car, x, z, h, others) {
@@ -5410,35 +5547,82 @@ class PlayerCars {
     }
     return x < MAP_BOUNDS.x0 || x > MAP_BOUNDS.x1 || z < MAP_BOUNDS.z0 || z > MAP_BOUNDS.z1;
   }
-  // throttle -1..1 (forward positive), steer -1..1 (right positive), brake = handbrake.
+  // Handling with weight: the car carries momentum, tyres only grip so hard, the handbrake breaks the
+  // rear loose (drift), the body rolls in corners and dives under braking. Impacts cost health; below
+  // 40% it smokes, at 0 the engine dies.
   update(dt, throttle, steer, brake, others) {
     const car = this.car; if (!car) return;
-    const D = CAR_DIM[car.type], vmax = 24, back = -7;
-    car.steer = lerp(car.steer, steer, 1 - Math.exp(-dt * 6));
+    const D = CAR_DIM[car.type], vmax = 26;
+    if (car.vx == null) { car.vx = Math.sin(car.h) * car.v; car.vz = Math.cos(car.h) * car.v; car.w = 0; car.health = car.health ?? 100; car.roll = 0; car.dive = 0; }
+    if (car.health <= 0) throttle = Math.min(0, throttle) * 0; // engine's dead
+    const fx = Math.sin(car.h), fz = Math.cos(car.h), rx = -fz, rz = fx;
+    let vf = car.vx * fx + car.vz * fz, vr = car.vx * rx + car.vz * rz;
+    car.steer = lerp(car.steer, steer, 1 - Math.exp(-dt * 7));
     let a = 0;
-    if (throttle > 0.05) a = car.v < -0.3 ? 14 * throttle : 6.5 * throttle * (1 - Math.max(0, car.v) / vmax);
-    else if (throttle < -0.05) a = car.v > 0.3 ? 14 * throttle : 4 * throttle * (1 - Math.max(0, -car.v) / -back);
-    car.v += a * dt;
-    const drag = 0.9 + 0.004 * car.v * car.v + (brake ? 16 : 0);
-    if (Math.abs(throttle) < 0.05 || brake) car.v -= Math.sign(car.v) * Math.min(Math.abs(car.v), drag * dt);
-    car.v = clamp(car.v, back, vmax);
-    const maxSteer = 0.6 / (1 + Math.abs(car.v) / 11);
-    const steps = Math.max(1, Math.ceil(Math.abs(car.v) * dt / 0.4));
+    if (throttle > 0.05) a = vf < -0.5 ? 15 * throttle : 7.2 * throttle * (1 - Math.max(0, vf) / vmax);
+    else if (throttle < -0.05) a = vf > 0.5 ? 15 * throttle : 4.5 * throttle * (1 + Math.min(0, vf) / 8);
+    vf += a * dt;
+    const roll = 0.6 + 0.0035 * vf * vf;
+    if (Math.abs(throttle) < 0.05) vf -= Math.sign(vf) * Math.min(Math.abs(vf), roll * dt);
+    if (brake) vf -= Math.sign(vf) * Math.min(Math.abs(vf), 7 * dt);
+    // Tyre grip: lateral speed bleeds off fast normally, slowly with the handbrake on (slide).
+    const grip = brake ? 1.4 : 7.5 + Math.max(0, 4 - Math.abs(vf) * 0.15);
+    vr *= Math.exp(-grip * dt);
+    // Yaw with inertia; the handbrake swings the tail round.
+    const maxSteer = 0.62 / (1 + Math.abs(vf) / 13);
+    const wTarget = -vf * Math.tan(car.steer * maxSteer) / D.wb * (brake && Math.abs(vf) > 5 ? 1.7 : 1);
+    car.w = lerp(car.w, wTarget, 1 - Math.exp(-dt * (brake ? 3 : 6.5)));
+    const nh = car.h + car.w * dt, nfx = Math.sin(nh), nfz = Math.cos(nh), nrx = -nfz, nrz = nfx;
+    car.vx = nfx * vf + nrx * vr; car.vz = nfz * vf + nrz * vr; car.v = vf;
+    // Integrate with substeps; on impact bounce, lose speed, take damage.
+    const speed = Math.hypot(car.vx, car.vz), steps = Math.max(1, Math.ceil(speed * dt / 0.4));
+    let h = car.h;
     for (let k = 0; k < steps; k++) {
-      const sdt = dt / steps, nh = car.h - car.v * Math.tan(car.steer * maxSteer) / D.wb * sdt;
-      const nx = car.x + Math.sin(nh) * car.v * sdt, nz = car.z + Math.cos(nh) * car.v * sdt;
-      if (this.blocked(car, nx, nz, nh, others)) {
-        if (Math.abs(car.v) > 6) this.world.shake = Math.min(0.5, Math.abs(car.v) * 0.03);
-        this.lastImpact = Math.abs(car.v); car.v *= -0.25; break;
+      const sdt = dt / steps; h += car.w * sdt;
+      const nx = car.x + car.vx * sdt, nz = car.z + car.vz * sdt;
+      if (this.blocked(car, nx, nz, h, others)) {
+        const imp = Math.hypot(car.vx, car.vz);
+        if (imp > 6) this.world.shake = Math.min(0.55, imp * 0.03);
+        this.lastImpact = imp; if (imp > 4) { car.health = Math.max(0, car.health - (imp - 4) * 4.5); SFX.play(imp > 10 ? 'heavy' : 'hit', 0.8); }
+        car.vx *= -0.22; car.vz *= -0.22; car.w *= 0.3; car.v = -car.v * 0.22; break;
       }
-      car.x = nx; car.z = nz; car.h = nh;
+      car.x = nx; car.z = nz;
     }
-    // Ride over kerbs: height from the front and back wheels, pitch from the difference.
-    const fx = Math.sin(car.h), fz = Math.cos(car.h), half = D.wb / 2;
-    const yf = groundHeight(car.x + fx * half, car.z + fz * half), yb = groundHeight(car.x - fx * half, car.z - fz * half);
+    car.h = h;
+    // Ride: kerb bumps pitch the car; cornering rolls it; braking and accelerating dive/squat it.
+    const half = D.wb / 2, yf = groundHeight(car.x + Math.sin(car.h) * half, car.z + Math.cos(car.h) * half), yb = groundHeight(car.x - Math.sin(car.h) * half, car.z - Math.cos(car.h) * half);
     car.y = lerp(car.y, (yf + yb) / 2, 1 - Math.exp(-dt * 12)); car.pitch = lerp(car.pitch, Math.atan2(yb - yf, D.wb), 1 - Math.exp(-dt * 10));
+    car.roll = lerp(car.roll, clamp(car.w * vf * 0.012 + vr * 0.02, -0.09, 0.09), 1 - Math.exp(-dt * 5));
+    car.dive = lerp(car.dive, clamp(-a * 0.004, -0.05, 0.05), 1 - Math.exp(-dt * 5));
+    this.drifting = Math.abs(vr) > 3.5 && Math.abs(vf) > 6;
     this.place(car);
-    this.audio.set(true, car.v, throttle);
+    this.audio.set(car.health > 0, vf, car.health > 0 ? throttle : 0);
+    this.smokeFx(dt, car);
+  }
+  // Damage smoke from the bonnet (and tyre smoke when drifting).
+  smokeFx(dt, car) {
+    if (!this.smoke) {
+      const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 2, 32, 32, 30);
+      gr.addColorStop(0, 'rgba(255,255,255,0.8)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
+      const tex = new THREE.CanvasTexture(c);
+      this.smoke = Array.from({ length: 28 }, () => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: 0x777777, transparent: true, opacity: 0, depthWrite: false })); sp.visible = false; this.world.scene.add(sp); return { sp, life: 0 }; });
+      this.smokeT = 0;
+    }
+    const D = CAR_DIM[car.type], fx = Math.sin(car.h), fz = Math.cos(car.h);
+    const engine = car.health < 40, tyres = this.drifting;
+    if ((engine || tyres) && (this.smokeT -= dt) <= 0) {
+      this.smokeT = engine ? (car.health <= 0 ? 0.05 : 0.12) : 0.06;
+      const p = this.smoke.find(q => q.life <= 0); if (p) {
+        const front = engine && (!tyres || Math.random() < 0.5);
+        const off = front ? D.L / 2 - 0.5 : -D.L / 2 + 0.6, y = front ? 1.0 : 0.25;
+        p.sp.position.set(car.x + fx * off + (Math.random() - 0.5) * 0.6, car.y + y, car.z + fz * off + (Math.random() - 0.5) * 0.6);
+        p.life = 1; p.vy = front ? 1.2 : 0.4; p.sp.visible = true; p.sp.material.color.set(front && car.health <= 0 ? 0x2a2a2a : front ? 0x6a6a6a : 0xcfcfcf); p.sp.scale.setScalar(0.6);
+      }
+    }
+    for (const p of this.smoke) {
+      if (p.life <= 0) { p.sp.visible = false; continue; }
+      p.life -= dt * 0.7; p.sp.position.y += p.vy * dt; p.sp.scale.setScalar(0.6 + (1 - p.life) * 2.4); p.sp.material.opacity = Math.max(0, p.life) * 0.5;
+    }
   }
 }
 

@@ -1,4 +1,4 @@
-AOTEAROA: UNDERWORLD | RUN 19 (HOW IT PLAYS: MOVEMENT, FIGHTING, THIRD PERSON, SOUND)
+AOTEAROA: UNDERWORLD | RUN 20 (JUMP + CLIMB, GRAB + THROW, BATS, REAL HANDS, CAR HANDLING)
 
 Extract this ZIP and keep the voice folder next to index.html. Open index.html on your phone with internet on.
 Give the progress bar a few seconds on first load, then tap NEW GAME.
@@ -9,6 +9,14 @@ The map is real Manurewa and Clendon Park (OpenStreetMap): real streets and name
 Southmall with the Norfolk pine, the station, the Clendon shops and Clendon skate park. The HUD shows the street you're on.
 
 RUN is a toggle: tap it once (it lights up) and steer with your other thumb; it switches off when you stop.
+
+NEW IN RUN 20
+- JUMP button: jumps, and in front of a fence, wall, car or ramp it vaults or climbs over (not house walls).
+- In a fight: TALK next to them = GRAB. HIT = knee. TALK again = THROW (into a fence hurts more).
+  Hitting someone who's already staggered or down is a FINISHER.
+- Cricket bats, softball bats and pipes lie around (yards, skate park, car parks, station). TALK to pick up / drop.
+- First-person hands are now your own arms and fists.
+- Cars: weight and grip, handbrake drifts, body roll. Crashes damage the car (% by the speed); 0% = dead engine.
 
 NEW IN RUN 19
 - PAUSE > VIEW switches to THIRD PERSON (over the shoulder, you can see yourself). PAUSE > SOUND turns sound off.

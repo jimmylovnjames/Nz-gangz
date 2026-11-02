@@ -433,7 +433,7 @@ class City {
         this.b.rect(key, [a[0], kh, a[1]], u, [0, 1, 0], L, hgt, { tint, uv0: [0, 0] });
         if (style === 'wood') for (let s = 0; s <= L; s += 2.4) this.b.box('timber', a[0] + u[0] * s, kh, a[1] + u[2] * s, 0.1, hgt + 0.05, 0.1);
       }
-      this.collision.addSeg(a[0], a[1], b[0], b[1], style === 'hedge' ? 0.4 : 0.1, 'fence');
+      this.collision.addSeg(a[0], a[1], b[0], b[1], style === 'hedge' ? 0.4 : 0.1, 'fence', hgt);
     };
     const FRONT = [[0.25, null, 0], [0.45, 'block', 0.9], [0.6, 'picket', 1.1], [0.72, 'wood', 1.8], [0.82, 'corrugated', 1.8], [0.94, 'hedge', 1.2], [1, 'block', 1.5]];
     m.frontFences.forEach((pts, k) => {
@@ -484,7 +484,7 @@ class City {
     this.collision.addCircle(np[0], np[1], 0.8, 'tree');
     this.b.box('white', np[0], kh + 33.5, np[1], 0.25, 3.2, 0.25); this.b.box('white', np[0], kh + 35.4, np[1], 1.8, 0.25, 0.25);
     // Letterboxes at the boundary, parked cars on driveways and kerbside, bins out on the berm.
-    for (let k = 0; k < m.letterboxes.length; k += 3) { const x = m.letterboxes[k], z = m.letterboxes[k + 1]; this.inst('letterbox', { x, y: kh, z, rot: m.letterboxes[k + 2] + Math.PI, v: Math.floor(this.hash(k, 81) * 3) }); this.collision.addCircle(x, z, 0.2, 'letterbox'); }
+    for (let k = 0; k < m.letterboxes.length; k += 3) { const x = m.letterboxes[k], z = m.letterboxes[k + 1]; this.inst('letterbox', { x, y: kh, z, rot: m.letterboxes[k + 2] + Math.PI, v: Math.floor(this.hash(k, 81) * 3) }); this.collision.addCircle(x, z, 0.2, 'letterbox', 1.15); }
     const D = m.drives;
     for (let k = 0; k < D.length; k += 5) {
       const r = this.hash(k, 82);
@@ -511,7 +511,7 @@ class City {
     // Bus stops: AT flag pole, shelters on the busier roads.
     for (const [x, z, rot, name, shelter] of MAPDATA.busStops) {
       this.inst('busSign', { x, y: kh, z, rot }); this.collision.addCircle(x, z, 0.1, 'pole');
-      if (shelter) { const sx = x - Math.sin(rot) * -1.4 + Math.cos(rot) * 3, sz = z - Math.cos(rot) * -1.4 - Math.sin(rot) * 3; this.inst('busShelter', { x: sx, y: kh, z: sz, rot }); this.collision.addOBB(sx, sz, 1.8, 0.5, -rot, 'shelter'); }
+      if (shelter) { const sx = x - Math.sin(rot) * -1.4 + Math.cos(rot) * 3, sz = z - Math.cos(rot) * -1.4 - Math.sin(rot) * 3; this.inst('busShelter', { x: sx, y: kh, z: sz, rot }); this.collision.addOBB(sx, sz, 1.8, 0.5, -rot, 'shelter', 2.6); }
     }
     // Signals: four poles round each signalised junction, on the first footpath cell outward.
     for (const [x, z] of MAPDATA.signals) for (let q = 0; q < 4; q++) {
@@ -561,12 +561,18 @@ class City {
       this.signs.push({ text, pos: new THREE.Vector3(c[0], y, c[1]) });
     }
   }
+  weapons() {
+    const out = [], spots = [this.places.skatepark, this.places.clendonShops, this.places.southmallCarpark, this.places.station, this.places.teMatariki].filter(Boolean);
+    for (const sp of spots) out.push({ x: sp.pos.x + 3, z: sp.pos.z - 2, kind: out.length % 2 ? 'pipe' : 'bat' });
+    const hs = this.houses; for (let k = 0; k < 40 && hs.length; k++) { const h = hs[Math.floor(this.hash(k, 99) * hs.length)]; out.push({ x: h.pos.x + 1.2, z: h.pos.z + 0.8, kind: this.hash(k, 98) < 0.6 ? 'cricket' : this.hash(k, 97) < 0.5 ? 'bat' : 'pipe' }); }
+    return out;
+  }
   parkCar(x, z, rot, y) {
     const r = this.hash(Math.round(x * 10), Math.round(z * 10));
     // Typical Manurewa mix: hatches and sedans, wagons, double-cab utes, people movers, the odd Hiace.
     const type = r < 0.28 ? 0 : r < 0.5 ? 1 : r < 0.65 ? 2 : r < 0.8 ? 3 : r < 0.92 ? 4 : 5;
     const car = { x, z, y, rot, type, color: this.hash(Math.round(z * 7), 9) };
-    car.col = this.collision.addOBB(x, z, 0.95, CAR_DIM[type].L / 2, -rot, 'car');
+    car.col = this.collision.addOBB(x, z, 0.95, CAR_DIM[type].L / 2, -rot, 'car', type >= 3 ? 1.85 : 1.5);
     this.cars.push(car);
   }
   platforms() {
@@ -626,7 +632,7 @@ class City {
         this.wall('skate', deck[1], deck[0], kh, kh + hgt, [0.95, 0.95, 0.95]);
         const c0 = at(u0, -width / 2), c1 = at(u0, width / 2);
         this.b.setTransform(new THREE.Matrix4().makeRotationY(-ang).setPosition((c0[0] + c1[0]) / 2, kh + hgt, (c0[1] + c1[1]) / 2)); this.b.box('steel', 0, -0.03, 0, 0.08, 0.08, width); this.b.setTransform(null);
-        const cc = at(u0 + dir * 0.4, 0); this.collision.addOBB(cc[0], cc[1], depth / 2 + 0.6, width / 2, -ang, 'ramp');
+        const cc = at(u0 + dir * 0.4, 0); this.collision.addOBB(cc[0], cc[1], depth / 2 + 0.6, width / 2, -ang, 'ramp', hgt);
       };
       qp(-len / 2 + 2.2 + 1.6, 1, wid * 0.7, 1.5, 2.2);
       qp(len / 2 - 2.2 - 1.6, -1, wid * 0.6, 1.2, 1.8);
@@ -639,7 +645,7 @@ class City {
       this.b.box('darkMetal', 0, 0.35, -wid * 0.3, 5, 0.05, 0.05);
       for (const s of [-2.3, 0, 2.3]) this.b.box('darkMetal', s, 0, -wid * 0.3, 0.05, 0.35, 0.05);
       this.b.setTransform(null);
-      this.collision.addOBB(fb[0], fb[1], fl / 2, fw / 2, -ang, 'ramp');
+      this.collision.addOBB(fb[0], fb[1], fl / 2, fw / 2, -ang, 'ramp', 0.5);
       this.places.skatepark = { pos: new THREE.Vector3(...[at(0, wid * 0.42)].map(p => [p[0], kh, p[1]])[0]), rot: ang };
     }
   }

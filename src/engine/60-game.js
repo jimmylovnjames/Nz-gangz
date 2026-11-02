@@ -26,15 +26,15 @@ function createGame(world) {
   // or trails it over the shoulder in third person (see the end of update()).
   const eye = new THREE.Object3D(); eye.rotation.order = 'YXZ';
   const mobile = matchMedia('(pointer:coarse)').matches;
-  const collides = (x, z, r = 0.55) => collision.collides(x, z, r);
-  function slideMove(p, dx, dz, r = 0.55) {
+  const collides = (x, z, r = 0.55, feet) => collision.collides(x, z, r, feet);
+  function slideMove(p, dx, dz, r = 0.55, feet) {
     if (!Number.isFinite(dx) || !Number.isFinite(dz)) return;
     const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dz)) / 0.45));
     for (let i = 0; i < steps; i++) {
       const nx = clamp(p.x + dx / steps, MAP_BOUNDS.x0, MAP_BOUNDS.x1), nz = clamp(p.z + dz / steps, MAP_BOUNDS.z0, MAP_BOUNDS.z1);
-      if (!collides(nx, nz, r)) { p.x = nx; p.z = nz; continue; }
-      if (!collides(nx, p.z, r)) p.x = nx;
-      if (!collides(p.x, nz, r)) p.z = nz;
+      if (!collides(nx, nz, r, feet)) { p.x = nx; p.z = nz; continue; }
+      if (!collides(nx, p.z, r, feet)) p.x = nx;
+      if (!collides(p.x, nz, r, feet)) p.z = nz;
     }
   }
   function safeSpawn(x, z) {
@@ -317,6 +317,7 @@ function createGame(world) {
   function beginNew() {
     saveAllowed = true; stage = 'prologue'; hp = 100; cash = 0; rep = 0; chapter = 0; defeated = 0; missionRoute = ''; stamina = 100; debtRoute = ''; debtCash = 0; strength = 0; endHustle(true);
     if (drive.car) exitCar();
+    grab = null; climb = null; air = false; setWeapon(null);
     heat.level = 0; police.clear(); c1.timer = 25; stage = 'prologue'; placeChapterOne();
     jobState = { kev: 'open', mikey: 'open', pita: 'open' }; phone.clear();
     placeDarren();
@@ -384,6 +385,8 @@ function createGame(world) {
     if (dlg.active) { dlg.advance(); return; }
     if (!started || pauseOpen) return;
     if (drive.car) { exitCar(); return; }
+    if (grab) { throwGrab(); return; }
+    if (tryGrab()) return;
     if (stage === 'debt-find' && dist(darren.position) < 4.5) {
       faceEachOther(darren);
       dlg.run('darrenMeet', storyVars(), r => {
@@ -478,8 +481,10 @@ function createGame(world) {
     if (stage === 'c1-manu' && dist(manu.position) < 4.5 && !c1.rivals.slice(3).some(r => r.alive)) { faceEachOther(manu); manu.userData.human.reset(); dlg.run('c1ManuDown', { rival: rivalCrew() }, () => advance('c1-home', 'Get Manu into a car and take him home.')); return; }
     if (stage === 'c1-done' || stage === 'complete') { if (dist(manu.position) < 4.5) { faceEachOther(manu); dlg.run('manuAfter', storyVars(), null); return; } }
     if (hustle && dist(hustle.npc.position) < 4.5 && hustle.npc.visible) { talkHustle(); return; }
+    const pk = nearestPickup(); if (pk && !weapon) { scene.remove(pk.g); pickups.splice(pickups.indexOf(pk), 1); setWeapon({ kind: pk.kind, uses: WEAPON_DEF[pk.kind].uses }); say(`Picked up a ${WEAPON_DEF[pk.kind].name}. Hits hard, swings slow, and the cops won't like it. TALK with nothing around to drop it.`); return; }
     const shop = shops.nearest(eye.position); if (shop) { openShop(shop); return; }
     const car = drive.nearest(eye.position); if (car) { enterCar(car); return; }
+    if (weapon) { spawnPickup(weapon.kind, eye.position.x + 0.8, eye.position.z); say(`Dropped the ${WEAPON_DEF[weapon.kind].name}.`); setWeapon(null); return; }
     if (stage === 'complete') { say(`Chapter complete. ${hometown} → ${chosen} → ${missionRoute}. Try a different origin and route for a different ending.`); return; }
     say(`Follow your current objective. ${objective()[0]}`);
   }
@@ -571,92 +576,154 @@ function createGame(world) {
     mikeyRun.fleeing = false; faceEachOther(JOBS.mikey.npc);
     dlg.run('mikeyCaught', storyVars(), () => { jobState.mikey = 'paid'; say('Mikey paid $300.'); updateHUD(); store(); checkJobs(); });
   }
+  // ---- fighting: fists, weapons, grabs, throws, finishers --------------------------------------
+  let grab = null, weapon = null;
+  const pickups = [];
+  // Everyone you can hit: current opponents plus the rival boys (hitting them starts it).
+  function targets() { const out = hostiles(); for (const r of c1.rivals) if (r.alive && r.p.visible && !r.hostile) out.push([r.p, r]); return out; }
+  function nearestTarget(forward, reach, cone) {
+    let best = null, bd = reach;
+    for (const [p, st] of targets()) { const delta = p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length(); if (d < bd && delta.normalize().dot(forward) > cone) { best = [p, st]; bd = d; } }
+    return best;
+  }
+  // Knockouts by who it was (story fights move the story on).
+  function koTarget(p, st, finisher) {
+    if (finisher) { slowMo = 1.1; rep += 3; banner('FINISHER', '+3 REP'); }
+    heat.add(0.4); peds.scare(p.position.x, p.position.z);
+    if (st === darrenState) {
+      darrenState.down = true; darrenState.hostile = false; darren.userData.human.knockDown(); rep += 5; say('Darren is down.');
+      setTimeout(() => dlg.run('darrenBeaten', storyVars(), () => { debtCash = 400; darren.userData.human.reset(); darrenState.down = false; advance('debt-return', 'Darren handed over the full $400. Take it to Manu.'); }), 1400);
+    } else if (st === kevRun) {
+      kevRun.down = true; JOBS.kev.npc.userData.human.knockDown(); rep += 8; say('Kev is down.');
+      setTimeout(() => dlg.run('kevBeaten', storyVars(), () => { JOBS.kev.npc.userData.human.reset(); kevRun.down = false; jobState.kev = 'paid'; say('Kev paid $600.'); updateHUD(); store(); checkJobs(); }), 1400);
+    } else if (hustle && st === hustle) {
+      hustle.state = 'down'; const n = hustle.npc; n.userData.human.knockDown();
+      setTimeout(() => { CAST.debtor.name = hustle.name; dlg.run('hustleBeaten', {}, () => { n.userData.human.reset(); hustlePaid(3); }); }, 1300);
+    } else if (c1.rivals.includes(st)) { st.alive = false; p.userData.human.knockDown(); rep += 4; heat.add(0.1); }
+    else if (enemies.includes(st)) {
+      st.alive = false; st.dyingT = 0.0001; p.userData.human.knockDown(); rep += 5;
+      if (stage === 'mission-brawl') { defeated++; if (defeated >= 3) { advance('mission-return', `You won the fights. Your ${hometown} fixer wants to see you.`); return; } }
+      say('Opponent defeated. Reputation +5.');
+    }
+    updateHUD(); store();
+  }
+  function applyHit(p, st, dmg, push, heavy, forward, how = 'punch') {
+    // A finisher: the blow that drops someone who is already staggered or on the ground.
+    const finisher = st.hp <= dmg && (st.stagger > 0 || st.downT > 0);
+    if (c1.rivals.includes(st)) st.hostile = true;
+    st.hp -= dmg; st._p = p; bloodAt(p.position);
+    slideMove(p.position, forward.x * push * (finisher ? 2.2 : 1), forward.z * push * (finisher ? 2.2 : 1), 0.4);
+    p.userData.human.hit();
+    world.shake = heavy || finisher ? 0.34 : 0.18; hitStop = finisher ? 0.16 : heavy ? 0.1 : 0.055; SFX.play(heavy || finisher || how !== 'punch' ? 'heavy' : 'hit');
+    st.stagger = heavy ? 0.75 : how === 'weapon' ? 0.6 : 0.28; st.windup = 0;
+    if (st.hp <= 0) koTarget(p, st, finisher);
+    else { if (heavy) say('Heavy hit!'); else if (st === kevRun) say('Hit landed. Kev is tough.'); }
+    setTimeout(() => { if (!hostiles().length && st.hp <= 0) { slowMo = Math.max(slowMo, 0.7); SFX.play('ko'); } }, 0);
+  }
   function hit() {
     if (drive.car) { drive.audio.horn(); return; }
-    if (!started || pauseOpen || dlg.active || blocking()) return;
-    const now = performance.now(); if (now - lastPunch < 300) return;
+    if (!started || pauseOpen || dlg.active || blocking() || climb) return;
+    const now = performance.now(), def = weapon && WEAPON_DEF[weapon.kind];
+    if (now - lastPunch < (def ? 520 : 300)) return;
     combo = now - lastPunch < 900 ? combo + 1 : 1; lastPunch = now;
-    const heavy = combo % 3 === 0, dmg = (heavy ? 2 : 1) * (1 + strength * 0.25), push = heavy ? 0.9 : 0.45, cone = mobile ? 0.3 : 0.45;
-    fists.swing(); playerBody.userData.human.punch(); SFX.play('whoosh');
+    const heavy = combo % 3 === 0, power = 1 + strength * 0.25, cone = mobile ? 0.3 : 0.45;
+    fists.swing(); playerBody.userData.human.punch(); SFX.play('whoosh', def ? 1.3 : 1);
+    if (grab) { // knee to the body while you hold them
+      const fwd = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+      applyHit(grab.p, grab.st, 1.3 * power, 0, true, fwd, 'knee'); grab.knees++;
+      if (grab.st.hp <= 0) grab = null; else if (grab.knees >= 3) throwGrab();
+      updateHUD(); return;
+    }
     // Aim assist: turn toward the nearest opponent in a wide cone so swings connect on a phone.
     {
-      let best = null, bd = 3.9;
-      for (const [p] of hostiles()) { const dx = p.position.x - eye.position.x, dz = p.position.z - eye.position.z, d = Math.hypot(dx, dz); if (d > bd) continue; const want = Math.atan2(-dx, -dz); let da = want - yaw; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) < 1.25) { best = da; bd = d; } }
+      let best = null, bd = def ? def.reach + 0.6 : 3.9;
+      for (const [p] of targets()) { const dx = p.position.x - eye.position.x, dz = p.position.z - eye.position.z, d = Math.hypot(dx, dz); if (d > bd) continue; const want = Math.atan2(-dx, -dz); let da = want - yaw; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) < 1.25) { best = da; bd = d; } }
       if (best != null) { yaw += best * 0.85; pitch = lerp(pitch, -0.05, 0.6); eye.rotation.set(pitch, yaw, 0); }
     }
     const forward = new THREE.Vector3(0, 0, -1).applyEuler(eye.rotation);
-    const landed = st => {
-      world.shake = heavy ? 0.32 : 0.18; hitStop = heavy ? 0.1 : 0.055; SFX.play(heavy ? 'heavy' : 'hit');
-      if (st) { st.stagger = heavy ? 0.75 : 0.28; st.windup = 0; }
-      if (heavy) say('Heavy hit!');
-      setTimeout(() => { if (!hostiles().length) { slowMo = 0.7; SFX.play('ko'); } }, 0);
-    };
-    if (hustle && hustle.state === 'fight') {
-      const n = hustle.npc, delta = n.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length();
-      if (d < 4 && delta.normalize().dot(forward) > cone) {
-        hustle.hp -= dmg; bloodAt(n.position); slideMove(n.position, forward.x * push, forward.z * push, 0.4); n.userData.human.hit(); landed(hustle);
-        if (hustle.hp <= 0) { hustle.state = 'down'; n.userData.human.knockDown(); setTimeout(() => { CAST.debtor.name = hustle.name; dlg.run('hustleBeaten', {}, () => { n.userData.human.reset(); hustlePaid(3); }); }, 1300); }
-        return;
+    const t = nearestTarget(forward, def ? def.reach + 1.4 : 4, def ? cone - 0.15 : cone);
+    if (t) {
+      const [p, st] = t;
+      applyHit(p, st, (def ? def.dmg : 1) * (heavy ? 2 : 1) * power, def ? 0.8 : heavy ? 0.9 : 0.45, heavy, forward, def ? 'weapon' : 'punch');
+      if (def) { heat.add(0.15); if (--weapon.uses <= 0) { say(`Your ${def.name} snapped.`); SFX.play('heavy'); setWeapon(null); } }
+      updateHUD(); return;
+    }
+    // Innocent bystanders: they go down, everyone else scatters, and the cops hear about it.
+    const ped = peds.near(eye.position.x, eye.position.z, def ? 4 : 3.5).find(a => { const v = a.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position).normalize(); return v.dot(forward) > cone; });
+    if (ped) { peds.knock(ped); bloodAt(ped.p.position); world.shake = 0.18; SFX.play('hit'); heat.add(def ? 1.5 : 1); peds.scare(eye.position.x, eye.position.z); say('You just laid out a random. Someone\'s calling the cops.'); updateHUD(); }
+  }
+  // Grab (TALK next to someone you're fighting): hold them, knee them with HIT, then throw.
+  function tryGrab() {
+    if (grab || weapon || drive.car) return false;
+    const fwd = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+    const t = hostiles().map(([p, st]) => [p, st, dist(p.position)]).filter(([p, st, d]) => d < 2.1 && !(st.downT > 0)).sort((a, b) => a[2] - b[2])[0];
+    if (!t) return false;
+    const [p, st] = t; grab = { p, st, t: 0, knees: 0 }; st._p = p; st.windup = 0; st.stagger = 0.5;
+    SFX.play('block'); say('Got him. HIT to knee, TALK to throw.'); return true;
+  }
+  function throwGrab() {
+    const g = grab; if (!g) return; grab = null;
+    const dir = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), p = g.p, st = g.st;
+    let slammed = false;
+    for (let k = 0; k < 12; k++) { const x0 = p.position.x, z0 = p.position.z; slideMove(p.position, dir.x * 0.28, dir.z * 0.28, 0.4); if (Math.hypot(p.position.x - x0, p.position.z - z0) < 0.1) { slammed = true; break; } }
+    p.position.y = groundHeight(p.position.x, p.position.z);
+    applyHit(p, st, (slammed ? 2.6 : 1.6) * (1 + strength * 0.25), 0, true, dir, 'throw');
+    if (st.hp > 0) { st.downT = 1.5; p.userData.human.knockDown(); }
+    if (slammed) say('Slammed him into the fence.'); heat.add(0.2);
+  }
+  function setWeapon(w) {
+    weapon = w; fists.setWeapon(w ? w.kind : null);
+    const hb = playerBody.userData.human; hb.weapon = !!w;
+    const hand = hb.bones[BONE.handR]; if (hb._wm) { hand.remove(hb._wm); hb._wm = null; }
+    if (w) { const m = weaponMesh(w.kind); m.rotation.x = -Math.PI / 2; m.position.set(0, -0.08, 0.03); hand.add(m); hb._wm = m; }
+  }
+  function spawnPickup(kind, x, z) {
+    const m = weaponMesh(kind); m.rotation.set(Math.PI / 2, 0, rnd() * TAU); const g = new THREE.Group(); g.add(m);
+    const sp = safeSpawn(x, z); g.position.set(sp.x, groundHeight(sp.x, sp.z) + 0.04, sp.z); scene.add(g);
+    pickups.push({ kind, g, x: sp.x, z: sp.z });
+  }
+  for (const w of world.city.weapons()) spawnPickup(w.kind, w.x, w.z);
+  function nearestPickup(r = 2) { let best = null, bd = r; for (const q of pickups) { const d = Math.hypot(q.x - eye.position.x, q.z - eye.position.z); if (d < bd) { bd = d; best = q; } } return best; }
+
+  // ---- jump, vault, climb ------------------------------------------------------------------
+  let vy = 0, air = false, climb = null, prevJump = false;
+  const feetUp = () => eye.position.y - EYE - groundHeight(eye.position.x, eye.position.z);
+  function tryJump() {
+    if (drive.car || climb || dlg.active) return;
+    const f = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), feet = Math.max(0, feetUp());
+    // Something climbable right in front (fences, walls, cars, letterboxes, ramps)? Vault or climb it.
+    for (const s0 of [0.5, 0.85, 1.15]) {
+      const o = collision.first(eye.position.x + f.x * s0, eye.position.z + f.z * s0, 0.3, feet);
+      if (!o) continue;
+      if ((o.top ?? 99) > 2.4) break; // a house wall or a pole: no
+      for (let s = s0 + 0.35; s < 3.6; s += 0.15) {
+        const x = eye.position.x + f.x * s, z = eye.position.z + f.z * s;
+        if (!collision.collides(x, z, 0.45)) { climb = { t: 0, dur: o.top <= 1.25 ? 0.45 : 0.95, fx: eye.position.x, fz: eye.position.z, tx: x, tz: z, top: o.top, y0: eye.position.y }; air = false; vy = 0; SFX.play('step', 2); vel.set(0, 0); return; }
       }
+      break;
     }
-    if (stage === 'debt-fight' && !darrenState.down) {
-      const delta = darren.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length();
-      if (d < 4 && delta.normalize().dot(forward) > cone) {
-        darrenState.hp -= dmg; bloodAt(darren.position); slideMove(darren.position, forward.x * push, forward.z * push, 0.4);
-        landed(darrenState); darren.userData.human.hit();
-        if (darrenState.hp <= 0) {
-          darrenState.down = true; darrenState.hostile = false; darren.userData.human.knockDown(); rep += 5;
-          say('Darren is down.');
-          setTimeout(() => dlg.run('darrenBeaten', storyVars(), () => {
-            debtCash = 400; darren.userData.human.reset(); darrenState.down = false;
-            advance('debt-return', 'Darren handed over the full $400. Take it to Manu.');
-          }), 1400);
-        } else say('Hit landed.');
-        updateHUD(); return;
-      }
-    }
-    if (jobState.kev === 'fight' && !kevRun.down) {
-      const kev = JOBS.kev.npc, delta = kev.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length();
-      if (d < 4 && delta.normalize().dot(forward) > cone) {
-        kevRun.hp -= dmg; bloodAt(kev.position); slideMove(kev.position, forward.x * push * 0.8, forward.z * push * 0.8, 0.4);
-        landed(kevRun); kev.userData.human.hit();
-        if (kevRun.hp <= 0) {
-          kevRun.down = true; kev.userData.human.knockDown(); rep += 8; say('Kev is down.');
-          setTimeout(() => dlg.run('kevBeaten', storyVars(), () => { kev.userData.human.reset(); kevRun.down = false; jobState.kev = 'paid'; say('Kev paid $600.'); updateHUD(); store(); checkJobs(); }), 1400);
-        } else say('Hit landed. Kev is tough.');
-        updateHUD(); return;
-      }
-    }
-    let target = null, score = 99;
-    for (const e of enemies) {
-      if (!e.alive) continue;
-      const delta = e.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length();
-      if (d < 4 && delta.normalize().dot(forward) > cone && d < score) { target = e; score = d; }
-    }
-    // Chapter One rivals.
-    for (const r of c1.rivals) {
-      if (!r.alive || !r.p.visible) continue;
-      const delta = r.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position), d = delta.length();
-      if (d < 4 && delta.normalize().dot(forward) > cone) {
-        r.hostile = true; r.hp -= dmg; bloodAt(r.p.position); slideMove(r.p.position, forward.x * push, forward.z * push, 0.4); r.p.userData.human.hit(); landed(r);
-        if (r.hp <= 0) { r.alive = false; r.p.userData.human.knockDown(); rep += 4; heat.add(0.5); peds.scare(r.p.position.x, r.p.position.z); }
-        updateHUD(); return;
-      }
-    }
-    if (!target) {
-      // Innocent bystanders: they go down, everyone else scatters, and the cops hear about it.
-      const ped = peds.near(eye.position.x, eye.position.z, 3.5).find(a => { const v = a.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position).normalize(); return v.dot(forward) > cone; });
-      if (ped) { peds.knock(ped); bloodAt(ped.p.position); landed(null); heat.add(1); peds.scare(eye.position.x, eye.position.z); say('You just laid out a random. Someone\'s calling the cops.'); updateHUD(); }
+    if (!air) { air = true; vy = 5.6; SFX.play('step', 2); }
+  }
+  function verticalFrame(dt, moving) {
+    const h = playerBody.userData.human;
+    if (climb) {
+      const c = climb; c.t += dt; const k = Math.min(1, c.t / c.dur);
+      const along = k < 0.55 ? 0.3 * (k / 0.55) : 0.3 + 0.7 * ((k - 0.55) / 0.45);
+      eye.position.x = lerp(c.fx, c.tx, along); eye.position.z = lerp(c.fz, c.tz, along);
+      const ground = groundHeight(eye.position.x, eye.position.z) + EYE, peak = Math.max(0, c.top + 1.0 - EYE);
+      eye.position.y = lerp(c.y0, ground, k) + Math.sin(k * Math.PI) * peak;
+      h.climbing = true; if (k >= 1) { climb = null; h.climbing = false; SFX.play('step'); }
       return;
     }
-    target.hp -= dmg; bloodAt(target.p.position); slideMove(target.p.position, forward.x * push, forward.z * push, 0.4);
-    landed(target); target.p.userData.human.hit();
-    if (target.hp <= 0) {
-      target.alive = false; target.dyingT = 0.0001; target.p.userData.human.knockDown(); rep += 5; heat.add(0.4); peds.scare(target.p.position.x, target.p.position.z);
-      if (stage === 'mission-brawl') { defeated++; if (defeated >= 3) { advance('mission-return', `You won the fights. Your ${hometown} fixer wants to see you.`); return; } }
-      say('Opponent defeated. Reputation +5.');
-    } else say('Hit landed.');
-    updateHUD(); store();
+    const ground = groundHeight(eye.position.x, eye.position.z) + EYE;
+    if (air) {
+      vy -= 22 * dt; eye.position.y += vy * dt; h.air = true;
+      if (eye.position.y <= ground && vy < 0) { eye.position.y = ground; air = false; vy = 0; h.air = false; SFX.play('step', 2); world.shake = Math.max(world.shake, 0.04); }
+      return;
+    }
+    h.air = false;
+    eye.position.y = lerp(eye.position.y, ground + (moving ? Math.sin(bobT) * 0.035 : 0), 1 - Math.exp(-dt * 12));
+    if (eye.position.y < ground - 0.5 || eye.position.y > ground + 0.6) eye.position.y = ground;
   }
   $('attack').onclick = hit; $('interact').onclick = talk;
   $('routeCourier').onclick = () => { missionRoute = 'courier'; closeMenus(); advance('mission-courier', `${chosen} chose the quiet route. Find the green package.`); };
@@ -745,7 +812,8 @@ function createGame(world) {
   const KO_ENEMY = KO_HOME, KO_DARREN = { at: () => home.spawn.pos, msg: 'Darren dropped you. You came to outside Manu\'s place.', rep: 0 };
   const KO_KEV = { at: () => sHome.spawn.pos, msg: 'Kev dropped you. You came to outside Shorty\'s.', rep: 0 };
   function hurtPlayer(dmg, ko) {
-    if (dodgeT > 0) return; // slipped it
+    if (dodgeT > 0 || climb) return; // slipped it
+    if (grab) grab = null;
     if (blocking() && stamina > 5) { dmg *= 0.15; stamina = Math.max(0, stamina - 14); world.shake = Math.max(world.shake, 0.06); SFX.play('block'); }
     else { world.hurt = 1; world.shake = Math.max(world.shake, 0.15); SFX.play('hurt'); playerBody.userData.human.hit(); }
     hp = Math.max(0, hp - dmg); lastHurt = performance.now();
@@ -764,14 +832,15 @@ function createGame(world) {
   }
   function meleeAI(st, h, d, dmg, ko, dt) {
     st.lastSeen = performance.now(); st.inFight = d < 10;
-    if (st.stagger > 0) return;
+    if (st.stagger > 0 || st.downT > 0 || (grab && grab.st === st)) return;
     if (st.windup > 0) { st.windup -= dt; if (st.windup <= 0) { st.attackT = 0.9 + rnd() * 0.8; SFX.play('whoosh', 0.7); if (d < 2.1) hurtPlayer(dmg, ko); if (fightToken === st) tokenT = Math.min(tokenT, 0.4); } return; }
     st.attackT = (st.attackT ?? 0.6) - dt;
     if (d < 1.95 && st.attackT <= 0 && (fightToken === st || !fightToken)) { st.windup = 0.42; h.punch(); }
   }
   // Fighters close in, hold at range and circle; only the token holder steps in to swing.
   function brawlerMove(pos, st, d, dt, sp) {
-    if (d < 0.01) return 0;
+    if (d < 0.01 || (grab && grab.st === st)) return 0;
+    if (st.downT > 0) { st.downT -= dt; if (st.downT <= 0 && st._p && st.hp > 0) st._p.userData.human.reset(); return 0; }
     const ux = (eye.position.x - pos.x) / d, uz = (eye.position.z - pos.z) / d;
     if ((st.circleT = (st.circleT ?? 0) - dt) <= 0) { st.circle = rnd() < 0.5 ? 1 : -1; st.circleT = 1.2 + rnd() * 2; }
     const attacker = fightToken === st || !fightToken, want = attacker ? 1.55 : 2.8;
@@ -868,14 +937,17 @@ function createGame(world) {
     yaw = car.h + Math.PI + orbit; lastDriveYaw = yaw; pitch = lerp(pitch, -0.14, 1 - Math.exp(-dt * 2));
     const fx = Math.sin(car.h + orbit), fz = Math.cos(car.h + orbit), k = 1 - Math.exp(-dt * 7);
     eye.position.x = lerp(eye.position.x, car.x - fx * 7, k); eye.position.z = lerp(eye.position.z, car.z - fz * 7, k); eye.position.y = lerp(eye.position.y, car.y + 2.6, k);
-    $('speedo').style.display = 'block'; $('speedo').innerHTML = `${Math.round(Math.abs(car.v) * 3.6)}<small>km/h</small>`;
+    $('speedo').style.display = 'block'; $('speedo').innerHTML = `${Math.round(Math.hypot(car.vx || 0, car.vz || 0) * 3.6)}<small>km/h</small>${drive.drifting ? ' <small style="color:#e8ba55">DRIFT</small>' : ''}<small style="color:${car.health > 60 ? '#b8f5e1' : car.health > 30 ? '#e8ba55' : '#ff7070'}"> · ${Math.round(car.health ?? 100)}%</small>`;
+    if (car.health <= 0 && !car.deadSaid) { car.deadSaid = true; say('This car\'s munted. Get out and find another.'); }
   }
   let hintT = 0;
   function showHint(talking) {
     const el = $('hint'); let t = '';
     if (!talking && !dlg.active) {
       if (drive.car) t = Math.abs(drive.car.v) < 1 ? 'TALK / E: get out' : '';
+      else if (hostiles().some(([p]) => dist(p.position) < 2.1) && !weapon) t = grab ? 'HIT: knee · TALK: throw' : 'TALK: grab';
       else if (hustle && hustle.state === 'open' && dist(hustle.npc.position) < 4.5) t = `TALK: ${hustle.name}`;
+      else if (nearestPickup() && !weapon) t = `TALK: pick up ${WEAPON_DEF[nearestPickup().kind].name}`;
       else { const sh = shops.nearest(eye.position); if (sh) t = `TALK: ${sh.name}`; else if (drive.nearest(eye.position)) t = 'TALK / E: get in'; }
     }
     el.textContent = t; el.style.display = t ? 'block' : 'none';
@@ -961,10 +1033,10 @@ function createGame(world) {
       if (!drive.car && (stepDist += Math.hypot(mx, mz)) > (sprinting ? 1.5 : 0.9)) { stepDist = 0; SFX.play('step', isCarriageway(eye.position.x, eye.position.z) ? 2 : 1); }
       if (drive.car) driveFrame(dt, talking ? 0 : clamp(-back, -1, 1), talking ? 0 : clamp(right, -1, 1));
       else {
-        slideMove(eye.position, mx, mz);
-        bobT += dt * (moving ? (sprinting ? 13 : 9) * Math.min(1, len) : 0);
-        const ground = groundHeight(eye.position.x, eye.position.z) + EYE + (moving ? Math.sin(bobT) * 0.035 : 0);
-        eye.position.y = lerp(eye.position.y, ground, 1 - Math.exp(-dt * 12));
+        const jumpNow = !!(keys.Space || move.jump); if (jumpNow && !prevJump && !talking) tryJump(); prevJump = jumpNow;
+        if (!climb) slideMove(eye.position, mx * (air ? 0.85 : 1), mz * (air ? 0.85 : 1), 0.55, Math.max(0, feetUp()));
+        bobT += dt * (moving && !air ? (sprinting ? 13 : 9) * Math.min(1, len) : 0);
+        verticalFrame(dt, moving);
       }
       traffic.update(dt, drive.car ? { x: drive.car.x, z: drive.car.z } : eye.position, drive.car);
       const me = drive.car ? { x: drive.car.x, z: drive.car.z } : eye.position;
@@ -983,6 +1055,11 @@ function createGame(world) {
       const guardUp = enemies.some(e => e.alive && dist(e.p.position) < 8) || (darrenState.hostile && dist(darren.position) < 8) || (jobState.kev === 'fight' && dist(JOBS.kev.npc.position) < 8);
       fists.update(dt, moving, sprinting, (guardUp || guarding) && !drive.car);
       fightDirector(dt);
+      if (grab) {
+        grab.t += dt; const g = grab, f = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+        g.p.position.set(eye.position.x + f.x * 0.85, groundHeight(eye.position.x, eye.position.z), eye.position.z + f.z * 0.85); g.p.rotation.y = Math.atan2(-f.x, -f.z);
+        g.st.stagger = 0.4; g.st.windup = 0; if (g.t > 1.8 || !hostiles().some(([, st]) => st === g.st)) throwGrab();
+      }
       if (drive.car) fists.group.visible = false;
       // Interaction hints.
       if ((hintT -= dt) <= 0) { hintT = 0.25; showHint(talking); }
@@ -1097,6 +1174,9 @@ function createGame(world) {
     setHp: v => { hp = v; }, setCash: v => { cash = v; }, strength: () => strength, traffic: () => traffic.cars.length,
     hustle: () => hustle && { name: hustle.name, amount: hustle.amount, state: hustle.state, type: hustle.type, x: hustle.npc.position.x, z: hustle.npc.position.z },
     startHustle: type => { hustleTimer = 0; startHustle(); if (hustle && type) hustle.type = type; return !!hustle; },
+    jumpTest: () => { tryJump(); return { air, climb: !!climb }; }, y: () => eye.position.y, airborne: () => air || !!climb,
+    nearFence: () => { let best = null, bd = 1e9; for (const o of collision.list) { if (o.tag !== 'fence' || o.t !== 2 || o.top > 1.9 || o.top < 0.8) continue; const mx = (o.ax + o.bx) / 2, mz = (o.az + o.bz) / 2, d = Math.hypot(mx - eye.position.x, mz - eye.position.z); if (d < bd && Math.hypot(o.bx - o.ax, o.bz - o.az) > 3) { bd = d; best = o; } } return best && { ax: best.ax, az: best.az, bx: best.bx, bz: best.bz, top: best.top }; },
+    grabbed: () => !!grab, weapon: () => weapon && { ...weapon }, pickups: () => pickups.map(q => ({ kind: q.kind, x: q.x, z: q.z })), carHealth: () => drive.car ? drive.car.health : null,
     view: v => { if (v != null) setView(!!v); return thirdPerson; }, feel: () => ({ vel: vel.length(), dodgeT, token: !!fightToken, beacon: beacon.visible, bars: [...enemies, darrenState, kevRun, ...c1.rivals].filter(s => s && s._bar && s._bar.g.visible).length }),
     dodge: () => { prevBlock = false; move.block = true; setTimeout(() => { move.block = false; }, 120); },
     pedDebug: () => peds.agents.map(a => ({ active: a.active, x: Math.round(a.p.position.x), z: Math.round(a.p.position.z), flee: a.flee, down: a.down, vis: a.p.visible })),
