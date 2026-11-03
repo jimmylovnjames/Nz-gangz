@@ -5529,7 +5529,7 @@ function createGame(world) {
   // ---- Chapter One per-frame logic ---------------------------------------------------------
   function chapterOne(dt) {
     const rdt = world.realDt || dt;
-    if (stage === 'complete' && (c1.timer -= rdt) <= 0) { c1.timer = 1e9; phone.receive(TEXTS.c1Call, {}, () => { rawiri.visible = true; advance('c1-car', 'Tipene texted. Get a car, then pick up Manu at his place.'); }); }
+    if (stage === 'complete' && (c1.timer -= rdt) <= 0) { c1.timer = 1e9; phone.receive(TEXTS.c1Call, {}, () => { if (stage !== 'complete') return; rawiri.visible = true; advance('c1-car', 'Tipene texted. Get a car, then pick up Manu at his place.'); }); }
     if ((stage === 'c1-car' || stage === 'c1-home') && drive.car && !c1.manuInCar && Math.hypot(manu.position.x - drive.car.x, manu.position.z - drive.car.z) < 10 && manu.parent === scene) {
       manuIntoCar();
       if (stage === 'c1-car') advance('c1-pickup', 'Manu\'s in. Drive to the Southmall car park and see Rawiri.'); else say('Manu\'s in. Take him home.');
@@ -5540,7 +5540,7 @@ function createGame(world) {
     }
     if (stage === 'c1-wait' && (c1.timer -= rdt) <= 0) {
       c1.timer = 1e9;
-      phone.receive(TEXTS.c1ManuJumped, { rival: rivalCrew() }, () => { advance('c1-manu', 'Manu got jumped at Manurewa station. Get there.'); placeChapterOne(); });
+      phone.receive(TEXTS.c1ManuJumped, { rival: rivalCrew() }, () => { if (stage !== 'c1-wait') return; advance('c1-manu', 'Manu got jumped at Manurewa station. Get there.'); placeChapterOne(); });
     }
     // Rival fights.
     for (const r of c1.rivals) {
@@ -5736,7 +5736,7 @@ function createGame(world) {
       }
       // Shorty texts a little while after Manu passes your number on.
       if (stage === 'shorty-wait' && (shortyTimer -= world.realDt || dt) <= 0) {
-        shortyTimer = 1e9; phone.receive(TEXTS.shortyHello, phoneVars(), () => advance('shorty-meet', `Shorty texted. Go see him on ${sHome.address}.`));
+        shortyTimer = 1e9; phone.receive(TEXTS.shortyHello, phoneVars(), () => { if (stage === 'shorty-wait') advance('shorty-meet', `Shorty texted. Go see him on ${sHome.address}.`); });
       }
       // Kev fights like a panel beater: slower than Darren, hits harder.
       if (jobState.kev === 'fight' && !kevRun.down) {
@@ -5834,7 +5834,7 @@ function createGame(world) {
     heat: () => heat.level, addHeat: n => heat.add(n), clearHeat: () => { heat.level = 0; police.clear(); }, police: () => police.cars.map(c => ({ x: c.x, z: c.z })), peds: () => peds.agents.filter(a => a.active).length,
     carTo: (x, z) => { if (drive.car) { drive.car.x = x; drive.car.z = z; drive.car.v = 0; } },
     c1: () => ({ manuInCar: c1.manuInCar, rawiri: rawiri.position.clone(), lani: lani.position.clone(), home: home.pos.clone(), rivals: c1.rivals.map(r => ({ x: r.p.position.x, z: r.p.position.z, alive: r.alive, hostile: r.hostile, hp: r.hp, down: r.downT || 0, stagger: r.stagger || 0 })) }),
-    skipTimers: () => { c1.timer = 0; },
+    skipTimers: () => { if (c1.timer < 1e8) c1.timer = 0; }, // not once a text is already on its way
     jobs: () => ({ ...jobState }),
     targets: () => ({ fixer: fixer.position.clone(), manu: manu.position.clone(), darren: darren.position.clone(), shorty: shorty.position.clone(), kev: JOBS.kev.npc.position.clone(), mikey: JOBS.mikey.npc.position.clone(), pita: JOBS.pita.npc.position.clone(), stash: stash.position.clone(), contacts: contacts.map(c => ({ f: c.f, x: c.p.position.x, z: c.p.position.z })), enemies: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z, alive: e.alive })) }),
   };
