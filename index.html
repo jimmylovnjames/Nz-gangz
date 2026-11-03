@@ -5832,7 +5832,7 @@ function createGame(world) {
     pedDebug: () => peds.agents.map(a => ({ active: a.active, x: Math.round(a.p.position.x), z: Math.round(a.p.position.z), flee: a.flee, down: a.down, vis: a.p.visible })),
     heat: () => heat.level, addHeat: n => heat.add(n), clearHeat: () => { heat.level = 0; police.clear(); }, police: () => police.cars.map(c => ({ x: c.x, z: c.z })), peds: () => peds.agents.filter(a => a.active).length,
     carTo: (x, z) => { if (drive.car) { drive.car.x = x; drive.car.z = z; drive.car.v = 0; } },
-    c1: () => ({ manuInCar: c1.manuInCar, rawiri: rawiri.position.clone(), lani: lani.position.clone(), home: home.pos.clone(), rivals: c1.rivals.map(r => ({ x: r.p.position.x, z: r.p.position.z, alive: r.alive, hostile: r.hostile })) }),
+    c1: () => ({ manuInCar: c1.manuInCar, rawiri: rawiri.position.clone(), lani: lani.position.clone(), home: home.pos.clone(), rivals: c1.rivals.map(r => ({ x: r.p.position.x, z: r.p.position.z, alive: r.alive, hostile: r.hostile, hp: r.hp, down: r.downT || 0, stagger: r.stagger || 0 })) }),
     skipTimers: () => { c1.timer = 0; },
     jobs: () => ({ ...jobState }),
     targets: () => ({ fixer: fixer.position.clone(), manu: manu.position.clone(), darren: darren.position.clone(), shorty: shorty.position.clone(), kev: JOBS.kev.npc.position.clone(), mikey: JOBS.mikey.npc.position.clone(), pita: JOBS.pita.npc.position.clone(), stash: stash.position.clone(), contacts: contacts.map(c => ({ f: c.f, x: c.p.position.x, z: c.p.position.z })), enemies: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z, alive: e.alive })) }),
