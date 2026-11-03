@@ -117,12 +117,12 @@ function createGame(world) {
   addEventListener('mouseup', e => { if (e.button === 2) rmb = false; });
   canvas.addEventListener('contextmenu', e => e.preventDefault());
   canvas.addEventListener('click', () => { if (!mobile && started) { if (document.pointerLockElement !== canvas) canvas.requestPointerLock?.(); else hit(); } });
-  document.addEventListener('mousemove', e => { if (document.pointerLockElement === canvas) { yaw -= e.movementX * 0.0025; pitch = clamp(pitch - e.movementY * 0.0025, -1.3, 1.3); } });
+  document.addEventListener('mousemove', e => { if (document.pointerLockElement === canvas) { lastLook = performance.now(); yaw -= e.movementX * 0.0025; pitch = clamp(pitch - e.movementY * 0.0025, -1.3, 1.3); } });
   canvas.addEventListener('touchstart', e => { const t = e.changedTouches[0]; if (lookTouchId === null && t.clientX > innerWidth * 0.35) { lookTouchId = t.identifier; lastX = t.clientX; lastY = t.clientY; } }, { passive: true });
   canvas.addEventListener('touchmove', e => {
     if (lookTouchId === null) return;
     const t = Array.from(e.changedTouches).find(t => t.identifier === lookTouchId); if (!t) return;
-    e.preventDefault(); yaw -= (t.clientX - lastX) * 0.006; pitch = clamp(pitch - (t.clientY - lastY) * 0.006, -1.3, 1.3); lastX = t.clientX; lastY = t.clientY;
+    e.preventDefault(); lastLook = performance.now(); yaw -= (t.clientX - lastX) * 0.006; pitch = clamp(pitch - (t.clientY - lastY) * 0.006, -1.3, 1.3); lastX = t.clientX; lastY = t.clientY;
   }, { passive: false });
   const releaseLook = e => { if (Array.from(e.changedTouches).some(t => t.identifier === lookTouchId)) lookTouchId = null; };
   canvas.addEventListener('touchend', releaseLook); canvas.addEventListener('touchcancel', releaseLook);
@@ -607,44 +607,100 @@ function createGame(world) {
     }
     updateHUD(); store();
   }
-  function applyHit(p, st, dmg, push, heavy, forward, how = 'punch') {
+  function applyHit(p, st, dmg, push, heavy, forward, how = 'punch', react = 'jab', side = 1, stagger) {
     // A finisher: the blow that drops someone who is already staggered or on the ground.
     const finisher = st.hp <= dmg && (st.stagger > 0 || st.downT > 0);
     if (c1.rivals.includes(st)) st.hostile = true;
     st.hp -= dmg; st._p = p; bloodAt(p.position);
     slideMove(p.position, forward.x * push * (finisher ? 2.2 : 1), forward.z * push * (finisher ? 2.2 : 1), 0.4);
-    p.userData.human.hit();
-    world.shake = heavy || finisher ? 0.34 : 0.18; hitStop = finisher ? 0.16 : heavy ? 0.1 : 0.055; SFX.play(heavy || finisher || how !== 'punch' ? 'heavy' : 'hit');
-    st.stagger = heavy ? 0.75 : how === 'weapon' ? 0.6 : 0.28; st.windup = 0;
+    p.userData.human.hit(react, side);
+    world.shake = heavy || finisher ? 0.34 : 0.18; hitStop = finisher ? 0.16 : heavy ? 0.1 : (stagger || 0) > 0.3 ? 0.07 : 0.05; SFX.play(heavy || finisher || how !== 'punch' ? 'heavy' : 'hit');
+    st.stagger = stagger ?? (heavy ? 0.75 : how === 'weapon' ? 0.6 : 0.28); st.windup = 0; st.blockT = 0;
     if (st.hp <= 0) koTarget(p, st, finisher);
     else { if (heavy) say('Heavy hit!'); else if (st === kevRun) say('Hit landed. Kev is tough.'); }
     setTimeout(() => { if (!hostiles().length && st.hp <= 0) { slowMo = Math.max(slowMo, 0.7); SFX.play('ko'); } }, 0);
   }
+  // Your strikes: HIT strings jab, cross, hook, uppercut. Damage lands at the moment the fist does (not on the
+  // tap), a tap during a strike queues the next one, and the uppercut breaks a block.
+  const PMOVES = {
+    jab: { dmg: 0.6, hit: 0.09, chain: 0.16, dur: 0.3, reach: 3.3, push: 0.25, react: 'jab', side: 1, stagger: 0.22 },
+    cross: { dmg: 0.9, hit: 0.13, chain: 0.22, dur: 0.38, reach: 3.5, push: 0.4, react: 'cross', side: -1, stagger: 0.3 },
+    hook: { dmg: 1.15, hit: 0.16, chain: 0.27, dur: 0.42, reach: 3.0, push: 0.45, react: 'hook', side: 1, stagger: 0.38 },
+    upper: { dmg: 1.6, hit: 0.19, chain: 0.4, dur: 0.5, reach: 2.9, push: 0.9, react: 'upper', side: -1, stagger: 0.7, heavy: true, breaks: true },
+    swing: { dmg: 1, hit: 0.22, chain: 0.4, dur: 0.56, reach: 2.6, push: 0.8, react: 'heavy', side: -1, stagger: 0.6 },
+    knee: { dmg: 1.3, hit: 0.15, chain: 0.3, dur: 0.42, reach: 2, push: 0, react: 'body', side: 1, stagger: 0.5, heavy: true },
+  };
+  const COMBO = ['jab', 'cross', 'hook', 'upper'];
+  let pmove = null, comboIdx = -1, lastMoveEnd = -9, simT = 0, lastBlockPress = -9, lockT = null, lastLook = -1e9, lastPop = '', lastPopT = -9, parryTold = false, fightTold = false;
+  const popEl = document.createElement('div');
+  popEl.style.cssText = 'position:fixed;left:50%;top:36%;transform:translate(-50%,-50%);font:900 24px/1 system-ui,sans-serif;letter-spacing:3px;color:#fff;text-shadow:0 2px 10px #000,0 0 2px #000;pointer-events:none;opacity:0;transition:opacity .2s,transform .2s;z-index:40';
+  document.body.appendChild(popEl); let popTimer = 0;
+  function pop(text, color = '#fff') {
+    lastPop = text; lastPopT = simT; popEl.textContent = text; popEl.style.color = color; popEl.style.opacity = '1'; popEl.style.transform = 'translate(-50%,-50%) scale(1.1)';
+    clearTimeout(popTimer); popTimer = setTimeout(() => { popEl.style.opacity = '0'; popEl.style.transform = 'translate(-50%,-50%) scale(1)'; }, 560);
+  }
   function hit() {
     if (drive.car) { drive.audio.horn(); return; }
     if (!started || pauseOpen || dlg.active || blocking() || climb) return;
-    const now = performance.now(), def = weapon && WEAPON_DEF[weapon.kind];
-    if (now - lastPunch < (def ? 520 : 300)) return;
-    combo = now - lastPunch < 900 ? combo + 1 : 1; lastPunch = now;
-    const heavy = combo % 3 === 0, power = 1 + strength * 0.25, cone = mobile ? 0.3 : 0.45;
-    fists.swing(); playerBody.userData.human.punch(); SFX.play('whoosh', def ? 1.3 : 1);
-    if (grab) { // knee to the body while you hold them
+    if (pmove) { if (pmove.t > pmove.d.dur * 0.3) pmove.queued = true; return; }
+    startMove();
+  }
+  // Turn toward the nearest opponent in a wide cone so swings connect on a phone.
+  function aimAssist(reach, k) {
+    let best = null, bd = reach;
+    for (const [p] of targets()) { const dx = p.position.x - eye.position.x, dz = p.position.z - eye.position.z, d = Math.hypot(dx, dz); if (d > bd) continue; let da = Math.atan2(-dx, -dz) - yaw; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) < 1.25) { best = da; bd = d; } }
+    if (best != null) { yaw += best * k; pitch = lerp(pitch, -0.05, 0.6 * k); eye.rotation.set(pitch, yaw, 0); }
+  }
+  function startMove() {
+    const def = weapon && WEAPON_DEF[weapon.kind];
+    let name;
+    if (grab) name = 'knee';
+    else if (def) name = 'swing';
+    else { comboIdx = simT - lastMoveEnd < 0.5 ? (comboIdx + 1) % COMBO.length : 0; name = COMBO[comboIdx]; }
+    pmove = { name, d: PMOVES[name], t: 0, done: false, queued: false }; lastPunch = performance.now();
+    fists.play(name); playerBody.userData.human.attack(name);
+    SFX.play('whoosh', name === 'swing' ? 1.3 : name === 'upper' || name === 'hook' ? 1.05 : 0.8);
+    if (grab) return;
+    aimAssist(def ? def.reach + 0.6 : 3.9, 0.55);
+    // They see it coming: sometimes they cover up (more often the better the fighter).
+    for (const [p, st] of hostiles()) if (dist(p.position) < 3.2 && !(st.windup > 0) && !(st.stagger > 0) && !(st.downT > 0) && !((st.blockCD || 0) > 0) && rnd() < styleOf(st).block) { st.blockT = 0.55; st.blockCD = 1.6; }
+  }
+  function moveFrame(dt) {
+    const m = pmove; if (!m) return;
+    m.t += dt;
+    if (!m.done && m.t >= m.d.hit) { m.done = true; strike(m); }
+    if (pmove !== m) return;
+    if (m.queued && m.t >= m.d.chain) { pmove = null; lastMoveEnd = simT; startMove(); }
+    else if (m.t >= m.d.dur) { pmove = null; lastMoveEnd = simT; }
+  }
+  function strike(m) {
+    const def = weapon && WEAPON_DEF[weapon.kind], power = 1 + strength * 0.25, d = m.d;
+    if (m.name === 'knee') { // knee to the body while you hold them
+      if (!grab) return;
       const fwd = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
-      applyHit(grab.p, grab.st, 1.3 * power, 0, true, fwd, 'knee'); grab.knees++;
+      applyHit(grab.p, grab.st, d.dmg * power, 0, true, fwd, 'knee', 'body', 1, 0.5); grab.knees++;
       if (grab.st.hp <= 0) grab = null; else if (grab.knees >= 3) throwGrab();
       updateHUD(); return;
     }
-    // Aim assist: turn toward the nearest opponent in a wide cone so swings connect on a phone.
-    {
-      let best = null, bd = def ? def.reach + 0.6 : 3.9;
-      for (const [p] of targets()) { const dx = p.position.x - eye.position.x, dz = p.position.z - eye.position.z, d = Math.hypot(dx, dz); if (d > bd) continue; const want = Math.atan2(-dx, -dz); let da = want - yaw; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) < 1.25) { best = da; bd = d; } }
-      if (best != null) { yaw += best * 0.85; pitch = lerp(pitch, -0.05, 0.6); eye.rotation.set(pitch, yaw, 0); }
-    }
-    const forward = new THREE.Vector3(0, 0, -1).applyEuler(eye.rotation);
-    const t = nearestTarget(forward, def ? def.reach + 1.4 : 4, def ? cone - 0.15 : cone);
+    aimAssist(def ? def.reach + 0.6 : 3.9, 0.85);
+    const forward = new THREE.Vector3(0, 0, -1).applyEuler(eye.rotation), cone = mobile ? 0.3 : 0.45;
+    const t = nearestTarget(forward, def ? def.reach + 1.4 : d.reach + 0.7, def ? cone - 0.15 : cone);
     if (t) {
-      const [p, st] = t;
-      applyHit(p, st, (def ? def.dmg : 1) * (heavy ? 2 : 1) * power, def ? 0.8 : heavy ? 0.9 : 0.45, heavy, forward, def ? 'weapon' : 'punch');
+      const [p, st] = t; lockT = st;
+      let dmg = (def ? def.dmg : d.dmg) * power, tag = '';
+      if (st.windup > 0) { dmg *= 1.4; tag = 'COUNTER'; }
+      if (st.parried > 0) { dmg *= 1.5; tag = tag || 'OPEN'; }
+      if (st.blockT > 0 && !def) {
+        if (d.breaks) { dmg *= 0.75; tag = 'GUARD BREAK'; }
+        else {
+          // Covered up: it bounces off the forearms. Chip damage only, and he's coming back at you.
+          st.blockT = Math.max(st.blockT, 0.35); st.attackT = Math.min(st.attackT ?? 1, 0.35); st.hp = Math.max(0.1, st.hp - dmg * 0.12);
+          p.userData.human.hit('block', d.side); SFX.play('block'); world.shake = Math.max(world.shake, 0.05); hitStop = 0.03;
+          slideMove(p.position, forward.x * 0.15, forward.z * 0.15, 0.4); pop('BLOCKED', '#9fc3ff'); updateHUD(); return;
+        }
+      }
+      applyHit(p, st, dmg, def ? 0.8 : d.push, !!d.heavy || !!def, forward, def ? 'weapon' : 'punch', def ? 'heavy' : d.react, d.side, def ? 0.6 : d.stagger);
+      if (tag && st.hp > 0) pop(tag, tag === 'COUNTER' ? '#ffd166' : tag === 'OPEN' ? '#7fe0ff' : '#ff9a5a');
       if (def) { heat.add(0.15); if (--weapon.uses <= 0) { say(`Your ${def.name} snapped.`); SFX.play('heavy'); setWeapon(null); } }
       updateHUD(); return;
     }
@@ -652,13 +708,31 @@ function createGame(world) {
     const ped = peds.near(eye.position.x, eye.position.z, def ? 4 : 3.5).find(a => { const v = a.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position).normalize(); return v.dot(forward) > cone; });
     if (ped) { peds.knock(ped); bloodAt(ped.p.position); world.shake = 0.18; SFX.play('hit'); heat.add(def ? 1.5 : 1); peds.scare(eye.position.x, eye.position.z); say('You just laid out a random. Someone\'s calling the cops.'); updateHUD(); }
   }
+  // A block tapped just before their punch lands: it's knocked aside and they're wide open.
+  function parry(st, h) {
+    st.stagger = 1.0; st.parried = 1.1; st.windup = 0; h.clip = null; h.hit('parried', 1);
+    fists.play('parry'); playerBody.userData.human.attack('parry');
+    SFX.play('parry'); slowMo = Math.max(slowMo, 0.3); hitStop = 0.08; stamina = Math.min(100, stamina + 15);
+    pop('PARRY', '#7fe0ff'); if (!parryTold) { parryTold = true; say('Parried. He\'s wide open: hit him.'); }
+  }
+  // Soft lock-on: while you're in a fight and not steering the camera, the view eases onto your opponent.
+  function lockOn(dt) {
+    if (drive.car || dlg.active || climb || performance.now() - lastLook < 700) return;
+    const list = hostiles(); if (!list.length) { lockT = null; return; }
+    let tg = list.find(([p, st]) => st === lockT && dist(p.position) < 6 && !(st.downT > 0));
+    if (!tg) { let bd = 4.5; for (const e of list) { const [p, st] = e, d = dist(p.position); if (d < bd && !(st.downT > 0)) { bd = d; tg = e; } } }
+    if (!tg) return;
+    const p = tg[0], dx = p.position.x - eye.position.x, dz = p.position.z - eye.position.z;
+    let da = Math.atan2(-dx, -dz) - yaw; da = Math.atan2(Math.sin(da), Math.cos(da)); if (Math.abs(da) > 1.5) return;
+    yaw += da * (1 - Math.exp(-dt * 5)); pitch = lerp(pitch, -0.06, 1 - Math.exp(-dt * 3));
+  }
   // Grab (TALK next to someone you're fighting): hold them, knee them with HIT, then throw.
   function tryGrab() {
     if (grab || weapon || drive.car) return false;
     const fwd = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
     const t = hostiles().map(([p, st]) => [p, st, dist(p.position)]).filter(([p, st, d]) => d < 2.1 && !(st.downT > 0)).sort((a, b) => a[2] - b[2])[0];
     if (!t) return false;
-    const [p, st] = t; grab = { p, st, t: 0, knees: 0 }; st._p = p; st.windup = 0; st.stagger = 0.5;
+    const [p, st] = t; grab = { p, st, t: 0, knees: 0 }; st._p = p; st.windup = 0; st.stagger = 0.5; st.blockT = 0; p.userData.human.clip = null;
     SFX.play('block'); say('Got him. HIT to knee, TALK to throw.'); return true;
   }
   function throwGrab() {
@@ -667,7 +741,8 @@ function createGame(world) {
     let slammed = false;
     for (let k = 0; k < 12; k++) { const x0 = p.position.x, z0 = p.position.z; slideMove(p.position, dir.x * 0.28, dir.z * 0.28, 0.4); if (Math.hypot(p.position.x - x0, p.position.z - z0) < 0.1) { slammed = true; break; } }
     p.position.y = groundHeight(p.position.x, p.position.z);
-    applyHit(p, st, (slammed ? 2.6 : 1.6) * (1 + strength * 0.25), 0, true, dir, 'throw');
+    fists.play('throw'); playerBody.userData.human.attack('throw');
+    applyHit(p, st, (slammed ? 2.6 : 1.6) * (1 + strength * 0.25), 0, true, dir, 'throw', 'heavy', -1, 0.6);
     if (st.hp > 0) { st.downT = 1.5; p.userData.human.knockDown(); }
     if (slammed) say('Slammed him into the fence.'); heat.add(0.2);
   }
@@ -811,11 +886,20 @@ function createGame(world) {
   const KO_HOME = { at: () => home.spawn.pos, msg: 'You got knocked out. You came to outside Manu\'s.', rep: 10 };
   const KO_ENEMY = KO_HOME, KO_DARREN = { at: () => home.spawn.pos, msg: 'Darren dropped you. You came to outside Manu\'s place.', rep: 0 };
   const KO_KEV = { at: () => sHome.spawn.pos, msg: 'Kev dropped you. You came to outside Shorty\'s.', rep: 0 };
-  function hurtPlayer(dmg, ko) {
-    if (dodgeT > 0 || climb) return; // slipped it
+  function hurtPlayer(dmg, ko, A) {
+    if (dodgeT > 0 || climb) { if (A) pop('SLIPPED', '#b8f5e1'); return; } // slipped it
     if (grab) grab = null;
-    if (blocking() && stamina > 5) { dmg *= 0.15; stamina = Math.max(0, stamina - 14); world.shake = Math.max(world.shake, 0.06); SFX.play('block'); }
-    else { world.hurt = 1; world.shake = Math.max(world.shake, 0.15); SFX.play('hurt'); playerBody.userData.human.hit(); }
+    const pb = playerBody.userData.human;
+    if (blocking() && stamina > 5) {
+      // A haymaker on your guard eats your energy; run out and it comes through.
+      if (A && A.heavy) { stamina = Math.max(0, stamina - 38); dmg *= stamina > 0 ? 0.45 : 0.8; if (stamina <= 0) pop('GUARD BROKEN', '#ff7070'); }
+      else { dmg *= 0.15; stamina = Math.max(0, stamina - 14); }
+      world.shake = Math.max(world.shake, 0.06); SFX.play('block'); pb.hit('block', 1); fists.kick = 0.5;
+    } else {
+      world.hurt = 1; world.shake = Math.max(world.shake, A && A.heavy ? 0.3 : 0.15); SFX.play(A && A.heavy ? 'heavy' : 'hurt'); pb.hit(A ? A.react : 'jab', A ? A.side : 1); fists.kick = 1;
+      if (A) { yaw += A.side * (A.react === 'hook' || A.heavy ? 0.07 : 0.02); pitch += A.heavy ? 0.06 : 0.03; }
+      if (A && A.heavy && pmove && !pmove.done) { pmove = null; lastMoveEnd = simT; } // a haymaker knocks you out of your swing
+    }
     hp = Math.max(0, hp - dmg); lastHurt = performance.now();
     if (hp <= 0) {
       const lost = Math.round(cash * 0.1); cash -= lost; hp = 100; rep = Math.max(0, rep - (ko.rep || 0));
@@ -830,21 +914,57 @@ function createGame(world) {
       updateHUD(); store();
     }
   }
-  function meleeAI(st, h, d, dmg, ko, dt) {
+  // What they throw: quick jabs, crosses, hooks and a slow haymaker (big telegraph, blocking it costs you).
+  const EATK = {
+    jab: { wu: 0.3, mult: 0.6, reach: 1.9, react: 'jab', side: 1 }, cross: { wu: 0.42, mult: 1, reach: 1.9, react: 'cross', side: -1 },
+    hook: { wu: 0.5, mult: 1.15, reach: 1.7, react: 'hook', side: 1 }, hay: { wu: 0.72, mult: 1.8, reach: 2.0, react: 'heavy', side: -1, heavy: true },
+  };
+  const STYLES = {
+    base: { jab: 0.35, cross: 0.33, hook: 0.2, hay: 0.12, block: 0.25, combo: 0.35, aggr: 1 },
+    darren: { jab: 0.45, cross: 0.3, hook: 0.18, hay: 0.07, block: 0.3, combo: 0.45, aggr: 1.1 }, // quick, mouthy
+    kev: { jab: 0.12, cross: 0.3, hook: 0.2, hay: 0.38, block: 0.4, combo: 0.2, aggr: 0.85 }, // slow, heavy hands
+  };
+  const styleOf = st => st === darrenState ? STYLES.darren : st === kevRun ? STYLES.kev : STYLES.base;
+  function pickAttack(sty) { let r = rnd() * (sty.jab + sty.cross + sty.hook + sty.hay); for (const k of ['jab', 'cross', 'hook', 'hay']) if ((r -= sty[k]) <= 0) return k; return 'cross'; }
+  function meleeAI(st, h, d, dmg, ko, dt, p) {
     st.lastSeen = performance.now(); st.inFight = d < 10;
-    if (st.stagger > 0 || st.downT > 0 || (grab && grab.st === st)) return;
-    if (st.windup > 0) { st.windup -= dt; if (st.windup <= 0) { st.attackT = 0.9 + rnd() * 0.8; SFX.play('whoosh', 0.7); if (d < 2.1) hurtPlayer(dmg, ko); if (fightToken === st) tokenT = Math.min(tokenT, 0.4); } return; }
+    for (const k of ['blockT', 'blockCD', 'parried']) if (st[k] > 0) st[k] -= dt;
+    h.daze = st.stagger > 0.35 || st.parried > 0;
+    if (st.blockT > 0) h.mode = 'block';
+    if (st.stagger > 0 || st.downT > 0 || (grab && grab.st === st)) { if (st.windup > 0) { st.windup = 0; h.clip = null; } return; }
+    if (st.windup > 0) {
+      const A = EATK[st.atk] || EATK.cross;
+      // Step in behind the punch.
+      if (p && d > 1.05) { const ux = (eye.position.x - p.position.x) / d, uz = (eye.position.z - p.position.z) / d, s0 = Math.min(2.6 * dt, d - 1.0); slideMove(p.position, ux * s0, uz * s0, 0.4); }
+      st.windup -= dt;
+      if (st.windup <= 0) {
+        SFX.play('whoosh', A.heavy ? 1.2 : 0.75);
+        const sty = styleOf(st);
+        if (d < A.reach) { if (simT - lastBlockPress < 0.26 && dodgeT <= 0 && !drive.car) parry(st, h); else hurtPlayer(dmg * A.mult, ko, A); }
+        else st.stagger = 0.25; // swung at air: off balance
+        if (st.atk === 'jab' && !(st.parried > 0) && rnd() < sty.combo) { st.attackT = 0.1; st.chain = 'cross'; }
+        else st.attackT = (0.75 + rnd() * 0.8) / sty.aggr;
+        if (fightToken === st) tokenT = Math.min(tokenT, 0.4);
+      }
+      return;
+    }
     st.attackT = (st.attackT ?? 0.6) - dt;
-    if (d < 1.95 && st.attackT <= 0 && (fightToken === st || !fightToken)) { st.windup = 0.42; h.punch(); }
+    if (d < 1.6 && st.attackT <= 0 && !(st.blockT > 0) && (fightToken === st || !fightToken)) {
+      st.atk = st.chain || pickAttack(styleOf(st)); st.chain = null;
+      const A = EATK[st.atk]; st.windup = A.wu; h.attack(st.atk, A.wu); h.mode = 'guard';
+      if (A.heavy) SFX.play('tell');
+    }
   }
   // Fighters close in, hold at range and circle; only the token holder steps in to swing.
   function brawlerMove(pos, st, d, dt, sp) {
     if (d < 0.01 || (grab && grab.st === st)) return 0;
-    if (st.downT > 0) { st.downT -= dt; if (st.downT <= 0 && st._p && st.hp > 0) st._p.userData.human.reset(); return 0; }
+    if (st.downT > 0) { st.downT -= dt; if (st.downT <= 0 && st._p && st.hp > 0) st._p.userData.human.getUp(); return 0; }
+    if (d > 6) sp *= 1.8; // jog in from range
     const ux = (eye.position.x - pos.x) / d, uz = (eye.position.z - pos.z) / d;
     if ((st.circleT = (st.circleT ?? 0) - dt) <= 0) { st.circle = rnd() < 0.5 ? 1 : -1; st.circleT = 1.2 + rnd() * 2; }
-    const attacker = fightToken === st || !fightToken, want = attacker ? 1.55 : 2.8;
-    let fwd = d > want + 0.25 ? 1 : d < want - 0.35 ? -0.7 : 0, side = attacker ? (d < 2.2 ? 0.25 : 0) : 0.7;
+    const attacker = fightToken === st || !fightToken, want = attacker ? 1.2 : 2.7;
+    let fwd = d > want + 0.25 ? 1 : d < want - 0.3 ? -0.7 : 0, side = attacker ? (d < 2.2 ? 0.25 : 0) : 0.7;
+    if (st.blockT > 0 || st.windup > 0) { fwd = Math.min(fwd, 0); side = 0; }
     if (d > 6) { fwd = 1; side = 0; }
     if (st.stagger > 0) { st.stagger -= dt; fwd = -0.9; side = 0; }
     const vx = (ux * fwd - uz * (st.circle || 1) * side) * sp, vz = (uz * fwd + ux * (st.circle || 1) * side) * sp;
@@ -862,6 +982,7 @@ function createGame(world) {
   }
   function fightDirector(dt) {
     const list = hostiles();
+    if (list.length && !fightTold && list.some(([p]) => dist(p.position) < 6)) { fightTold = true; say('HIT strings jab, cross, hook, uppercut. Tap BLOCK just as their punch lands to parry. TALK up close grabs.'); }
     if ((tokenT -= dt) <= 0 || !list.some(([, st]) => st === fightToken)) {
       const near = list.filter(([p]) => dist(p.position) < 5).sort((a, b) => dist(a[0].position) - dist(b[0].position));
       fightToken = near.length ? near[Math.floor(rnd() * Math.min(2, near.length))][1] : list[0]?.[1] || null; tokenT = 1.4 + rnd() * 1.2;
@@ -876,6 +997,8 @@ function createGame(world) {
       const b = st._bar, f = clamp(st.hp / st.maxHp, 0, 1);
       b.g.visible = true; b.g.position.set(p.position.x, p.position.y + 2.12, p.position.z); b.g.quaternion.copy(camera.quaternion);
       b.fg.scale.x = Math.max(0.001, f); b.fg.position.x = -0.3 * (1 - f); b.st = st; b.seen = performance.now();
+      // The bar flashes as they wind up (white for a haymaker), blue while they cover up.
+      b.fg.material.color.setHex(st.windup > 0 ? (EATK[st.atk]?.heavy ? 0xffffff : 0xffa94d) : st.blockT > 0 ? 0x7fa8ff : st.parried > 0 ? 0x7fe0ff : 0xe04040);
     }
     for (const st of [...enemies, darrenState, kevRun, hustle, ...c1.rivals]) if (st && st._bar && !list.some(([, s2]) => s2 === st)) st._bar.g.visible = false;
   }
@@ -915,7 +1038,7 @@ function createGame(world) {
       let sp = 0;
       if (d < 30) sp = brawlerMove(r.p.position, r, d, dt, 1.75);
       faceEachOther(r.p); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle'; r.p.position.y = groundHeight(r.p.position.x, r.p.position.z);
-      if (!dlg.active && !drive.car) meleeAI(r, h, d, 9, KO_HOME, dt);
+      if (!dlg.active && !drive.car) meleeAI(r, h, d, 9, KO_HOME, dt, r.p);
     }
     if (stage === 'c1-rivals' && c1.rivals.slice(0, 3).every(r => !r.alive) && c1.rivals[0].hostile) { c1.timer = 20; rep += 10; advance('c1-wait', 'All three down. Aunty Lani\'s dairy should be quiet now.'); }
   }
@@ -945,7 +1068,7 @@ function createGame(world) {
     const el = $('hint'); let t = '';
     if (!talking && !dlg.active) {
       if (drive.car) t = Math.abs(drive.car.v) < 1 ? 'TALK / E: get out' : '';
-      else if (hostiles().some(([p]) => dist(p.position) < 2.1) && !weapon) t = grab ? 'HIT: knee · TALK: throw' : 'TALK: grab';
+      else if (hostiles().some(([p]) => dist(p.position) < 2.1) && !weapon) t = grab ? 'HIT: knee · TALK: throw' : lastPop === 'BLOCKED' && simT - lastPopT < 2 ? 'BLOCKED · TALK: grab · 4th hit breaks guard' : 'TALK: grab';
       else if (hustle && hustle.state === 'open' && dist(hustle.npc.position) < 4.5) t = `TALK: ${hustle.name}`;
       else if (nearestPickup() && !weapon) t = `TALK: pick up ${WEAPON_DEF[nearestPickup().kind].name}`;
       else { const sh = shops.nearest(eye.position); if (sh) t = `TALK: ${sh.name}`; else if (drive.nearest(eye.position)) t = 'TALK / E: get in'; }
@@ -971,7 +1094,7 @@ function createGame(world) {
       let want = bodyYaw;
       if (guardingNow || performance.now() - lastPunch < 650 || hostiles().length) want = yaw + Math.PI; else if (sp > 0.4) want = Math.atan2(vel.x, vel.y);
       let da = want - bodyYaw; da = Math.atan2(Math.sin(da), Math.cos(da)); bodyYaw += da * Math.min(1, dt * 12); pb.rotation.y = bodyYaw;
-      h.speed = sp; h.mode = guardingNow || hostiles().length ? 'guard' : 'idle'; h.update(dt, t);
+      h.mode = guardingNow && dodgeT <= 0 ? 'block' : hostiles().length || pmove ? 'guard' : 'idle'; h.dodge = dodgeT > 0; h.update(dt, t);
       _f.set(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch)); _r.set(Math.cos(yaw), 0, -Math.sin(yaw));
       _head.copy(eye.position).y -= 0.05;
       _want.copy(_head).addScaledVector(_r, 0.7).addScaledVector(_f, -3.7); _want.y += 0.45;
@@ -1026,6 +1149,7 @@ function createGame(world) {
       const wx = (dx * Math.cos(yaw) + dz * Math.sin(yaw)) * topSpeed, wz = (-dx * Math.sin(yaw) + dz * Math.cos(yaw)) * topSpeed;
       // Dodge: hit BLOCK while moving for a quick sidestep (you can't be hit during it; costs energy).
       const blockEdge = guarding && !prevBlock; prevBlock = guarding; guardingNow = guarding; dodgeCD -= dt;
+      simT += dt; if (blockEdge) lastBlockPress = simT;
       if (blockEdge && len > 0.5 && stamina >= 20 && dodgeCD <= 0 && !drive.car) { const k = 9.5 / Math.max(0.01, Math.hypot(wx, wz)); dodgeT = 0.26; dodgeCD = 0.7; stamina -= 20; vel.set(wx * k, wz * k); SFX.play('dodge'); }
       if (dodgeT > 0) dodgeT -= dt;
       else { const acc = (Math.hypot(wx, wz) > vel.length() ? 24 : 32) * dt, ex = wx - vel.x, ez = wz - vel.y, el = Math.hypot(ex, ez); if (el <= acc) vel.set(wx, wz); else vel.set(vel.x + ex / el * acc, vel.y + ez / el * acc); }
@@ -1053,7 +1177,9 @@ function createGame(world) {
       window.AUControls?.setPosition?.(eye.position.x, eye.position.z, 'THREE');
       if (Math.abs(joy.x) + Math.abs(joy.y) > 0.1) $('joyReadout').textContent = `${Math.round(eye.position.x)},${Math.round(eye.position.z)}`;
       const guardUp = enemies.some(e => e.alive && dist(e.p.position) < 8) || (darrenState.hostile && dist(darren.position) < 8) || (jobState.kev === 'fight' && dist(JOBS.kev.npc.position) < 8);
-      fists.update(dt, moving, sprinting, (guardUp || guarding) && !drive.car);
+      fists.hold = !!grab;
+      fists.update(dt, moving, sprinting, (guardUp || hostiles().length > 0) && !drive.car, guarding && !drive.car);
+      moveFrame(dt); lockOn(dt);
       fightDirector(dt);
       if (grab) {
         grab.t += dt; const g = grab, f = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
@@ -1071,7 +1197,7 @@ function createGame(world) {
         let sp = 0;
         if (d < 25) sp = brawlerMove(n.position, hustle, d, dt, 1.7);
         faceEachOther(n); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle'; n.position.y = groundHeight(n.position.x, n.position.z);
-        if (!talking && !drive.car) meleeAI(hustle, h, d, 9, KO_HOME, dt);
+        if (!talking && !drive.car) meleeAI(hustle, h, d, 9, KO_HOME, dt, n);
       }
       for (const e of enemies) {
         if (!e.alive) continue;
@@ -1082,7 +1208,7 @@ function createGame(world) {
         if (d < 15) e.p.rotation.y = Math.atan2(eye.position.x - e.p.position.x, eye.position.z - e.p.position.z);
         h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle';
         e.p.position.y = groundHeight(e.p.position.x, e.p.position.z);
-        if (!drive.car) meleeAI(e, h, d, 8, KO_ENEMY, dt);
+        if (!drive.car) meleeAI(e, h, d, 8, KO_ENEMY, dt, e.p);
       }
       // Darren squares up when the debt talk goes bad.
       {
@@ -1092,7 +1218,7 @@ function createGame(world) {
           if (d < 20) sp = brawlerMove(darren.position, darrenState, d, dt, 1.8);
           faceEachOther(darren); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle';
           darren.position.y = groundHeight(darren.position.x, darren.position.z);
-          if (!talking && !drive.car) meleeAI(darrenState, h, d, 10, KO_DARREN, dt);
+          if (!talking && !drive.car) meleeAI(darrenState, h, d, 10, KO_DARREN, dt, darren);
         } else { h.mode = 'idle'; h.speed = 0; }
       }
       // Shorty texts a little while after Manu passes your number on.
@@ -1105,7 +1231,7 @@ function createGame(world) {
         let sp = 0;
         if (d < 22) sp = brawlerMove(kev.position, kevRun, d, dt, 1.6);
         faceEachOther(kev); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle'; kev.position.y = groundHeight(kev.position.x, kev.position.z);
-        if (!talking && !drive.car) meleeAI(kevRun, h, d, 14, KO_KEV, dt);
+        if (!talking && !drive.car) meleeAI(kevRun, h, d, 14, KO_KEV, dt, kev);
       }
       // Mikey bolts when you get close: sprint bursts, then he blows out and you can catch him.
       if (stage === 'shorty-jobs' && jobState.mikey === 'open' && !talking) {
@@ -1150,7 +1276,7 @@ function createGame(world) {
     eye.rotation.set(pitch + (Math.random() - 0.5) * sh * 0.12, yaw + (Math.random() - 0.5) * sh * 0.12, 0);
     syncCamera(dt, t);
     // Animate characters near the camera every frame, distant ones at a lower rate.
-    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.map(e => e.p), ...debtors, ...peds.people, rawiri, lani, ...c1.rivals.map(r => r.p)]) {
+    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.map(e => e.p), ...debtors, ...peds.people, rawiri, lani, ...c1.rivals.map(r => r.p), ...labPeople]) {
       if (!p.parent || !p.visible) continue;
       const d = p.position.distanceTo(eye.position);
       const h = p.userData.human;
@@ -1160,13 +1286,23 @@ function createGame(world) {
     return forward;
   }
 
+  // Pose lab (screenshots/tests): frozen figures, e.g. { look, x, z, ry, vx, vz, ph, clip, u, mode, down }.
+  const labPeople = [];
+  function lab(list) {
+    list.forEach((o, i) => {
+      let p = labPeople[i]; if (!p) { p = person(o.x, o.z, { look: o.look || 'player', seed: 77 + i, pose: 'relaxed' }); labPeople.push(p); }
+      p.visible = true; p.position.set(o.x, groundHeight(o.x, o.z), o.z); p.rotation.y = o.ry || 0;
+      const h = p.userData.human; h.mode = o.mode || 'idle'; h.weapon = !!o.weapon; h.lab = o; h.react = o.react ? { kind: o.react, side: o.side || 1, t: o.rt ?? 0.06 } : null;
+    });
+    for (let i = list.length; i < labPeople.length; i++) labPeople[i].visible = false;
+  }
   window.__auEngineReady = true; window.__auThreeBooting = false; document.documentElement.dataset.engine = 'ready';
   $('start').disabled = false; $('continue').disabled = false; $('start').title = ''; $('continue').title = '';
   // Test/diagnostic hooks.
   window.__auGame = {
     state: () => ({ stage, hp, rep, cash, chosen, defeated, started, x: eye.position.x, z: eye.position.z, yaw, objective: objective()[0] }),
     teleport(x, z) { eye.position.set(x, groundHeight(x, z) + EYE, z); },
-    face(y) { yaw = y; }, talk, hit, collides,
+    face(y) { yaw = y; }, look(p) { pitch = p; }, talk, hit, collides, lab, fpLab: o => { fists.lab = o || null; },
     drive: () => drive.car ? { x: drive.car.x, z: drive.car.z, v: drive.car.v, h: drive.car.h } : null,
     nearestCar: () => { let b = null, bd = 1e9; for (const c of world.city.cars) { if (c.taken) continue; const d = Math.hypot(c.x - eye.position.x, c.z - eye.position.z); if (d < bd) { bd = d; b = c; } } return b && { x: b.x, z: b.z }; },
     shopsList: () => shops.list.map(s => ({ kind: s.kind, name: s.name, x: s.x, z: s.z })),
@@ -1176,6 +1312,8 @@ function createGame(world) {
     startHustle: type => { hustleTimer = 0; startHustle(); if (hustle && type) hustle.type = type; return !!hustle; },
     jumpTest: () => { tryJump(); return { air, climb: !!climb }; }, y: () => eye.position.y, airborne: () => air || !!climb,
     nearFence: () => { let best = null, bd = 1e9; for (const o of collision.list) { if (o.tag !== 'fence' || o.t !== 2 || o.top > 1.9 || o.top < 0.8) continue; const mx = (o.ax + o.bx) / 2, mz = (o.az + o.bz) / 2, d = Math.hypot(mx - eye.position.x, mz - eye.position.z); if (d < bd && Math.hypot(o.bx - o.ax, o.bz - o.az) > 3) { bd = d; best = o; } } return best && { ax: best.ax, az: best.az, bx: best.bx, bz: best.bz, top: best.top }; },
+    fight: () => ({ move: pmove && pmove.name, busy: !!pmove, combo: comboIdx, pop: lastPop, windups: hostiles().map(([, st]) => st.windup || 0), blocks: hostiles().map(([, st]) => st.blockT || 0) }),
+    block: on => { move.block = !!on; },
     grabbed: () => !!grab, weapon: () => weapon && { ...weapon }, pickups: () => pickups.map(q => ({ kind: q.kind, x: q.x, z: q.z })), carHealth: () => drive.car ? drive.car.health : null,
     view: v => { if (v != null) setView(!!v); return thirdPerson; }, feel: () => ({ vel: vel.length(), dodgeT, token: !!fightToken, beacon: beacon.visible, bars: [...enemies, darrenState, kevRun, ...c1.rivals].filter(s => s && s._bar && s._bar.g.visible).length }),
     dodge: () => { prevBlock = false; move.block = true; setTimeout(() => { move.block = false; }, 120); },

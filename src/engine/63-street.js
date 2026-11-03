@@ -113,7 +113,7 @@ class Pedestrians {
       if (!a.active) continue;
       const p = a.p, d = Math.hypot(p.position.x - px, p.position.z - pz);
       if (d > 160) { a.active = false; p.visible = false; continue; }
-      if (a.down > 0) { a.down -= dt; a.h.speed = 0; if (a.down <= 0) { a.h.reset(); a.flee = 5; } continue; }
+      if (a.down > 0) { a.down -= dt; a.h.speed = 0; if (a.down <= 0) { a.h.getUp(); a.flee = 5; } continue; }
       if (a.flee > 0) {
         a.flee -= dt; const ux = (p.position.x - px) / (d || 1), uz = (p.position.z - pz) / (d || 1), b0 = p.position.clone();
         collide(p.position, ux * 4.6 * dt, uz * 4.6 * dt);

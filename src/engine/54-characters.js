@@ -1,5 +1,5 @@
 // Procedural skinned humans. One SkinnedMesh (one draw call) per character, textured from a shared
-// 4x4 canvas atlas, animated procedurally (walk, idle, guard, punch, hit, knockout).
+// 4x4 canvas atlas, animated procedurally: IK gait with planted feet, boxing guard and strikes, hit reactions, falls.
 const ATLAS = { skin: 0, faceA: 1, faceB: 2, faceC: 3, denim: 4, cotton: 5, leather: 6, vest: 7, knit: 8, shoe: 9, canvas: 10, track: 13 };
 const SKIN_TONES = [0x8d5a3b, 0x6b4029, 0xa86f4c, 0xc68e6a, 0x7a4b31, 0xe0b090, 0x5a3624, 0xb5835e];
 
@@ -130,6 +130,81 @@ function mergeParts(list) {
   return m;
 }
 
+// ---- procedural animation helpers: two-bone IK, Catmull-Rom tracks, boxing clips ------------------
+const _V = Array.from({ length: 16 }, () => new THREE.Vector3());
+const _Q = Array.from({ length: 4 }, () => new THREE.Quaternion());
+const _Qa = [new THREE.Quaternion(), new THREE.Quaternion()], _Qb = [new THREE.Quaternion(), new THREE.Quaternion()];
+const _M = Array.from({ length: 4 }, () => new THREE.Matrix4());
+const _EU = new THREE.Euler(), _EQ = new THREE.Quaternion(), V_FWD = new THREE.Vector3(0, 0, 1);
+// Rotation turning a bone's rest axis a0 (front f0) onto axis a1 (front f1); fronts are squared up to their axis.
+function aimQuat(out, a0, f0, a1, f1) {
+  const X = _V[14], Z = _V[15], m0 = _M[0], m1 = _M[1];
+  Z.copy(f0).addScaledVector(a0, -f0.dot(a0)).normalize(); X.crossVectors(a0, Z); m0.makeBasis(X, a0, Z);
+  Z.copy(f1).addScaledVector(a1, -f1.dot(a1)); if (Z.lengthSq() < 1e-8) Z.set(0, 0, 1).addScaledVector(a1, -a1.z); Z.normalize(); X.crossVectors(a1, Z); m1.makeBasis(X, a1, Z);
+  return out.setFromRotationMatrix(m1.multiply(m0.transpose()));
+}
+// Two-bone IK in the limb's parent space: tgt = where the end joint goes, pole = which way the knee/elbow points.
+// sgn +1 when the limb's rest front faces the pole (legs: kneecap), -1 when it faces away (arms: inside of the elbow).
+function ik2(L, tgt, pole, sgn) {
+  const base = L.up.position, D = _V[0].subVectors(tgt, base); let d = D.length(); if (d < 1e-5) return; D.divideScalar(d);
+  const l1 = L.l1, l2 = L.l2; d = clamp(d, Math.abs(l1 - l2) + 0.02, (l1 + l2) * 0.999);
+  const ca = clamp((l1 * l1 + d * d - l2 * l2) / (2 * l1 * d), -1, 1), sa = Math.sqrt(1 - ca * ca);
+  const n = _V[1].copy(pole).addScaledVector(D, -pole.dot(D)); if (n.lengthSq() < 1e-8) n.set(0, 0, sgn).addScaledVector(D, -D.z * sgn); n.normalize();
+  const ud = _V[2].copy(D).multiplyScalar(ca).addScaledVector(n, sa);
+  const mid = _V[3].copy(base).addScaledVector(ud, l1), ld = _V[4].copy(base).addScaledVector(D, d).sub(mid).normalize();
+  const f = _V[5].copy(n).multiplyScalar(sgn);
+  aimQuat(L.up.quaternion, L.a1, V_FWD, ud, f);
+  const qi = _Q[0].copy(L.up.quaternion).invert();
+  aimQuat(L.lo.quaternion, L.a2, V_FWD, _V[6].copy(ld).applyQuaternion(qi), _V[7].copy(f).applyQuaternion(qi));
+}
+const cr = (p0, p1, p2, p3, s) => 0.5 * (2 * p1 + (-p0 + p2) * s + (2 * p0 - 5 * p1 + 4 * p2 - p3) * s * s + (-p0 + 3 * p1 - 3 * p2 + p3) * s * s * s);
+function trackAt(tr, u) {
+  const n = tr.length; if (u <= tr[0][0]) return tr[0][1]; if (u >= tr[n - 1][0]) return tr[n - 1][1];
+  let i = 0; while (u > tr[i + 1][0]) i++;
+  return cr(tr[Math.max(0, i - 1)][1], tr[i][1], tr[i + 1][1], tr[Math.min(n - 1, i + 2)][1], (u - tr[i][0]) / (tr[i + 1][0] - tr[i][0]));
+}
+// Guard hand spots relative to each shoulder in the chest's frame, in arm lengths (x outward, y up, z forward).
+// Orthodox: left hand leads at the chin, right hand by the jaw.
+const GUARD = { lead: [-0.18, 0.23, 0.48], rear: [-0.2, 0.27, 0.25], block: [-0.22, 0.38, 0.53], weapon: [0.25, 0.32, 0.15] };
+// Strikes for anyone throwing them (player body and every fighter). Hand keys are relative to the shoulder in
+// the body frame ('G' guard, 'W' weapon guard); torso tracks add to the guard stance (yaws in radians, steps in m).
+// hit = the impact moment, which the fight code lines up with damage.
+const CLIPS = {
+  jab: { arm: 'L', dur: 0.32, hit: 0.1, pole: [0.5, -1, -0.25], hand: [[0, 'G'], [0.1, [-0.22, 0.1, 0.96]], [0.16, [-0.22, 0.09, 0.93]], [0.32, 'G']],
+    chest: [[0, 0], [0.1, -0.25], [0.32, 0]], hips: [[0, 0], [0.1, -0.08], [0.32, 0]], lean: [[0, 0], [0.1, 0.08], [0.32, 0]], lead: [[0, 0], [0.1, 0.12], [0.32, 0]] },
+  cross: { arm: 'R', dur: 0.4, hit: 0.13, pole: [0.5, -1, -0.25], hand: [[0, 'G'], [0.13, [-0.2, 0.08, 0.97]], [0.2, [-0.2, 0.07, 0.94]], [0.4, 'G']],
+    chest: [[0, 0], [0.13, 0.85], [0.22, 0.8], [0.4, 0]], hips: [[0, 0], [0.13, 0.5], [0.4, 0]], lean: [[0, 0], [0.13, 0.12], [0.4, 0]], heel: [[0, 0], [0.13, 0.07], [0.3, 0.04], [0.4, 0]], pivot: [[0, 0], [0.13, 0.55], [0.4, 0]] },
+  hook: { arm: 'L', dur: 0.44, hit: 0.17, pole: [1, 0.8, -0.5], hand: [[0, 'G'], [0.07, [0.38, 0.0, 0.42]], [0.17, [-0.42, 0.03, 0.75]], [0.25, [-0.55, 0.0, 0.55]], [0.44, 'G']],
+    chest: [[0, 0], [0.07, -0.2], [0.17, 0.75], [0.25, 0.85], [0.44, 0]], hips: [[0, 0], [0.07, -0.05], [0.17, 0.4], [0.44, 0]], lean: [[0, 0], [0.17, 0.05], [0.44, 0]], leadHeel: [[0, 0], [0.17, 0.04], [0.44, 0]], leadPivot: [[0, 0], [0.17, 0.4], [0.44, 0]] },
+  upper: { arm: 'R', dur: 0.5, hit: 0.2, pole: [0.3, -1, -0.5], hand: [[0, 'G'], [0.08, [0.06, -0.48, 0.35]], [0.2, [-0.16, 0.42, 0.62]], [0.28, [-0.16, 0.52, 0.5]], [0.5, 'G']],
+    chest: [[0, 0], [0.08, -0.15], [0.2, 0.7], [0.5, 0]], hips: [[0, 0], [0.2, 0.35], [0.5, 0]], lean: [[0, 0], [0.08, 0.12], [0.2, -0.06], [0.5, 0]], drop: [[0, 0], [0.08, 0.08], [0.2, -0.02], [0.5, 0]],
+    roll: [[0, 0], [0.08, 0.14], [0.2, -0.08], [0.5, 0]], heel: [[0, 0], [0.2, 0.06], [0.5, 0]], pivot: [[0, 0], [0.2, 0.45], [0.5, 0]] },
+  hay: { arm: 'R', dur: 1.0, hit: 0.62, pole: [1, 0.5, -0.4], hand: [[0, 'G'], [0.42, [0.62, 0.25, -0.35]], [0.62, [-0.32, 0.05, 0.62]], [0.74, [-0.62, -0.12, 0.38]], [1.0, 'G']],
+    chest: [[0, 0], [0.42, -0.55], [0.62, 0.95], [0.74, 1.1], [1.0, 0]], hips: [[0, 0], [0.42, -0.3], [0.62, 0.6], [1, 0]], lean: [[0, 0], [0.42, -0.12], [0.62, 0.18], [1, 0]], lead: [[0, 0], [0.42, -0.05], [0.62, 0.18], [1, 0]],
+    heel: [[0, 0], [0.62, 0.07], [1, 0]], pivot: [[0, 0], [0.62, 0.6], [1, 0]] },
+  swing: { arm: 'R', dur: 0.56, hit: 0.22, pole: [1, 0.3, -0.5], hand: [[0, 'W'], [0.1, [0.55, 0.45, -0.18]], [0.22, [-0.25, 0.0, 0.85]], [0.34, [-0.65, -0.3, 0.45]], [0.56, 'W']],
+    chest: [[0, 0], [0.1, -0.45], [0.22, 0.85], [0.34, 1.1], [0.56, 0]], hips: [[0, 0], [0.1, -0.2], [0.22, 0.5], [0.56, 0]], lean: [[0, 0], [0.22, 0.15], [0.56, 0]], heel: [[0, 0], [0.22, 0.06], [0.56, 0]], pivot: [[0, 0], [0.22, 0.5], [0.56, 0]] },
+  knee: { arm: 'B', dur: 0.42, hit: 0.15, pole: [0.6, -1, -0.3], hand: [[0, [-0.25, -0.15, 0.75]], [0.42, [-0.25, -0.15, 0.75]]], knee: [[0, 0], [0.15, 1], [0.42, 0]], lean: [[0, 0], [0.15, 0.22], [0.42, 0]] },
+  parry: { arm: 'L', dur: 0.3, hit: 0.08, pole: [0.6, -1, -0.2], hand: [[0, 'G'], [0.08, [0.3, 0.2, 0.62]], [0.3, 'G']], chest: [[0, 0], [0.08, -0.25], [0.3, 0]] },
+  throw: { arm: 'B', dur: 0.55, hit: 0.2, pole: [0.6, -1, -0.3], hand: [[0, [-0.25, -0.1, 0.75]], [0.2, [-0.6, 0.0, 0.5]], [0.55, 'G']], chest: [[0, -0.3], [0.2, 1.1], [0.55, 0]], hips: [[0, -0.1], [0.2, 0.5], [0.55, 0]], lean: [[0, 0], [0.2, 0.2], [0.55, 0]] },
+};
+// First-person versions (camera space, x outward): [pos, forearm-toward-elbow, back-of-hand]. Lead = left hand.
+const FGUARD = {
+  lead: [[0.12, -0.13, -0.44], [0.18, -0.7, 0.65], [0.35, 0.75, 0.5]], rear: [[0.17, -0.17, -0.36], [0.22, -0.72, 0.62], [0.35, 0.75, 0.55]],
+  block: [[0.075, -0.03, -0.32], [0.12, -1, 0.2], [0.15, 0.1, -1]], hold: [[0.11, -0.16, -0.5], [0.2, -0.6, 0.8], [0.3, 0.9, 0.2]], weapon: [[0.2, -0.16, -0.4], [0.22, -0.72, 0.62], [0.35, 0.75, 0.55]],
+};
+const FCLIPS = {
+  jab: { hand: 'L', dur: 0.3, keys: [[0, 'G'], [0.03, [[0.13, -0.13, -0.42], [0.18, -0.7, 0.65], [0.35, 0.75, 0.5]]], [0.09, [[-0.02, -0.08, -0.7], [0.08, -0.2, 1], [0.35, 0.75, 0.1]]], [0.14, [[-0.02, -0.085, -0.68], [0.08, -0.2, 1], [0.35, 0.75, 0.1]]], [0.3, 'G']], twist: [[0, 0], [0.09, -0.03], [0.3, 0]] },
+  cross: { hand: 'R', dur: 0.38, keys: [[0, 'G'], [0.13, [[-0.03, -0.09, -0.72], [0.08, -0.2, 1], [0.35, 0.75, 0.1]]], [0.19, [[-0.03, -0.095, -0.7], [0.08, -0.2, 1], [0.35, 0.75, 0.1]]], [0.38, 'G']], twist: [[0, 0], [0.13, 0.07], [0.38, 0]] },
+  hook: { hand: 'L', dur: 0.42, keys: [[0, 'G'], [0.07, [[0.3, -0.1, -0.42], [1, -0.15, 0.3], [0.05, 1, 0.1]]], [0.16, [[0.0, -0.07, -0.55], [1, -0.05, 0.25], [0, 1, 0]]], [0.24, [[-0.12, -0.08, -0.5], [0.95, -0.05, 0.35], [0, 1, 0]]], [0.42, 'G']], twist: [[0, 0], [0.07, 0.04], [0.16, -0.08], [0.42, 0]] },
+  upper: { hand: 'R', dur: 0.5, keys: [[0, 'G'], [0.08, [[0.1, -0.3, -0.42], [0.15, -0.95, 0.35], [0.2, 0.2, -1]]], [0.19, [[0.02, -0.03, -0.56], [0.1, -1, 0.3], [0.1, 0.15, -1]]], [0.26, [[0.02, 0.0, -0.54], [0.1, -1, 0.3], [0.1, 0.15, -1]]], [0.5, 'G']], twist: [[0, 0], [0.08, -0.03], [0.19, 0.05], [0.5, 0]], dip: [[0, 0], [0.08, 0.03], [0.19, -0.02], [0.5, 0]] },
+  parry: { hand: 'L', dur: 0.3, keys: [[0, 'G'], [0.08, [[0.32, -0.04, -0.5], [0.4, -0.8, 0.5], [0.6, 0.2, -0.6]]], [0.3, 'G']], twist: [[0, 0], [0.08, -0.05], [0.3, 0]] },
+  knee: { hand: 'B', dur: 0.42, keys: [[0, 'G'], [0.15, [[0.11, -0.12, -0.46], [0.2, -0.6, 0.8], [0.3, 0.9, 0.2]]], [0.42, 'G']], dip: [[0, 0], [0.15, 0.05], [0.42, 0]] },
+  throw: { hand: 'B', dur: 0.55, keys: [[0, 'G'], [0.2, [[-0.3, -0.12, -0.45], [0.6, -0.5, 0.6], [0.3, 0.9, 0.2]]], [0.55, 'G']], twist: [[0, 0], [0.2, 0.18], [0.55, 0]] },
+  swing: { hand: 'R', dur: 0.56, keys: [[0, 'G'], [0.1, [[0.26, -0.06, -0.38], [0.22, -0.72, 0.62], [0.35, 0.75, 0.55]]], [0.22, [[-0.05, -0.12, -0.6], [0.1, -0.4, 0.9], [0.35, 0.75, 0.2]]], [0.34, [[-0.2, -0.2, -0.5], [0.1, -0.5, 0.85], [0.35, 0.75, 0.3]]], [0.56, 'G']],
+    sweep: [[0, 0], [0.1, -0.5], [0.22, 1.3], [0.34, 1.65], [0.56, 0]], twist: [[0, 0], [0.1, 0.05], [0.22, -0.1], [0.56, 0]] },
+};
+
 class Human {
   constructor(material, o) {
     const rnd = mulberry32(o.seed || 1);
@@ -173,6 +248,7 @@ class Human {
     this.mesh.bind(new THREE.Skeleton(bones));
     this.mesh.castShadow = true; this.mesh.receiveShadow = true;
     this.bones = bones;
+    bones[BONE.armL].rotation.order = 'YXZ'; bones[BONE.armR].rotation.order = 'YXZ';
     this.root = new THREE.Group();
     this.root.add(this.mesh);
     const s = o.scale ?? (0.96 + rnd() * 0.1); this.mesh.scale.setScalar(s);
@@ -201,71 +277,223 @@ class Human {
     mesh.rotation.copy(rot); mesh.position.copy(pos);
     mesh.userData = { ...old.userData };
     const k = CULLED.indexOf(old); if (k >= 0) CULLED[k] = mesh;
-    this.mesh = mesh; this.real = true;
+    this.mesh = mesh; this.real = true; this._rig = null; if (this.loco) this.loco.hy = this.hipRest.y;
   }
-  punch() { this.punchT = 0.45; }
-  hit() { this.hitT = 0.35; }
-  knockDown() { this.downT = 0.0001; }
-  reset() { this.downT = 0; this.hitT = 0; this.punchT = 0; this.mesh.rotation.set(0, 0, 0); this.mesh.position.set(0, 0, 0); }
-  update(dt, t) {
+  // Moves: jab, cross, hook, upper, hay (haymaker), swing (weapon), knee, parry, throw. windup (s) stretches
+  // the build-up so the impact lands exactly when the fight code resolves it.
+  attack(name, windup = 0) { const d = CLIPS[name] || CLIPS.cross; this.clip = { d, e: 0, wu: windup > 0 ? windup : 0 }; }
+  punch(windup) { this.attack('cross', windup); }
+  // kind: jab | cross | hook | upper | body | heavy | parried | block; side: +1 from their right, -1 from their left.
+  hit(kind = 'jab', side = 1) { this.react = { kind, side, t: 0 }; if (kind !== 'block' && this.clip && this.clip.e < (this.clip.wu || this.clip.d.hit)) this.clip = null; }
+  knockDown() { this.downT = 0.0001; this.upT = 0; this.clip = null; this.downSide = Math.random() < 0.5 ? -1 : 1; }
+  getUp() { if (this.downT > 0) this.upT = Math.min(this.downT, 0.8); else this.reset(); }
+  reset() { this.downT = 0; this.upT = 0; this.hitT = 0; this.punchT = 0; this.clip = null; this.react = null; this.mesh.rotation.set(0, 0, 0); this.mesh.position.set(0, 0, 0); if (this.loco) this.loco.hy = this.hipRest.y; }
+  rig() {
+    if (this._rig) return this._rig;
     const B = this.bones, b = n => B[BONE[n]];
+    const limb = (u, l, e) => { const up = b(u), lo = b(l), en = b(e); return { up, lo, en, l1: lo.position.length(), l2: en.position.length(), a1: lo.position.clone().normalize(), a2: en.position.clone().normalize() }; };
+    const R = { legL: limb('thighL', 'shinL', 'footL'), legR: limb('thighR', 'shinR', 'footR'), armL: limb('armL', 'foreL', 'handL'), armR: limb('armR', 'foreR', 'handR') };
+    R.leg = R.legL.l1 + R.legL.l2; R.k = R.leg / 0.875; R.reach = R.armL.l1 + R.armL.l2;
+    R.ankleY = this.hipRest.y + b('thighL').position.y + b('shinL').position.y + b('footL').position.y;
+    R.hipX = Math.abs(b('thighL').position.x); R.thighY = b('thighL').position.y; R.thighZ = b('thighL').position.z;
+    R.feet = [{ p: new THREE.Vector3(), pitch: 0, yaw: 0, st: 0, u: 0 }, { p: new THREE.Vector3(), pitch: 0, yaw: 0, st: 0, u: 0 }];
+    return (this._rig = R);
+  }
+  update(dt, t) {
+    const B = this.bones, b = n => B[BONE[n]], R = this.rig();
     for (const bone of B) bone.rotation.set(0, 0, 0);
-    b('hips').position.copy(this.hipRest);
-    if (this.downT > 0) {
-      this.downT = Math.min(this.downT + dt, 3);
-      const k = smoothstep(this.downT, 0, 0.55);
-      this.mesh.rotation.x = -k * Math.PI / 2 * 0.98; this.mesh.position.y = k * 0.12; this.mesh.position.z = -k * 0.25;
-      b('armL').rotation.z = k * 1.2; b('armR').rotation.z = -k * 1.2; b('head').rotation.x = k * 0.3;
-      b('thighL').rotation.x = -k * 0.15; b('shinL').rotation.x = k * 0.4;
-      return;
+    const hips = b('hips'), spine = b('spine'), chest = b('chest');
+    hips.position.copy(this.hipRest);
+    // Velocity in the body's own frame, from how far the character actually moved (so feet match the ground).
+    const rp = this.root.position, ry = this.root.rotation.y;
+    const L = this.loco || (this.loco = { lx: rp.x, lz: rp.z, ly: ry, vx: 0, vz: 0, ph: this.phase / TAU, hy: this.hipRest.y, dx: 0, dz: 1, yr: 0 });
+    let wvx = 0, wvz = 0;
+    if (dt > 0) {
+      const ddx = rp.x - L.lx, ddz = rp.z - L.lz; if (ddx * ddx + ddz * ddz < 9) { wvx = ddx / dt; wvz = ddz / dt; }
+      let dyaw = ry - L.ly; dyaw = Math.atan2(Math.sin(dyaw), Math.cos(dyaw)); L.yr = lerp(L.yr, clamp(dyaw / dt, -8, 8), 1 - Math.exp(-dt * 8));
     }
-    const sp = this.speed, walk = clamp(sp / 1.6, 0, 1), run = clamp((sp - 2.5) / 3, 0, 1);
-    this.phase += dt * (sp > 0.05 ? 4.2 + sp * 1.25 : 0);
-    const ph = this.phase, sw = Math.sin(ph), cw = Math.cos(ph);
-    const breath = Math.sin(t * 1.6 + this.idleSeed) * 0.02;
-    // Legs and arms swing opposite; knees bend on the recovering leg.
-    const amp = 0.55 * walk + 0.35 * run;
-    b('thighL').rotation.x = -sw * amp; b('thighR').rotation.x = sw * amp;
-    b('shinL').rotation.x = Math.max(0, cw) * amp * 1.3 + 0.05; b('shinR').rotation.x = Math.max(0, -cw) * amp * 1.3 + 0.05;
-    b('footL').rotation.x = -Math.max(0, -sw) * amp * 0.4; b('footR').rotation.x = -Math.max(0, sw) * amp * 0.4;
-    b('hips').position.y = this.hipRest.y - Math.abs(cw) * 0.035 * walk - run * 0.05;
-    b('hips').rotation.y = sw * 0.12 * walk; b('chest').rotation.y = -sw * 0.18 * walk;
-    b('spine').rotation.x = 0.05 * walk + 0.15 * run + breath;
-    let armL = sw * amp * 0.9, armR = -sw * amp * 0.9, foreL = -0.25 - 0.5 * run, foreR = -0.25 - 0.5 * run;
-    b('armL').rotation.z = 0.12; b('armR').rotation.z = -0.12;
-    if (this.pose === 'crossed' && sp < 0.1 && this.mode === 'idle') {
-      // Forearms fold across the chest: swing about z to point across the body, then forward about y.
-      armL = -0.4; armR = -0.4; foreL = 0; foreR = 0;
-      b('armL').rotation.z = 0.06; b('armR').rotation.z = -0.06;
-      b('foreL').rotation.set(0, 0.55, -1.72); b('foreR').rotation.set(0, -0.48, 1.68);
+    L.lx = rp.x; L.lz = rp.z; L.ly = ry;
+    const cy = Math.cos(ry), sy = Math.sin(ry), sc = this.mesh.scale.x || 1;
+    let lvx = (wvx * cy - wvz * sy) / sc, lvz = (wvx * sy + wvz * cy) / sc; const ls = Math.hypot(lvx, lvz); if (ls > 9) { lvx *= 9 / ls; lvz *= 9 / ls; }
+    const kv = 1 - Math.exp(-dt * 10); L.vx = lerp(L.vx, lvx, kv); L.vz = lerp(L.vz, lvz, kv);
+    const lab = this.lab; if (lab) { L.vx = lab.vx || 0; L.vz = lab.vz || 0; if (lab.down != null) { this.downT = lab.down; this.upT = 0; } }
+    const sp = Math.hypot(L.vx, L.vz); this.speed = sp; if (sp > 0.15) { L.dx = L.vx / sp; L.dz = L.vz / sp; }
+    if (this.upT > 0) { this.upT -= dt * 1.5; if (this.upT <= 0) { this.upT = 0; this.downT = 0; this.mesh.rotation.set(0, 0, 0); this.mesh.position.set(0, 0, 0); L.hy = this.hipRest.y - 0.3 * R.k; } }
+    if (this.downT > 0) { if (!(this.upT > 0) && !lab) this.downT = Math.min(this.downT + dt, 4); this.fallPose(this.upT > 0 ? Math.min(this.upT, 0.8) : this.downT, t, b, R); return; }
+    if (this.pose === 'seated') { b('head').rotation.y = clamp(this.lookYaw, -1.1, 1.1) * 0.75; b('neck').rotation.y = clamp(this.lookYaw, -1.1, 1.1) * 0.25; b('head').rotation.x = Math.sin(t * 0.7 + this.idleSeed) * 0.04; this.seated(dt, t, b); return; }
+    // Clip timeline.
+    if (lab) this.clip = lab.clip ? { d: CLIPS[lab.clip], e: lab.u || 0, wu: 0 } : null;
+    let C = this.clip, cu = -1, cw = 0;
+    if (C) {
+      if (!lab) C.e += dt; const d = C.d; cu = C.wu && C.e < C.wu ? C.e / C.wu * d.hit : C.wu ? d.hit + (C.e - C.wu) : C.e;
+      if (cu >= d.dur) { this.clip = C = null; cu = -1; } else cw = clamp(Math.min(cu / Math.max(0.04, d.hit * 0.5), (d.dur - cu) / (d.dur * 0.3)), 0, 1);
     }
-    if (this.mode === 'guard') {
-      armL = -0.9; armR = -0.75; foreL = -2.0; foreR = -2.1;
-      b('armL').rotation.z = 0.35; b('armR').rotation.z = -0.35; b('spine').rotation.x += 0.12;
+    const tr = name => C && C.d[name] ? trackAt(C.d[name], cu) : 0;
+    // Hit reaction envelope.
+    let rk = null, re = 0, rs = 1;
+    if (this.react) { const r = this.react; r.t += dt; re = r.t < 0.05 ? r.t / 0.05 : Math.exp(-(r.t - 0.05) * 6.5); if (r.t > 0.7) this.react = null; else { rk = r.kind; rs = r.side; } }
+    this.dz = lerp(this.dz || 0, this.daze ? 1 : 0, 1 - Math.exp(-dt * 6));
+    const guardMode = this.mode === 'guard' || this.mode === 'block';
+    const gwT = (guardMode ? 1 - smoothstep(sp, 2.6, 3.4) : 0) || (C ? 1 : 0);
+    this.gw = lab ? gwT : lerp(this.gw ?? 0, gwT, 1 - Math.exp(-dt * 9)); const gw = this.gw;
+    // ---- gait --------------------------------------------------------------------------------------
+    // Dodge: a quick duck-and-slip, feet sliding, not a sideways sprint.
+    this.dgw = lab ? (this.dodge ? 1 : 0) : lerp(this.dgw || 0, this.dodge ? 1 : 0, 1 - Math.exp(-dt * 18)); const dg = this.dgw;
+    const sn = sp / R.k, run = smoothstep(sn, 1.9, 3.0) * (1 - gw) * (1 - dg), moveW = smoothstep(sp, 0.08, 0.6) * (1 - dg), fwdW = moveW * clamp(L.dz * 1.5, 0, 1);
+    const cad = lerp(lerp(1.55 + 0.32 * sn, 2.65 + 0.16 * sn, run), 3.2, gw) / Math.sqrt(R.k);
+    if (lab && lab.ph != null) L.ph = lab.ph; else if (sp > 0.05) L.ph = (L.ph + dt * cad / 2) % 1;
+    const sf = lerp(lerp(0.6, lerp(0.35, 0.28, smoothstep(sn, 4, 8)), run), 0.62, gw);
+    const dT = Math.min(sp * sf / Math.max(cad / 2, 0.1), 1.05 * R.k);
+    const lift = (lerp(0.05 + 0.025 * sn, Math.min(0.5, 0.15 + 0.05 * sn), run) * (1 - gw) + gw * 0.045) * R.k;
+    const back = L.dz < -0.2;
+    for (let i = 0; i < 2; i++) {
+      const F = R.feet[i], sg = i ? -1 : 1, psi = (L.ph + i * 0.5) % 1;
+      let along, y = R.ankleY, pitch;
+      if (psi < sf) {
+        const u = psi / sf; along = dT * (0.5 - u);
+        const hr = lerp(0.07, 0.09, run) * smoothstep(u, lerp(0.55, 0.4, run), 1) * R.k; y += hr;
+        pitch = hr * 5.5 - (1 - run) * 0.18 * (1 - smoothstep(u, 0, 0.18)); F.st = 1; F.u = u;
+      } else {
+        const u = (psi - sf) / (1 - sf), ue = Math.pow(u, lerp(1, 1.35, run));
+        along = dT * (-0.5 + (1 - Math.cos(Math.PI * ue)) / 2);
+        y += lift * Math.sin(Math.PI * Math.pow(u, lerp(1, 0.7, run)));
+        pitch = lerp(0.5, 0.8, run) * (1 - u) * (1 - u) - (1 - run) * 0.22 * smoothstep(u, 0.6, 1); F.st = 0; F.u = u;
+      }
+      along -= 0.2 * run * R.k; // runners land under themselves and push off well behind
+      if (back) pitch *= 0.3;
+      const bx = lerp(sg * lerp(0.12, 0.09, run) * R.k, (i ? -0.16 : 0.15) * R.k, gw), bz = lerp(0, (i ? -0.2 : 0.19) * R.k, gw) + (i ? 0 : tr('lead') * R.k);
+      F.p.set(bx + L.dx * along * moveW, lerp(R.ankleY, y, moveW) + (i ? tr('heel') : tr('leadHeel')) * R.k, bz + L.dz * along * moveW);
+      F.pitch = pitch * moveW + (i ? tr('heel') : tr('leadHeel')) * 5;
+      F.yaw = lerp(sg * 0.12, i ? -0.75 : -0.25, gw) + (i ? tr('pivot') : tr('leadPivot'));
     }
-    if (this.punchT > 0) {
-      this.punchT = Math.max(0, this.punchT - dt);
-      const p = Math.sin((1 - this.punchT / 0.45) * Math.PI);
-      armR = lerp(armR, -1.55, p); foreR = lerp(foreR, -0.1, p); b('chest').rotation.y += p * 0.45; b('armR').rotation.z = -0.1;
+    const kn = tr('knee'); if (kn) { const F = R.feet[1]; F.p.lerp(_V[8].set(-0.06 * R.k, R.ankleY + 0.45 * R.k, 0.3 * R.k), kn); F.pitch = lerp(F.pitch, 0.6, kn); F.st = 0; }
+    // ---- pelvis and torso ---------------------------------------------------------------------------
+    const cyc = Math.cos(TAU * L.ph), syc = Math.sin(TAU * L.ph);
+    const sway = 0.022 * (1 - run * 0.7) * syc * moveW * (1 - gw) * R.k;
+    const hx = this.hipRest.x + sway * L.dz, hz = this.hipRest.z - sway * L.dx;
+    let hy = this.hipRest.y - (0.035 * run + 0.1 * gw + 0.03 * this.dz + 0.12 * dg) * R.k - tr('drop') * R.k;
+    if (rk === 'body') hy -= 0.07 * re * R.k;
+    let anyStance = false;
+    for (let i = 0; i < 2; i++) {
+      const F = R.feet[i]; if (!F.st) continue; anyStance = true;
+      const jx = hx + (i ? -R.hipX : R.hipX), jz = hz + R.thighZ, h2 = (F.p.x - jx) ** 2 + (F.p.z - jz) ** 2;
+      const top = F.p.y + Math.sqrt(Math.max(0, (0.975 * R.leg) ** 2 - h2)) - R.thighY - 0.06 * R.k * run * Math.sin(Math.PI * F.u);
+      if (top < hy) hy = top;
     }
-    b('armL').rotation.x = armL; b('armR').rotation.x = armR;
-    b('foreL').rotation.x = foreL; b('foreR').rotation.x = foreR;
-    // Idle weight shift and head look.
-    if (sp < 0.1) { b('hips').rotation.z = Math.sin(t * 0.45 + this.idleSeed) * 0.03; b('thighL').rotation.z = -b('hips').rotation.z; b('thighR').rotation.z = -b('hips').rotation.z; }
-    b('head').rotation.y = clamp(this.lookYaw, -1.1, 1.1) * 0.75; b('neck').rotation.y = clamp(this.lookYaw, -1.1, 1.1) * 0.25;
-    b('head').rotation.x = Math.sin(t * 0.7 + this.idleSeed) * 0.04;
-    if (this.pose === 'seated') this.seated(dt, t, b);
+    if (!anyStance) hy += 0.025 * R.k * run;
+    hy += gw * 0.012 * R.k * Math.sin(t * 10.5 + this.idleSeed) * (1 - moveW * 0.6);
+    L.hy = hy < L.hy || lab ? hy : lerp(L.hy, hy, 1 - Math.exp(-dt * 14));
+    hips.position.set(hx, L.hy, hz);
+    const bank = clamp(-L.yr * sp * 0.025, -0.25, 0.25) * (1 - gw);
+    const list = lerp(0.045, 0.025, run) * syc * moveW * (1 - gw);
+    let hipsYaw = lerp(-lerp(0.1, 0.07, run) * cyc * fwdW, -0.3, gw) + tr('hips');
+    let chestYaw = lerp(lerp(0.06, 0.16, run) * cyc * fwdW, -0.45, gw) + tr('chest');
+    let lean = lerp(0.04 + 0.1 * run + 0.08 * smoothstep(sn, 5, 8), 0.12, gw) * (back ? 0.3 : 1) + tr('lean') + 0.1 * this.dz;
+    let roll = tr('roll') - L.dx * 0.4 * dg, headX = 0, headY = 0, headZ = 0, armOut = 0; lean += L.dz * 0.25 * dg;
+    if (rk) {
+      if (rk === 'jab' || rk === 'cross') { headX -= 0.5 * re; lean -= 0.14 * re; headY += rs * 0.15 * re; }
+      else if (rk === 'hook') { headY += rs * 0.7 * re; headZ += rs * 0.25 * re; chestYaw += rs * 0.25 * re; lean -= 0.05 * re; }
+      else if (rk === 'upper') { headX -= 0.8 * re; lean -= 0.3 * re; armOut += 0.5 * re; }
+      else if (rk === 'body') { lean += 0.6 * re; headX += 0.2 * re; }
+      else if (rk === 'heavy') { headX -= 0.55 * re; headY += rs * 0.45 * re; lean -= 0.25 * re; chestYaw += rs * 0.3 * re; armOut += 0.3 * re; }
+      else if (rk === 'parried') { chestYaw += rs * 0.45 * re; lean -= 0.12 * re; armOut += 0.35 * re; }
+      else if (rk === 'block') { lean -= 0.06 * re; headX -= 0.08 * re; }
+    }
+    const breath = Math.sin(t * 1.6 + this.idleSeed) * 0.015;
+    hips.rotation.set(0, hipsYaw, list + bank);
+    const twist = chestYaw - hipsYaw;
+    spine.rotation.set(lean * 0.6, twist * 0.4, -0.5 * list + roll * 0.5);
+    chest.rotation.set(lean * 0.4 + breath, twist * 0.6, roll * 0.5);
+    // ---- legs: two-bone IK onto the planted / swinging feet -----------------------------------------
+    const legsFK = this.air || this.climbing;
+    if (!legsFK) {
+      const hq = hips.quaternion, hqi = _Q[1].copy(hq).invert();
+      for (let i = 0; i < 2; i++) {
+        const F = R.feet[i], leg = i ? R.legR : R.legL;
+        const tgt = _V[8].copy(F.p).sub(hips.position).applyQuaternion(hqi);
+        const pole = _V[9].set(Math.sin(F.yaw) + (i ? -0.15 : 0.15), 0, Math.cos(F.yaw)).applyQuaternion(hqi);
+        ik2(leg, tgt, pole, 1);
+        _EU.set(F.pitch, F.yaw, 0, 'YXZ');
+        leg.en.quaternion.copy(_Q[3].copy(hq).multiply(leg.up.quaternion).multiply(leg.lo.quaternion).invert()).multiply(_Q[2].setFromEuler(_EU));
+      }
+    }
+    // ---- arms: relaxed swing (FK), then guard / strike IK blended over it -----------------------------
+    const S = lerp(0.22 + 0.1 * sn, Math.min(0.8, 0.4 + 0.05 * sn), run) * moveW;
+    const aL = b('armL'), aR = b('armR'), fL = b('foreL'), fR = b('foreR');
+    aL.rotation.set(S * cyc - 0.12 * run + 0.03, -0.25 * run * Math.max(0, -cyc), 0.08 + 0.1 * run + breath);
+    aR.rotation.set(-S * cyc - 0.12 * run + 0.03, 0.25 * run * Math.max(0, cyc), -0.08 - 0.1 * run - breath);
+    fL.rotation.x = -(lerp(0.18, 1.4, run) + lerp(0.2, 0.35, run) * Math.max(0, -cyc) * moveW);
+    fR.rotation.x = -(lerp(0.18, 1.4, run) + lerp(0.2, 0.35, run) * Math.max(0, cyc) * moveW);
+    if (this.pose === 'crossed' && sp < 0.1 && !guardMode && !C) {
+      aL.rotation.set(-0.4, 0, 0.06); aR.rotation.set(-0.4, 0, -0.06);
+      fL.rotation.set(0, 0.55, -1.72); fR.rotation.set(0, -0.48, 1.68);
+    }
+    const armW = Math.max(gw, cw) * (1 - 0.45 * this.dz);
+    if (armW > 0.01) {
+      hips.updateMatrix(); spine.updateMatrix(); chest.updateMatrix();
+      const Mc = _M[2].multiplyMatrices(hips.matrix, spine.matrix).multiply(chest.matrix), Mci = _M[3].copy(Mc).invert();
+      const block = this.mode === 'block' && !C;
+      for (let s = 0; s < 2; s++) {
+        const sg = s ? -1 : 1, A = s ? R.armR : R.armL, uses = C && (C.d.arm === 'B' || (C.d.arm === 'L') === !s);
+        _Qa[s].copy(A.up.quaternion); _Qb[s].copy(A.lo.quaternion);
+        const gk = block ? GUARD.block : this.weapon && s ? GUARD.weapon : s ? GUARD.rear : GUARD.lead;
+        const gp = _V[10].set(gk[0] * sg, gk[1], gk[2]).multiplyScalar(R.reach).add(A.up.position).applyMatrix4(Mc);
+        const pole = _V[11].set((block ? 0.15 : 0.35) * sg, -1, block ? 0.1 : -0.15);
+        let tgt = gp;
+        if (uses) {
+          const sh = _V[12].copy(A.up.position).applyMatrix4(Mc), keys = C.d.hand, n = keys.length;
+          let i = 0; while (i < n - 2 && cu > keys[i + 1][0]) i++;
+          const kp = j => { const k = keys[clamp(j, 0, n - 1)][1]; if (k === 'G' || k === 'W') return k === 'W' ? _V[13].set(GUARD.weapon[0] * sg, GUARD.weapon[1], GUARD.weapon[2]).multiplyScalar(R.reach).add(A.up.position).applyMatrix4(Mc).clone() : gp.clone(); return new THREE.Vector3(k[0] * sg, k[1], k[2]).multiplyScalar(R.reach).add(sh); };
+          const p0 = kp(i - 1), p1 = kp(i), p2 = kp(i + 1), p3 = kp(i + 2), u = clamp((cu - keys[i][0]) / Math.max(1e-4, keys[Math.min(i + 1, n - 1)][0] - keys[i][0]), 0, 1);
+          tgt = _V[13].set(cr(p0.x, p1.x, p2.x, p3.x, u), cr(p0.y, p1.y, p2.y, p3.y, u), cr(p0.z, p1.z, p2.z, p3.z, u));
+          const cp = C.d.pole; pole.lerp(_V[12].set(cp[0] * sg, cp[1], cp[2]), cw);
+        }
+        if (this.dz > 0.01) tgt.y -= 0.12 * this.dz * R.reach;
+        if (armOut) tgt.x += sg * armOut * 0.25 * R.reach;
+        tgt.applyMatrix4(Mci); pole.transformDirection(Mci);
+        ik2(A, tgt, pole, -1);
+        A.up.quaternion.slerpQuaternions(_Qa[s], A.up.quaternion.clone(), armW);
+        A.lo.quaternion.slerpQuaternions(_Qb[s], A.lo.quaternion.clone(), armW);
+      }
+    }
+    // ---- head: steady gaze, looks at whoever it's watching -------------------------------------------
+    const look = lerp(clamp(this.lookYaw, -1.1, 1.1), 0, gw), torso = chestYaw;
+    b('neck').rotation.set(-lean * 0.25, (look - torso) * 0.3, 0);
+    b('head').rotation.set(-lean * 0.35 + gw * 0.1 + Math.sin(t * 0.7 + this.idleSeed) * 0.03 + headX + Math.sin(t * 5) * 0.12 * this.dz, (look - torso) * 0.7 + headY, headZ + Math.sin(t * 3.7) * 0.1 * this.dz);
     // Jumping and climbing (the player's own body in third person).
-    if (this.air) { b('thighL').rotation.x = -0.75; b('thighR').rotation.x = -0.45; b('shinL').rotation.x = 1.1; b('shinR').rotation.x = 0.8; b('armL').rotation.z = 0.55; b('armR').rotation.z = -0.55; }
-    if (this.climbing) { b('armL').rotation.x = -2.7; b('armR').rotation.x = -2.7; b('foreL').rotation.x = -0.4; b('foreR').rotation.x = -0.4; b('thighL').rotation.x = -1.1; b('shinL').rotation.x = 1.3; }
-    if (this.weapon && this.mode === 'guard') { b('armR').rotation.x = -0.6; b('foreR').rotation.x = -1.4; }
-    if (this.hitT > 0) {
-      this.hitT = Math.max(0, this.hitT - dt);
-      const h = Math.sin(this.hitT / 0.35 * Math.PI);
-      b('spine').rotation.x -= h * 0.35; b('head').rotation.x -= h * 0.5; b('armL').rotation.x -= h * 0.5; b('armR').rotation.x -= h * 0.4;
+    if (this.air) { b('thighL').rotation.set(-0.75, 0, 0); b('thighR').rotation.set(-0.45, 0, 0); b('shinL').rotation.set(1.1, 0, 0); b('shinR').rotation.set(0.8, 0, 0); b('footL').rotation.set(0.3, 0, 0); b('footR').rotation.set(0.3, 0, 0); aL.rotation.z = 0.55; aR.rotation.z = -0.55; }
+    if (this.climbing) { aL.rotation.set(-2.7, 0, 0.2); aR.rotation.set(-2.7, 0, -0.2); fL.rotation.set(-0.4, 0, 0); fR.rotation.set(-0.4, 0, 0); b('thighL').rotation.set(-1.1, 0, 0); b('shinL').rotation.set(1.3, 0, 0); b('thighR').rotation.set(-0.3, 0, 0); b('shinR').rotation.set(0.5, 0, 0); }
+  }
+  // Knocked down: the knees go, they sit back and land on their back, legs slide out. Played backwards to get up.
+  fallPose(T, t, b, R) {
+    const k = R.k, hips = b('hips'), sc = this.mesh.scale.x || 1;
+    const k1 = smoothstep(T, 0, 0.3), k2r = clamp((T - 0.14) / 0.48, 0, 1), k2 = k2r * k2r, k3 = smoothstep(T, 0.75, 1.7);
+    const land = T > 0.62 ? Math.sin(clamp((T - 0.62) / 0.22, 0, 1) * Math.PI) * Math.exp(-(T - 0.62) * 4) : 0, side = this.downSide || 1;
+    const hy = this.hipRest.y - 0.36 * k * k1;
+    hips.position.set(this.hipRest.x, hy, this.hipRest.z);
+    this.mesh.rotation.set(-k2 * Math.PI / 2 * 0.96, 0, side * 0.2 * k2);
+    const hl = _V[8].set(0, hy, this.hipRest.z).multiplyScalar(sc).applyEuler(this.mesh.rotation);
+    this.mesh.position.set(-hl.x, lerp(hy, 0.13 + 0.03 * land, k2) * sc - hl.y, lerp(this.hipRest.z, -0.32 * k, k2) * sc - hl.z);
+    b('spine').rotation.set(0.28 * k1 - 0.25 * k2 + 0.04, 0, 0); b('chest').rotation.set(0.1 * k1 - 0.05 * k2, 0, 0);
+    b('head').rotation.set(0.35 * k1 * (1 - k2) - 0.12 * k2 + 0.25 * land, side * 0.6 * k3, 0);
+    const mrInv = _Q[1].setFromEuler(this.mesh.rotation).invert(), hqi = _Q[2].copy(hips.quaternion).invert();
+    for (let i = 0; i < 2; i++) {
+      const sg = i ? -1 : 1, leg = i ? R.legR : R.legL;
+      // Feet planted where they stood (root space), carried into the falling body's frame, then sliding out.
+      const p = _V[9].set(sg * 0.13 * k, R.ankleY, 0.06 * k).sub(this.mesh.position).divideScalar(sc).applyQuaternion(mrInv);
+      p.lerp(_V[10].set(sg * 0.17 * k, hy - 0.8 * k, (0.12 + 0.06 * i) * k), k3 * 0.75);
+      const tgt = p.sub(hips.position).applyQuaternion(hqi);
+      ik2(leg, tgt, _V[11].set(sg * 0.25, 0, 1).applyQuaternion(hqi), 1);
+      _Q[3].copy(hips.quaternion).multiply(leg.up.quaternion).multiply(leg.lo.quaternion).invert();
+      const qf = _Q[0].copy(mrInv).slerp(_EQ.setFromEuler(_EU.set(0.5, sg * 0.3, 0, 'YXZ')), k3);
+      leg.en.quaternion.copy(_Q[3]).multiply(qf);
     }
+    const fl = 0.4 * k1 + 0.95 * k2 + 0.15 * land;
+    b('armL').rotation.set(-0.5 * k1 * (1 - k2) - 0.2 * k2, 0, fl); b('armR').rotation.set(-0.5 * k1 * (1 - k2) - 0.2 * k2, 0, -fl);
+    b('foreL').rotation.x = -0.6 + 0.35 * k2; b('foreR').rotation.x = -0.6 + 0.3 * k2;
   }
 }
+
 
 // Couch pose with a controller: thumbs mash while playing; react > 0 cheers, < 0 slumps (decays).
 Human.prototype.seated = function (dt, t, b) {
@@ -334,41 +562,55 @@ class Fists {
     }
     geo.computeVertexNormals();
   }
-  swing() { const i = this.next; this.punch[i] = 1; this.next = 1 - i; this.raised = 1.2; }
+  play(name) { this.clip = { d: FCLIPS[name] || FCLIPS.jab, e: 0, name }; this.raised = 1.2; }
+  swing() { this.play(this.next ? 'jab' : 'cross'); this.next = 1 - (this.next || 0); }
   // Hands stay out of view until you swing or a fight is on; they slide up from below the frame.
   setWeapon(kind) {
     this.weapon.clear(); this.weaponKind = kind || null;
     if (kind) { const m = weaponMesh(kind); m.traverse(o => { if (o.isMesh) { o.renderOrder = 11; o.frustumCulled = false; } }); this.weapon.add(m); }
     this.weapon.visible = !!kind;
   }
-  update(dt, moving, sprint, guard) {
-    if (this.weaponKind) {
-      // Every swing uses the right hand and sweeps the bat through the fist's frame.
-      this.next = 0;
-      const p = this.punch[0], sw = p > 0 ? Math.sin((1 - p) * Math.PI) : 0;
-      this.weapon.position.set(0, -0.02, 0);
-      this.weapon.quaternion.copy(this.weaponBase).premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -sw * 1.3));
-      guard = true;
-    }
-    this.raised = Math.max(guard ? 1 : 0, (this.raised || 0) - dt);
+  update(dt, moving, sprint, guard, block) {
+    const lab = this.lab; if (lab) { guard = true; block = !!lab.block; this.hold = !!lab.hold; this.clip = lab.name ? { d: FCLIPS[lab.name], e: lab.u || 0 } : null; this.show = 1; }
+    let C = this.clip, cu = 0;
+    if (C) { if (!lab) C.e += dt; cu = C.e; if (cu >= C.d.dur) { this.clip = C = null; } }
+    if (this.weaponKind) guard = true;
+    this.raised = Math.max(guard || block || this.hold ? 1 : 0, (this.raised || 0) - dt);
     this.show = lerp(this.show || 0, this.raised > 0 ? 1 : 0, 1 - Math.exp(-dt * 10));
-    this.group.visible = this.show > 0.02; this.group.position.y = (1 - this.show) * -0.35;
+    this.group.visible = this.show > 0.02;
     this.bob += dt * (moving ? (sprint ? 13 : 9) : 1.6);
+    this.kick = Math.max(0, (this.kick || 0) - dt * 5);
+    const twist = C && C.d.twist ? trackAt(C.d.twist, cu) : 0, dip = C && C.d.dip ? trackAt(C.d.dip, cu) : 0;
+    this.group.rotation.set(-this.kick * 0.12, twist, 0);
+    this.group.position.set(0, (1 - this.show) * -0.35 - dip - this.kick * 0.03, this.kick * 0.04);
+    const v = this._tmp || (this._tmp = new Float32Array(9));
     this.hands.forEach((g, i) => {
-      const s = g.userData.side;
-      this.punch[i] = Math.max(0, this.punch[i] - dt * 3.6);
-      const p = this.punch[i] > 0 ? Math.sin((1 - this.punch[i]) * Math.PI) : 0;
-      const bob = Math.sin(this.bob + i * Math.PI) * (moving ? 0.016 : 0.004);
-      g.position.set(s * lerp(0.19, 0.05, p), lerp(-0.2, -0.11, p) + bob, lerp(-0.37, -0.68, p));
+      const s = g.userData.side, lead = s < 0;
+      const G = block && !this.weaponKind ? FGUARD.block : this.hold ? FGUARD.hold : this.weaponKind && !lead ? FGUARD.weapon : lead ? FGUARD.lead : FGUARD.rear;
+      for (let k = 0; k < 3; k++) for (let j = 0; j < 3; j++) v[k * 3 + j] = G[k][j];
+      if (C && (C.d.hand === 'B' || (C.d.hand === 'L') === lead)) {
+        const K = C.d.keys, n = K.length; let a = 0; while (a < n - 2 && cu > K[a + 1][0]) a++;
+        const key = j => { const q = K[clamp(j, 0, n - 1)][1]; return q === 'G' ? G : q; };
+        const k0 = key(a - 1), k1 = key(a), k2 = key(a + 1), k3 = key(a + 2), u = clamp((cu - K[a][0]) / Math.max(1e-4, K[Math.min(a + 1, n - 1)][0] - K[a][0]), 0, 1);
+        for (let k = 0; k < 3; k++) for (let j = 0; j < 3; j++) v[k * 3 + j] = cr(k0[k][j], k1[k][j], k2[k][j], k3[k][j], u);
+      }
+      const bob = Math.sin(this.bob + i * Math.PI) * (moving ? 0.016 : 0.004) + (guard ? Math.sin(this.bob * 1.7 + i) * 0.004 : 0);
+      g.position.set(s * v[0], v[1] + bob, v[2]);
       // Basis: forearm toward an elbow below the screen edge, back of the hand up and outward.
-      this.E.set(s * lerp(0.22, 0.08, p), lerp(-0.72, -0.2, p), lerp(0.62, 1.0, p)).normalize();
-      this.B.set(s * 0.35, 0.75, lerp(0.55, 0.1, p)).normalize();
+      this.E.set(s * v[3], v[4], v[5]).normalize();
+      this.B.set(s * v[6], v[7], v[8]);
       this.B.addScaledVector(this.E, -this.B.dot(this.E)).normalize();
       this.Z.copy(this.B).negate();
       this.X.crossVectors(this.E, this.Z).normalize();
       this.m.makeBasis(this.X, this.E, this.Z);
       g.quaternion.setFromRotationMatrix(this.m);
     });
+    if (this.weaponKind) {
+      // The bat or pipe sweeps through the fist's frame: cocked back, through the target, follow-through.
+      const sw = C && C.d.sweep ? trackAt(C.d.sweep, cu) : 0;
+      this.weapon.position.set(0, -0.02, 0);
+      this.weapon.quaternion.copy(this.weaponBase).premultiply(_EQ.setFromAxisAngle(V_FWD, -sw));
+    }
   }
 }
 

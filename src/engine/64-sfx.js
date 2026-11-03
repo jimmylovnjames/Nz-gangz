@@ -44,6 +44,8 @@ const SFX = {
       case 'buzz': for (const o of [0, 0.32]) this.tone(t + o, 0.22, 62, 0.25, 'square'); break;
       case 'click': this.tone(t, 0.03, 1800, 0.06, 'square'); break;
       case 'dodge': this.burst(t, 0.18, 400, 1, 0.15, 'bandpass', 1800); break;
+      case 'parry': this.tone(t, 0.2, 1500, 0.16, 'triangle', 900); this.tone(t, 0.12, 2300, 0.06, 'sine', 1800); this.burst(t, 0.12, 2400, 1.5, 0.12, 'bandpass', 600); break;
+      case 'tell': this.tone(t, 0.16, 150, 0.12, 'sawtooth', 95); this.burst(t, 0.1, 380, 1.2, 0.08, 'lowpass'); break;
       case 'banner': this.tone(t, 0.18, 660, 0.12, 'triangle'); this.tone(t + 0.12, 0.3, 990, 0.12, 'triangle'); break;
     }
   },

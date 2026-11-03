@@ -44,6 +44,11 @@ async function advanceUntil(page, predicate, tries = 40) {
   }
   return page.evaluate(predicate);
 }
+// Strikes land when the fist does (a few frames after the tap), so tap and wait for the move to finish.
+async function strike(page) {
+  await page.evaluate(() => window.__auGame.hit());
+  await page.waitForFunction(() => !window.__auGame.fight().busy, null, { timeout: 30000, polling: 100 }).catch(() => { });
+}
 async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auGame.teleport(x, z), [x, z]); await page.waitForTimeout(400); }
 
 (async () => {
@@ -104,11 +109,11 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   await page.evaluate(() => window.__auStory.choose(1));
   await advanceUntil(page, () => !window.__auStory.active);
   check('telling Darren "the whole four hundred" starts a scrap', (await state(page)).stage === 'debt-fight');
-  for (let k = 0; k < 6 && (await state(page)).stage === 'debt-fight' && !(await page.evaluate(() => window.__auStory.active)); k++) {
+  for (let k = 0; k < 18 && (await state(page)).stage === 'debt-fight' && !(await page.evaluate(() => window.__auStory.active)); k++) {
     const d = (await page.evaluate(() => window.__auGame.targets())).darren;
-    await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 2.2, z); g.face(Math.atan2(2.2, 0)); }, [d.x, d.z]);
+    await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 2.2, z); g.face(Math.atan2(2.2, 0)); g.setHp(100); }, [d.x, d.z]);
     await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-    await page.evaluate(() => window.__auGame.hit());
+    await strike(page);
   }
   await page.waitForFunction(() => window.__auStory.active, null, { timeout: 30000 }).catch(() => { });
   await advanceUntil(page, () => !window.__auStory.active);
@@ -135,11 +140,11 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   for (let c = 0; c < 2; c++) { await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice)); await page.evaluate(() => window.__auStory.choose(0)); }
   await advanceUntil(page, () => !window.__auStory.active);
   check('Kev refuses and squares up', (await page.evaluate(() => window.__auGame.jobs())).kev === 'fight');
-  for (let k = 0; k < 8 && (await page.evaluate(() => window.__auGame.jobs())).kev === 'fight' && !(await page.evaluate(() => window.__auStory.active)); k++) {
+  for (let k = 0; k < 22 && (await page.evaluate(() => window.__auGame.jobs())).kev === 'fight' && !(await page.evaluate(() => window.__auStory.active)); k++) {
     const d = (await page.evaluate(() => window.__auGame.targets())).kev;
-    await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 2.2, z); g.face(Math.atan2(2.2, 0)); }, [d.x, d.z]);
+    await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 2.2, z); g.face(Math.atan2(2.2, 0)); g.setHp(100); }, [d.x, d.z]);
     await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-    await page.evaluate(() => window.__auGame.hit());
+    await strike(page);
   }
   await page.waitForFunction(() => window.__auStory.active, null, { timeout: 30000 }).catch(() => { });
   await advanceUntil(page, () => !window.__auStory.active);
@@ -183,11 +188,12 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
     const enemies = (await page.evaluate(() => window.__auGame.targets())).enemies;
     const s = await state(page);
     const e = enemies.filter(e => e.alive).sort((a, b) => Math.hypot(a.x - s.x, a.z - s.z) - Math.hypot(b.x - s.x, b.z - s.z))[0];
-    for (let k = 0; k < 3; k++) {
+    for (let k = 0; k < 14; k++) {
       const cur = (await page.evaluate(() => window.__auGame.targets())).enemies.find(q => Math.abs(q.x - e.x) < 6 && Math.abs(q.z - e.z) < 6) || e;
-      await page.evaluate(([ex, ez]) => { const g = window.__auGame; g.teleport(ex + 2.2, ez); g.face(Math.atan2(2.2, 0)); }, [cur.x, cur.z]);
+      if (!cur.alive) break;
+      await page.evaluate(([ex, ez]) => { const g = window.__auGame; g.teleport(ex + 2.2, ez); g.face(Math.atan2(2.2, 0)); g.setHp(100); }, [cur.x, cur.z]);
       await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-      await page.evaluate(() => window.__auGame.hit());
+      await strike(page);
     }
   }
   check('three knockouts complete the brawl', (await state(page)).stage === 'mission-return', JSON.stringify(await state(page)));
@@ -233,11 +239,11 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
     await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice));
     await page.evaluate(i => window.__auStory.choose(i), pick);
     await advanceUntil(page, () => !window.__auStory.active);
-    for (let k = 0; k < 14 && (await page.evaluate(() => window.__auGame.hustle().state)) === 'fight'; k++) {
+    for (let k = 0; k < 30 && (await page.evaluate(() => window.__auGame.hustle().state)) === 'fight'; k++) {
       const d = await page.evaluate(() => window.__auGame.hustle());
       await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 2.2, z); g.face(Math.atan2(2.2, 0)); g.setHp(100); }, [d.x, d.z]);
       await page.waitForTimeout(350);
-      await page.evaluate(() => window.__auGame.hit());
+      await strike(page);
     }
     await page.waitForFunction(() => window.__auStory.active || window.__auGame.hustle().state === 'done', null, { timeout: 30000 }).catch(() => { });
     await advanceUntil(page, () => !window.__auStory.active);
@@ -294,7 +300,7 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
       const alive = (await page.evaluate(() => window.__auGame.c1().rivals)).filter(r => r.alive);
       if (!alive.length) break;
       await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 2.2, z); g.face(Math.atan2(2.2, 0)); g.setHp(100); }, [alive[0].x, alive[0].z]);
-      await page.waitForTimeout(350); await page.evaluate(() => window.__auGame.hit());
+      await page.waitForTimeout(350); await strike(page);
     }
   };
   await brawl();
@@ -363,6 +369,38 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   await page.waitForTimeout(350); await page.evaluate(() => window.__auGame.hit());
   await page.waitForTimeout(350); await page.evaluate(() => window.__auGame.talk());
   check('TALK again throws them', !(await page.evaluate(() => window.__auGame.grabbed())));
+  // Run 21: the combo string (away from anyone) and the parry (in a fresh hustle fight).
+  await page.waitForFunction(() => !window.__auGame.fight().busy, null, { timeout: 30000 }).catch(() => { });
+  { const P0 = await state(page); await page.evaluate(([x, z]) => window.__auGame.teleport(x + 60, z + 60), [P0.x, P0.z]); }
+  await page.waitForTimeout(1500);
+  const seq = [];
+  for (let i = 0; i < 4; i++) { await page.evaluate(() => window.__auGame.hit()); seq.push(await page.evaluate(() => window.__auGame.fight().move)); await page.waitForFunction(() => !window.__auGame.fight().busy, null, { timeout: 30000, polling: 'raf' }).catch(() => { }); }
+  check('HIT strings jab, cross, hook, uppercut', seq.join() === 'jab,cross,hook,upper', seq.join());
+  await page.waitForFunction(() => !window.__auStory.active, null, { timeout: 30000 }).catch(() => { });
+  await advanceUntil(page, () => !window.__auStory.active);
+  H = await page.evaluate(() => window.__auGame.hustle());
+  if (!H || H.state !== 'fight') {
+    await page.evaluate(() => window.__auGame.startHustle('fights'));
+    H = await page.evaluate(() => window.__auGame.hustle());
+    await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 1.5, z); g.face(Math.atan2(1.5, 0)); g.talk(); }, [H.x, H.z]);
+    await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice));
+    await page.evaluate(() => window.__auStory.choose(0));
+    await advanceUntil(page, () => !window.__auStory.active);
+    H = await page.evaluate(() => window.__auGame.hustle());
+  }
+  let parried = false;
+  for (let a = 0; a < 4 && !parried && H && H.state === 'fight'; a++) {
+    await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 1.4, z); g.face(Math.atan2(1.4, 0)); g.setHp(100); }, [H.x, H.z]);
+    const wound = await page.waitForFunction(() => window.__auGame.fight().windups.some(w => w > 0 && w < 0.2), null, { timeout: 90000, polling: 'raf' }).then(() => true).catch(() => false);
+    if (wound) {
+      await page.evaluate(() => window.__auGame.block(true));
+      await page.waitForFunction(() => window.__auGame.fight().pop === 'PARRY' || !window.__auGame.fight().windups.some(w => w > 0), null, { timeout: 30000, polling: 'raf' }).catch(() => { });
+      await page.evaluate(() => window.__auGame.block(false));
+      parried = (await page.evaluate(() => window.__auGame.fight().pop)) === 'PARRY';
+    }
+    H = await page.evaluate(() => window.__auGame.hustle());
+  }
+  check('BLOCK timed to their punch parries it', parried, JSON.stringify(await page.evaluate(() => window.__auGame.fight())) + ' ' + JSON.stringify(H));
   const pk = (await page.evaluate(() => window.__auGame.pickups()))[0];
   await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 0.6, z); }, [pk.x, pk.z]);
   await page.waitForTimeout(300);
