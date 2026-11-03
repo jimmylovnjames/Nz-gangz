@@ -391,10 +391,10 @@ class Human {
     let lean = lerp(0.04 + 0.1 * run + 0.08 * smoothstep(sn, 5, 8), 0.12, gw) * (back ? 0.3 : 1) + tr('lean') + 0.1 * this.dz;
     let roll = tr('roll') - L.dx * 0.4 * dg, headX = 0, headY = 0, headZ = 0, armOut = 0; lean += L.dz * 0.25 * dg;
     if (rk) {
-      if (rk === 'jab' || rk === 'cross') { headX -= 0.5 * re; lean -= 0.14 * re; headY += rs * 0.15 * re; }
-      else if (rk === 'hook') { headY += rs * 0.7 * re; headZ += rs * 0.25 * re; chestYaw += rs * 0.25 * re; lean -= 0.05 * re; }
+      if (rk === 'jab' || rk === 'cross') { headX -= 0.65 * re; lean -= 0.2 * re; headY += rs * 0.2 * re; }
+      else if (rk === 'hook') { headY += rs * 0.8 * re; headZ += rs * 0.3 * re; chestYaw += rs * 0.35 * re; lean -= 0.08 * re; }
       else if (rk === 'upper') { headX -= 0.8 * re; lean -= 0.3 * re; armOut += 0.5 * re; }
-      else if (rk === 'body') { lean += 0.6 * re; headX += 0.2 * re; }
+      else if (rk === 'body') { lean += 0.8 * re; headX += 0.25 * re; armOut -= 0.2 * re; }
       else if (rk === 'heavy') { headX -= 0.55 * re; headY += rs * 0.45 * re; lean -= 0.25 * re; chestYaw += rs * 0.3 * re; armOut += 0.3 * re; }
       else if (rk === 'parried') { chestYaw += rs * 0.45 * re; lean -= 0.12 * re; armOut += 0.35 * re; }
       else if (rk === 'block') { lean -= 0.06 * re; headX -= 0.08 * re; }
