@@ -420,8 +420,8 @@ class Human {
     // ---- arms: relaxed swing (FK), then guard / strike IK blended over it -----------------------------
     const S = lerp(0.22 + 0.1 * sn, Math.min(0.8, 0.4 + 0.05 * sn), run) * moveW;
     const aL = b('armL'), aR = b('armR'), fL = b('foreL'), fR = b('foreR');
-    aL.rotation.set(S * cyc - 0.12 * run + 0.03, -0.25 * run * Math.max(0, -cyc), 0.08 + 0.1 * run + breath);
-    aR.rotation.set(-S * cyc - 0.12 * run + 0.03, 0.25 * run * Math.max(0, cyc), -0.08 - 0.1 * run - breath);
+    aL.rotation.set(S * cyc - 0.12 * run + 0.03, -0.25 * run * Math.max(0, -cyc), (this.real ? 0.0 : 0.07) + 0.1 * run + breath);
+    aR.rotation.set(-S * cyc - 0.12 * run + 0.03, 0.25 * run * Math.max(0, cyc), -(this.real ? 0.0 : 0.07) - 0.1 * run - breath);
     fL.rotation.x = -(lerp(0.18, 1.4, run) + lerp(0.2, 0.35, run) * Math.max(0, -cyc) * moveW);
     fR.rotation.x = -(lerp(0.18, 1.4, run) + lerp(0.2, 0.35, run) * Math.max(0, cyc) * moveW);
     if (this.pose === 'crossed' && sp < 0.1 && !guardMode && !C) {
