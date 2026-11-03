@@ -24,17 +24,21 @@ Read this first in any new session. It is the full context needed to keep workin
 - `node tools/build.mjs`: concatenates `src/engine/*.js` (sorted) into one inline module inside `src/shell.html` and writes `index.html`.
   - Module scripts can't load from `file://`, hence the single file.
   - Always rebuild after editing `src/`.
-- `node tests/smoke.cjs`: Playwright with headless SwiftShader at `?gfx=low`. **72 checks**, the whole story end to end plus every mechanic; takes ~12 min.
+- `node tests/smoke.cjs`: Playwright with headless SwiftShader at `?gfx=low`. **74 checks**, the whole story end to end plus every mechanic; takes ~15 min.
+  - Run it alone: a second SwiftShader page (e.g. a MEDIUM screenshot run) halves the frame rate and the Mikey chase times out.
+  - Strikes resolve a few frames after the tap, so fight loops use the `strike(page)` helper (tap, wait until `fight().busy` is false).
   - Run it in the background and wait on the log.
   - Must be 100% before shipping.
 - Quick syntax check: extract the module from `index.html` and run `node --check`. See git history for the one-liner.
 - URL params: `?gfx=low|medium|high|ultra`, `?assets=off|cdn`, `?people=off`.
 - Debug hooks:
-  - `window.__auGame`: state, teleport, face, talk, hit, targets, drive, carTo, startHustle, heat/addHeat/clearHeat, c1, view, feel, jumpTest, nearFence, grabbed, weapon, pickups, carHealth, peds, police…
+  - `window.__auGame`: state, teleport, face, look, talk, hit, fight (move/busy/combo/pop/windups/blocks), block, targets, drive, carTo, startHustle, heat/addHeat/clearHeat, c1, view, feel, jumpTest, nearFence, grabbed, weapon, pickups, carHealth, peds, police…
+  - Pose lab: `__auGame.lab([{ look, x, z, ry, vx, vz, ph, clip, u, mode, react, rt, down, weapon }])` spawns frozen figures (gait phase `ph`, clip time `u`, fall time `down`); `__auGame.fpLab({ name, u, block, hold })` freezes the first-person fists. `lab([])` / `fpLab(null)` clears.
   - `window.__auStory`: advance, choose, skip, phone, minigame.
   - `window.__auDebug`: scene, camera, city, updateCull, THREE.
   - `window.__auStats`: fps, draw calls, triangles.
-- Screenshot scripts lived in the old session's scratchpad (gone). Write a small Playwright script:
+- Realistic people only load at MEDIUM and above (LOW uses the stand-in bodies). At MEDIUM click `#start` with `page.evaluate(() => document.getElementById('start').click())`: a Playwright click times out on the slow frames.
+- Screenshot scripts live in the session scratchpad (gone next session). Write a small Playwright script:
   1. Serve the repo.
   2. Click `#start`.
   3. Play through the prologue with `__auStory` advance/skip/choose (choice 1, then 0).
@@ -51,11 +55,11 @@ Read this first in any new session. It is the full context needed to keep workin
 | 40-geometry | GeoBuilder (typed buffers, chunked batches by cull class base/detail/far), distance culling (`CULL_DIST`, `updateCull`), CollisionGrid (boxes, circles, segments, OBBs, polygons, each with a `top` height; `collides(x,z,r,feet)`, `first()`), ground grid (`groundHeight`, `isCarriageway`) |
 | 50-city | builds the real district from MAPDATA: ground layers, kerbs, markings, buildings (houses with hip/gable roofs, shops with verandahs, Southmall, big boxes…), fences, furniture, platforms/rails, skate park, far context ring, story `places`, `houses`, weapon spots |
 | 53-props | instanced props (lamps, poles, letterboxes, bus stops, signals, goalposts, hoops), trees, **parametric cars** (6 types + police livery, `city.carKit`), wires, regional hills |
-| 54-characters | Human rig (18 bones, procedural animation: walk, guard, punch, hit, knockdown, seated, air, climbing), stand-in bodies, `PEOPLE` loader for the realistic MakeHuman bodies, `Fists` first-person arms (real forearms from `people/fparms.bin`), weapons (`WEAPON_DEF`, `weaponMesh`) |
+| 54-characters | Human rig (18 bones) with procedural animation: two-bone IK (`ik2`, `aimQuat`) for legs and arms; a foot-planted gait driven by the root's real motion (walk/jog/sprint cadence, stance, lift, pelvis/chest counter-rotation, turn lean); bladed boxing guard; strike clips (`CLIPS`: jab, cross, hook, upper, hay, swing, knee, parry, throw; hand keys relative to the shoulder, Catmull-Rom); directional hit reactions; dodge duck; knockdown `fallPose` + `getUp`; seated, air, climbing. Stand-in bodies, `PEOPLE` loader for the realistic MakeHuman bodies, `Fists` first-person arms (real forearms from `people/fparms.bin`, clips in `FCLIPS`/`FGUARD`), weapons (`WEAPON_DEF`, `weaponMesh`) |
 | 55-weather | rain |
 | 56-minigame / 57-lounge / 58-story | prologue: Kiwi Knuckle Kings console fighter on Manu's couch; dialogue system + VoiceBank; `SCRIPT` (all voiced lines with ids), `TEXTS` (phone), CAST |
 | 59-phone | phone UI (messages, JOBS) |
-| 60-game | `createGame()`: everything gameplay. The player is `eye` (Object3D); the render `camera` follows it in `syncCamera` (first person, or third-person boom with `playerBody`). Story stages, missions, fighting (hostiles, fightDirector token, brawlerMove, meleeAI, applyHit/koTarget, grab/throw, finishers, weapons), movement (momentum, dodge, jump/vault/climb), driving frame, shops, hustles, heat/police/peds, Chapter One, saves (`MAP_VERSION`), HUD, banners, beacon, minimap |
+| 60-game | `createGame()`: everything gameplay. The player is `eye` (Object3D); the render `camera` follows it in `syncCamera` (first person, or third-person boom with `playerBody`). Story stages, missions, fighting (hostiles, fightDirector token + telegraph bar colours, brawlerMove, meleeAI with `EATK` attacks and `STYLES` per fighter, enemy blocking, `PMOVES` player strikes resolved on the impact frame by `moveFrame`/`strike`, 4-hit `COMBO`, parry, counters, guard break, soft `lockOn`, `pop` callouts, applyHit/koTarget, grab/throw, finishers, weapons), movement (momentum, dodge, jump/vault/climb), driving frame, shops, hustles, heat/police/peds, Chapter One, saves (`MAP_VERSION`), HUD, banners, beacon, minimap |
 | 61-drive | PlayerCars (enter any parked car, weighted drift handling, damage, smoke, engine audio), Traffic (road graph from map vertices, drive on the left) |
 | 62-shops | 110 real shops from map signs: food heals, energy drinks, barber/supermarket rep, gym punch power |
 | 63-street | Heat (stars), Police (Battenburg cars chasing on the road graph, bust = Manurewa Police Station + 30% fine), Pedestrians (spatial-grid spawns, scatter, knockdown) |
@@ -75,11 +79,13 @@ Story stages (in order): `prologue, debt-find, debt-fight, debt-return, shorty-w
     - MakeHuman repo `makehuman/data`: blobless sparse clone of `https://github.com/makehumancommunity/makehuman.git` with `targets/macrodetails/*`, `rigs/*`, `3dobjs/*`, `eyes/*`.
     - System assets zip: `https://files.makehumancommunity.org/asset_packs/makehuman_system_assets/makehuman_system_assets_cc0.zip` (280 MB; extract only the skins, clothes, hair, eyebrows and eyes named in the CAST dict).
   - The script strips the MakeHuman logo from the tees (`delogo`).
+  - `curl_fingers` bakes a loose fist into every body (the game rig has no finger bones) and a tight one into `fparms`. The palm normal must rotate with each joint; recomputing it from world down gives a claw.
+  - `MESH_ONLY=1` rewrites just the `.bin` meshes (no texture churn). `PEOPLE_ONLY=fparms` builds only the first-person arms.
   - Looks: manu, shorty, darren, kev, mikey, pita, crewA-C, pedF1-3, pedM1-2, player.
 - **Textures/HDRIs**: Poly Haven CC0 (`https://api.polyhaven.com/files/<id>`); mapping in `25-photo.js` `PHOTO`. Credits in `assets/README.md`.
 - **Voice**: `node tools/voice-script.mjs` regenerates `VOICE_SCRIPT.md` (134 lines) from SCRIPT. Recordings go in `voice/` and are listed in `voice/manifest.js` (`window.AU_VOICE = { id: 'file.m4a' }`).
 
-## State at handoff (Run 20)
+## State at handoff (Run 21)
 Done:
 - Real map.
 - Realistic people.
@@ -103,11 +109,16 @@ Done:
   - bats and pipes;
   - real first-person arms;
   - weighted car handling with drift and damage.
+- Run 21:
+  - IK animation for everyone: planted feet, real stride/cadence, guard stance, boxing strikes, hit reactions, crumpling knockdowns and get-ups, dodge duck;
+  - loose fists baked into all bodies, a fixed tight fist for first person;
+  - fights: damage on the impact frame, jab-cross-hook-uppercut string with input buffering, soft lock-on, enemy jab/cross/hook/haymaker mix with telegraphs (bar orange, white for a haymaker), enemies cover up (bar blue; the uppercut breaks it, grabs beat it), parry (BLOCK tapped within 0.26 s of their impact), counter-hits on wind-ups, whiffs stagger them; Darren quick, Kev heavy.
 
-Unverified (ask the user): feel and tuning (aim assist, dodge, enemy aggression, walk speed 4.4, drift amount, climb triggering, grab and bat strength) and phone performance. A busy view at MEDIUM is ~1.5–2.7M tris and ~350–450 draw calls. Each tuning knob is a single constant in 60-game.js / 61-drive.js.
+Unverified (ask the user): feel and tuning (parry window 0.26 s, enemy block chance 0.25-0.4, combo damage 0.6/0.9/1.15/1.6, lock-on strength, gait cadence/stride, aim assist, dodge, enemy aggression, walk speed 4.4, drift amount, climb triggering, grab and bat strength) and phone performance (the IK adds per-character CPU; ~20-40 animated people). A busy view at MEDIUM is ~1.5–2.7M tris and ~350–450 draw calls. Each tuning knob is a single constant in 60-game.js / 61-drive.js.
 
 Known rough edges:
-- Fingers in the first-person fists aren't fully closed.
+- Hands are one bone: fists are baked, so open-hand gestures aren't possible.
+- Punch contact is approximate (no hand-to-head collision); reach is generous for phones.
 - Cars are parametric shapes, not models.
 - Faint traces of the MakeHuman print on some tees.
 - The ground is flat (no terrain heights).
