@@ -5166,8 +5166,8 @@ function createGame(world) {
   function startMove() {
     const def = weapon && WEAPON_DEF[weapon.kind];
     let name;
-    if (grab) name = 'knee';
-    else if (def) name = 'swing';
+    if (grab) { name = 'knee'; comboIdx = -1; }
+    else if (def) { name = 'swing'; comboIdx = -1; }
     else { comboIdx = simT - lastMoveEnd < 0.5 ? (comboIdx + 1) % COMBO.length : 0; name = COMBO[comboIdx]; }
     pmove = { name, d: PMOVES[name], t: 0, done: false, queued: false }; lastPunch = performance.now();
     fists.play(name); playerBody.userData.human.attack(name);
@@ -5182,8 +5182,9 @@ function createGame(world) {
     m.t += dt;
     if (!m.done && m.t >= m.d.hit) { m.done = true; strike(m); }
     if (pmove !== m) return;
-    if (m.queued && m.t >= m.d.chain) { pmove = null; lastMoveEnd = simT; startMove(); }
-    else if (m.t >= m.d.dur) { pmove = null; lastMoveEnd = simT; }
+    // Only punches carry the string on; a knee or a bat swing starts it again.
+    if (m.queued && m.t >= m.d.chain) { pmove = null; lastMoveEnd = COMBO.includes(m.name) ? simT : -9; startMove(); }
+    else if (m.t >= m.d.dur) { pmove = null; lastMoveEnd = COMBO.includes(m.name) ? simT : -9; }
   }
   function strike(m) {
     const def = weapon && WEAPON_DEF[weapon.kind], power = 1 + strength * 0.25, d = m.d;
