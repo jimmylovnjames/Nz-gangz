@@ -176,16 +176,35 @@ def region_uv(T, region, atlas):
 ATLAS = (2048, 1536)
 REG = {'skin': (0, 0, 1024, 1024), 'cloth': (1024, 0, 1024, 1024), 'shoes': (0, 1024, 512, 512), 'hair': (512, 1024, 512, 512), 'brow': (1024, 1024, 256, 256), 'eye': (1280, 1024, 256, 256)}
 
+# Fingers curled about MakeHuman's finger bones (in the original T-ish pose, palms face down). Bodies get a
+# loose fist baked in (the game rig has no finger bones), the first-person arms a tight one.
+def curl_fingers(V, side, angs_f, angs_t):
+    down = np.array([0.0, -1.0, 0.0]); Ms = {}
+    for f in range(1, 6):
+        M = np.eye(4)
+        for b, ang in zip([f'finger{f}-{k}.{side}' for k in (1, 2, 3)], angs_t if f == 1 else angs_f):
+            head, tail = apply(M, bone_head(V, b)[None])[0], apply(M, bone_tail(V, b)[None])[0]
+            d = tail - head; d /= np.linalg.norm(d)
+            pn = down - np.dot(down, d) * d; pn /= np.linalg.norm(pn)
+            if f == 1: pn = pn * 0.6 + (bone_head(V, f'finger2-1.{side}') - head) / np.linalg.norm(bone_head(V, f'finger2-1.{side}') - head) * 0.4
+            M = affine(rodrigues(np.cross(d, pn), ang), head, M); Ms[b] = M.copy()
+    P = V.copy()
+    for b, M in Ms.items():
+        w = bone_w(b)
+        if w.any(): P += (apply(M, V) - V) * w[:, None]
+    return P
 def build(name, spec):
     V = morph(spec)
     parts = []
+    Vc = V
+    for side in ('L', 'R'): Vc = curl_fingers(Vc, side, [1.05, 1.2, 0.9], [0.4, 0.35, 0.25])
     # Body minus whatever the clothes and shoes cover.
     proxies = {k: load_mhclo(spec[k]) for k in ('cloth', 'shoes', 'hair', 'brow', 'eyes') if spec.get(k)}
     hidden = set()
     for k in ('cloth', 'shoes'):
         if k in proxies: hidden |= proxies[k]['delete']
     bf = [f for f in base_F if f[2] == 'body' and not any(v in hidden for v in f[0])]
-    parts.append(('skin', V, W_base, base_T, bf))
+    parts.append(('skin', Vc, W_base, base_T, bf))
     for k in ('cloth', 'shoes', 'hair', 'brow', 'eyes'):
         if k not in proxies: continue
         px = proxies[k]
@@ -264,7 +283,7 @@ def build(name, spec):
         f.write(b'AUHM'); f.write(struct.pack('<I', len(head))); f.write(head)
         for arr in (q, n8, u16, si8, sw8, ix):
             b = arr.tobytes(); f.write(b); f.write(b'\0' * ((4 - len(b) % 4) % 4))
-    atlas(name, spec, proxies)
+    if not os.environ.get('MESH_ONLY'): atlas(name, spec, proxies)
     print(name, 'verts', len(pos), 'tris', len(idx), 'height', round(float(pos[:, 1].max()), 2), 'hips', joints['hips'])
 
 # ----------------------------------------------------------------------------- textures

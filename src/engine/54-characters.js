@@ -418,12 +418,12 @@ class Human {
       }
     }
     // ---- arms: relaxed swing (FK), then guard / strike IK blended over it -----------------------------
-    const S = lerp(0.22 + 0.1 * sn, Math.min(0.8, 0.4 + 0.05 * sn), run) * moveW;
+    const S = lerp(0.22 + 0.1 * sn, Math.min(0.7, 0.38 + 0.04 * sn), run) * moveW;
     const aL = b('armL'), aR = b('armR'), fL = b('foreL'), fR = b('foreR');
-    aL.rotation.set(S * cyc - 0.12 * run + 0.03, -0.25 * run * Math.max(0, -cyc), (this.real ? 0.0 : 0.07) + 0.1 * run + breath);
-    aR.rotation.set(-S * cyc - 0.12 * run + 0.03, 0.25 * run * Math.max(0, cyc), -(this.real ? 0.0 : 0.07) - 0.1 * run - breath);
-    fL.rotation.x = -(lerp(0.18, 1.4, run) + lerp(0.2, 0.35, run) * Math.max(0, -cyc) * moveW);
-    fR.rotation.x = -(lerp(0.18, 1.4, run) + lerp(0.2, 0.35, run) * Math.max(0, cyc) * moveW);
+    aL.rotation.set(S * cyc + 0.1 * run + 0.03, -0.25 * run * Math.max(0, -cyc), (this.real ? 0.0 : 0.07) + 0.1 * run + breath);
+    aR.rotation.set(-S * cyc + 0.1 * run + 0.03, 0.25 * run * Math.max(0, cyc), -(this.real ? 0.0 : 0.07) - 0.1 * run - breath);
+    fL.rotation.x = -(lerp(0.18, 1.3, run) + lerp(0.2, 0.3, run) * Math.max(0, -cyc) * moveW);
+    fR.rotation.x = -(lerp(0.18, 1.3, run) + lerp(0.2, 0.3, run) * Math.max(0, cyc) * moveW);
     if (this.pose === 'crossed' && sp < 0.1 && !guardMode && !C) {
       aL.rotation.set(-0.4, 0, 0.06); aR.rotation.set(-0.4, 0, -0.06);
       fL.rotation.set(0, 0.55, -1.72); fR.rotation.set(0, -0.48, 1.68);
