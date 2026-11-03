@@ -178,16 +178,31 @@ REG = {'skin': (0, 0, 1024, 1024), 'cloth': (1024, 0, 1024, 1024), 'shoes': (0, 
 
 # Fingers curled about MakeHuman's finger bones (in the original T-ish pose, palms face down). Bodies get a
 # loose fist baked in (the game rig has no finger bones), the first-person arms a tight one.
-def curl_fingers(V, side, angs_f, angs_t):
-    down = np.array([0.0, -1.0, 0.0]); Ms = {}
+def curl_fingers(V, side, angs_f, angs_t, squeeze=0.0, Ms=None):
+    """Curl each finger about its own knuckle axis, the palm normal carried along as the joints bend
+    (recomputing it from world 'down' after the first bend gives a random axis: a claw). squeeze closes the
+    gaps between fingers by swinging them toward the middle finger in the palm plane first."""
+    def dirb(b): d = bone_tail(V, b) - bone_head(V, b); return d / np.linalg.norm(d)
+    down = np.array([0.0, -1.0, 0.0]); d3 = dirb(f'finger3-1.{side}')
+    palm = down - np.dot(down, d3) * d3; palm /= np.linalg.norm(palm)
+    Ms = {} if Ms is None else Ms
     for f in range(1, 6):
-        M = np.eye(4)
-        for b, ang in zip([f'finger{f}-{k}.{side}' for k in (1, 2, 3)], angs_t if f == 1 else angs_f):
-            head, tail = apply(M, bone_head(V, b)[None])[0], apply(M, bone_tail(V, b)[None])[0]
-            d = tail - head; d /= np.linalg.norm(d)
-            pn = down - np.dot(down, d) * d; pn /= np.linalg.norm(pn)
-            if f == 1: pn = pn * 0.6 + (bone_head(V, f'finger2-1.{side}') - head) / np.linalg.norm(bone_head(V, f'finger2-1.{side}') - head) * 0.4
-            M = affine(rodrigues(np.cross(d, pn), ang), head, M); Ms[b] = M.copy()
+        chain = [f'finger{f}-{k}.{side}' for k in (1, 2, 3)]
+        h1, d1 = bone_head(V, chain[0]), dirb(chain[0])
+        if f == 1:
+            to2 = bone_head(V, f'finger2-1.{side}') - h1; to2 /= np.linalg.norm(to2)
+            pn = palm * 0.6 + to2 * 0.4
+        else: pn = palm.copy()
+        pn = pn - np.dot(pn, d1) * d1; pn /= np.linalg.norm(pn)
+        M, R = np.eye(4), np.eye(3)
+        if squeeze and f != 3 and f != 1:
+            dp = d1 - np.dot(d1, palm) * palm; dq = d3 - np.dot(d3, palm) * palm
+            ang = np.arctan2(np.dot(np.cross(dp, dq), palm), np.dot(dp, dq)) * squeeze
+            Ra = rodrigues(palm, ang); M = affine(Ra, h1, M); R = Ra @ R
+        for b, ang in zip(chain, angs_t if f == 1 else angs_f):
+            head = apply(M, bone_head(V, b)[None])[0]
+            Rk = rodrigues(np.cross(R @ dirb(b), R @ pn), ang)
+            M = affine(Rk, head, M); R = Rk @ R; Ms[b] = M.copy()
     P = V.copy()
     for b, M in Ms.items():
         w = bone_w(b)
@@ -197,7 +212,7 @@ def build(name, spec):
     V = morph(spec)
     parts = []
     Vc = V
-    for side in ('L', 'R'): Vc = curl_fingers(Vc, side, [1.05, 1.2, 0.9], [0.4, 0.35, 0.25])
+    for side in ('L', 'R'): Vc = curl_fingers(Vc, side, [1.1, 1.3, 0.9], [0.5, 0.45, 0.3], squeeze=0.6)
     # Body minus whatever the clothes and shoes cover.
     proxies = {k: load_mhclo(spec[k]) for k in ('cloth', 'shoes', 'hair', 'brow', 'eyes') if spec.get(k)}
     hidden = set()
@@ -394,28 +409,13 @@ def bone_w(name):
 def rodrigues(axis, ang):
     k = axis / np.linalg.norm(axis); K = np.array([[0, -k[2], k[1]], [k[2], 0, -k[0]], [-k[1], k[0], 0]])
     return np.eye(3) + np.sin(ang) * K + (1 - np.cos(ang)) * K @ K
+FIST_F, FIST_T = [1.45, 1.65, 1.15], [0.75, 0.7, 0.45]
 def build_fparms(spec):
     V = morph(spec)
     down = np.array([0.0, -1.0, 0.0])
     out = {}
     for side in ('L', 'R'):
-        P = V.copy()
-        for f in range(1, 6):
-            chain = [f'finger{f}-{k}.{side}' for k in (1, 2, 3)]
-            M = np.eye(4); angs = [0.55, 0.5, 0.35] if f == 1 else [1.35, 1.5, 1.2]
-            for b, ang in zip(chain, angs):
-                head, tail = apply(M, bone_head(V, b)[None])[0], apply(M, bone_tail(V, b)[None])[0]
-                d = tail - head; d /= np.linalg.norm(d)
-                pn = down - np.dot(down, d) * d; pn /= np.linalg.norm(pn)
-                if f == 1: pn = pn * 0.6 + (bone_head(V, f'finger2-1.{side}') - head) / np.linalg.norm(bone_head(V, f'finger2-1.{side}') - head) * 0.4
-                M = affine(rodrigues(np.cross(d, pn), ang), head, M)
-                w = bone_w(b)
-                out.setdefault(side + 'M', {})[b] = M.copy()
-        # Skin each vertex with its finger-bone transforms (vertices outside the fingers stay put).
-        Ms = out[side + 'M']; P = V.copy()
-        for b, M in Ms.items():
-            w = bone_w(b)
-            if w.any(): P += (apply(M, V) - V) * w[:, None]
+        P = curl_fingers(V, side, FIST_F, FIST_T, squeeze=0.8)
         arm = sum(bone_w(b) for b in [f'upperarm02.{side}', f'lowerarm01.{side}', f'lowerarm02.{side}', f'wrist.{side}'] + [f'metacarpal{k}.{side}' for k in range(1, 5)] + [f'finger{f}-{k}.{side}' for f in range(1, 6) for k in (1, 2, 3)])
         sel = arm > 0.75
         faces = [f for f in base_F if f[2] == 'body' and all(sel[v] for v in f[0])]
