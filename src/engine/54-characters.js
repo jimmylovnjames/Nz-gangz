@@ -165,7 +165,9 @@ function trackAt(tr, u) {
 }
 // Guard hand spots relative to each shoulder in the chest's frame, in arm lengths (x outward, y up, z forward).
 // Orthodox: left hand leads at the chin, right hand by the jaw.
-const GUARD = { lead: [-0.18, 0.23, 0.48], rear: [-0.2, 0.27, 0.25], block: [-0.22, 0.38, 0.53], weapon: [0.25, 0.32, 0.15] };
+const GUARD = { lead: [-0.18, 0.23, 0.48], rear: [-0.2, 0.27, 0.25], block: [-0.22, 0.38, 0.53], weapon: [0.25, 0.32, 0.15],
+  // Arms folded: left hand to the right biceps, right hand tucked under the left elbow.
+  foldL: [-0.64, -0.28, 0.27], foldR: [-0.58, -0.41, 0.21] };
 // Strikes for anyone throwing them (player body and every fighter). Hand keys are relative to the shoulder in
 // the body frame ('G' guard, 'W' weapon guard); torso tracks add to the guard stance (yaws in radians, steps in m).
 // hit = the impact moment, which the fight code lines up with damage.
@@ -256,7 +258,9 @@ class Human {
     this.phase = rnd() * TAU; this.idleSeed = rnd() * 100; this.mode = 'idle'; this.speed = 0; this.punchT = 0; this.hitT = 0; this.downT = 0;
     this.pose = o.pose || 'relaxed'; this.lookYaw = 0; this.heading = 0; this.lean = 0;
     this.hipRest = new THREE.Vector3(0, 0.95, 0);
-    if (o.look) PEOPLE.get(o.look).then(d => d && this.applyReal(d)).catch(() => { });
+    // A dropped download shouldn't leave someone as a stand-in all session: try again a few times.
+    const tryReal = n => PEOPLE.get(o.look).then(d => { if (d) this.applyReal(d); else if (n > 0 && PEOPLE.enabled) setTimeout(() => tryReal(n - 1), 5000 + Math.random() * 3000); }).catch(() => { });
+    if (o.look) tryReal(4);
   }
   // Swap the stand-in body for a realistic MakeHuman one: same bones, rest joints from the model.
   applyReal(d) {
@@ -424,11 +428,9 @@ class Human {
     aR.rotation.set(-S * cyc + 0.1 * run + 0.03, 0.25 * run * Math.max(0, cyc), -(this.real ? 0.0 : 0.07) - 0.1 * run - breath);
     fL.rotation.x = -(lerp(0.18, 1.3, run) + lerp(0.2, 0.3, run) * Math.max(0, -cyc) * moveW);
     fR.rotation.x = -(lerp(0.18, 1.3, run) + lerp(0.2, 0.3, run) * Math.max(0, cyc) * moveW);
-    if (this.pose === 'crossed' && sp < 0.1 && !guardMode && !C) {
-      aL.rotation.set(-0.4, 0, 0.06); aR.rotation.set(-0.4, 0, -0.06);
-      fL.rotation.set(0, 0.55, -1.72); fR.rotation.set(0, -0.48, 1.68);
-    }
-    const armW = Math.max(gw, cw) * (1 - 0.45 * this.dz);
+    this.fw = lerp(this.fw || 0, this.pose === 'crossed' && sp < 0.3 && !guardMode && !C ? 1 : 0, lab ? 1 : 1 - Math.exp(-dt * 6));
+    const fold = this.fw > 0.01 && gw < 0.5;
+    const armW = fold ? this.fw : Math.max(gw, cw) * (1 - 0.45 * this.dz);
     if (armW > 0.01) {
       hips.updateMatrix(); spine.updateMatrix(); chest.updateMatrix();
       const Mc = _M[2].multiplyMatrices(hips.matrix, spine.matrix).multiply(chest.matrix), Mci = _M[3].copy(Mc).invert();
@@ -436,9 +438,9 @@ class Human {
       for (let s = 0; s < 2; s++) {
         const sg = s ? -1 : 1, A = s ? R.armR : R.armL, uses = C && (C.d.arm === 'B' || (C.d.arm === 'L') === !s);
         _Qa[s].copy(A.up.quaternion); _Qb[s].copy(A.lo.quaternion);
-        const gk = block ? GUARD.block : this.weapon && s ? GUARD.weapon : s ? GUARD.rear : GUARD.lead;
+        const gk = fold ? (s ? GUARD.foldR : GUARD.foldL) : block ? GUARD.block : this.weapon && s ? GUARD.weapon : s ? GUARD.rear : GUARD.lead;
         const gp = _V[10].set(gk[0] * sg, gk[1], gk[2]).multiplyScalar(R.reach).add(A.up.position).applyMatrix4(Mc);
-        const pole = _V[11].set((block ? 0.15 : 0.35) * sg, -1, block ? 0.1 : -0.15);
+        const pole = fold ? _V[11].set(0.8 * sg, -0.6, 0.1) : _V[11].set((block ? 0.15 : 0.35) * sg, -1, block ? 0.1 : -0.15);
         let tgt = gp;
         if (uses) {
           const sh = _V[12].copy(A.up.position).applyMatrix4(Mc), keys = C.d.hand, n = keys.length;
@@ -541,10 +543,11 @@ class Fists {
       return g;
     });
     this.punch = [0, 0]; this.next = 0; this.bob = 0;
-    PEOPLE.fparms().then(r => {
-      if (!r) return;
+    const tryArms = n => PEOPLE.fparms().then(r => {
+      if (!r) { if (n > 0 && PEOPLE.enabled) setTimeout(() => tryArms(n - 1), 6000); return; }
       for (const g of this.hands) { const m = g.children[0]; m.geometry = r[g.userData.side > 0 ? 'R' : 'L']; m.material = r.material; }
     }).catch(() => { });
+    tryArms(4);
     // A held weapon (cricket bat, softball bat, pipe) gripped in the right fist (hand frame: knuckle line
     // along x, so the bat runs out of the thumb side and up past the knuckles).
     this.weapon = new THREE.Group(); this.weapon.visible = false;
@@ -650,7 +653,7 @@ const PEOPLE = {
   fparms() {
     if (this._fp) return this._fp;
     return (this._fp = (async () => {
-      const pl = await this.get('player'); if (!pl) return null;
+      const pl = await this.get('player'); if (!pl) { this._fp = null; return null; }
       const buf = await this.fetchBin('people/fparms.bin'), dv = new DataView(buf), hl = dv.getUint32(4, true), head = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 8, hl)));
       let o = 8 + hl; const take = (T, n, bytes) => { const a = new T(buf, o, n); o += Math.ceil(n * bytes / 4) * 4; return a; };
       const out = { material: new THREE.MeshStandardMaterial({ map: pl.material.map, normalMap: pl.material.normalMap, roughness: 0.62, metalness: 0 }) };
@@ -661,7 +664,7 @@ const PEOPLE = {
         g.setIndex(new THREE.BufferAttribute(new Uint16Array(ix), 1)); g.computeBoundingSphere(); out[side] = g;
       }
       return out;
-    })().catch(e => { console.info('First-person arms unavailable', e?.message); return null; }));
+    })().catch(e => { console.info('First-person arms unavailable for now', e?.message); this._fp = null; return null; }));
   },
   async fetchBin(path) {
     for (const b of this.bases) { try { const r = await fetch(b + path); if (r.ok) return await r.arrayBuffer(); } catch (_) { } }
@@ -671,7 +674,7 @@ const PEOPLE = {
     if (!this.enabled) return Promise.resolve(null);
     this.bases = this.bases || assetBases();
     if (!this.bases.length) return Promise.resolve(null);
-    return this.cache[look] || (this.cache[look] = this.load(look).catch(e => { console.info('Realistic people unavailable, keeping stand-ins.', e?.message); return null; }));
+    return this.cache[look] || (this.cache[look] = this.load(look).catch(e => { console.info('Realistic people unavailable for now, will retry.', look, e?.message); delete this.cache[look]; return null; }));
   },
   async load(look) {
     const tl = new THREE.TextureLoader();

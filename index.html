@@ -72,7 +72,7 @@ body.prologue.mg #dialogue{bottom:auto;top:calc(10px + env(safe-area-inset-top))
 #toast.show{transform:translate(-50%,0)}
 body.prologue :is(#phoneBtn,#phone){display:none!important}
 #hitFlash{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,transparent 45%,#7a0a0a 120%);opacity:0;transition:opacity .35s}
-</style><canvas id="miniMap" class="compact" width="180" height="180" aria-label="District minimap, tap to collapse" title="Tap to collapse minimap"></canvas><div id="panel"><div id="menu"><h1>AOTEAROA: UNDERWORLD</h1><p>CHAPTER ZERO: NOBODY KNOWS YOUR NAME</p><p>Friday night on your cousin Manu's couch. A busted old console, a few cans, and a debt somebody needs to collect. Fourteen crews are watching who steps up. Your hometown and your choices change how it plays out.</p><label for="hometown">CHOOSE YOUR HOMETOWN</label><select id="hometown" style="display:block;width:100%;padding:12px;margin:10px 0;background:#152320;color:white;border:1px solid #879b83"></select><p id="originStory"></p><div id="factions"></div><button id="independent">INDEPENDENT / NO FACTION</button><p><small>Choose a crew to approach after the prologue, or stay independent.</small></p><p><small>Playable vertical slice. Fictional characters and story. Desktop: WASD, mouse look, click to punch, hold Q or right mouse to block (tap it while moving to dodge), Space jump / climb, V first/third person, Shift sprint, E talk / shop / get in a car, Space handbrake, Esc pause. Phone: floating left joystick, drag right side to look, HIT, BLOCK, TALK, RUN toggle, pause button. Save is device-local.</small></p><div id="loadState" aria-live="polite">Loading 3D engine…</div><div id="loadBar"><i></i></div><button id="start" disabled title="Loading 3D engine">NEW GAME</button><button id="continue" disabled title="Loading 3D engine">CONTINUE SAVED GAME</button><div id="saveState" aria-live="polite"></div></div></div><div id="hud"><small style="opacity:.65">R20 • CLIMB · GRAB · DRIFT</small><b id="status">HEALTH 100 | REP 0</b><div id="quest">Find your hometown contact</div><div id="missionDistance"></div><div id="location">CLENDON PARK</div></div><div id="cross">+</div><div id="waypoint" aria-live="off"></div><button id="pauseButton" aria-label="Pause game">Ⅱ</button><div id="notice">Find the yellow diamond above your hometown contact. Press E or TALK nearby.</div><div id="joystick" aria-label="Floating movement joystick"><div id="joyBase"><div id="joyThumb"></div><span id="joyReadout" aria-live="off">MOVE</span></div><span id="controlStatus" aria-live="off">ENGINE WAIT</span></div><div id="touch"><div id="actions"><button id="interact">TALK</button><button id="attack">HIT</button><button data-m="block" id="block" aria-label="Hold to block">BLOCK</button><button data-m="sprint" id="sprint" aria-label="Toggle run" aria-pressed="false">RUN</button><button data-m="jump" id="jump" aria-label="Jump or climb">JUMP</button></div></div><div id="choicePanel" role="dialog" aria-modal="true"><div class="dialog"><h2 id="choiceTitle">Choose your path</h2><p id="choiceText"></p><button id="routeCourier">The quiet job: collect the package</button><button id="routeBrawl">The loud job: win three fights</button><button id="choiceBack">Not yet</button></div></div><div id="pausePanel" role="dialog" aria-modal="true"><div class="dialog"><h2>PAUSED</h2><p>Progress saves automatically on mission changes and periodically on this device.</p><button id="resume">RESUME</button><button id="saveNow">SAVE NOW</button><div id="gfxPanel"><div class="row"><span>GRAPHICS</span><button data-gfx="low">LOW</button><button data-gfx="medium">MEDIUM</button><button data-gfx="high">HIGH</button><button data-gfx="ultra">ULTRA</button></div><div class="row"><span>TIME</span><button data-time="golden">GOLDEN HOUR</button><button data-time="overcast">OVERCAST</button><button data-time="night">NIGHT</button></div><div class="row"><span>WEATHER</span><button data-rain="0">DRY</button><button data-rain="1">DRIZZLE</button><button data-rain="2">RAIN</button></div><div class="row"><span>DISPLAY</span><button id="fpsToggle">SHOW FPS</button><button id="viewToggle">VIEW: FIRST PERSON</button><button id="soundToggle">SOUND: ON</button></div><p id="gfxNote"></p></div><button id="exportSave">EXPORT SAVE FILE</button><button id="importSave">IMPORT SAVE FILE</button><input id="saveFile" type="file" accept=".json,application/json" hidden><p id="transferStatus" role="status" aria-live="polite"></p><button id="restart">NEW GAME (RESTART)</button></div></div><div id="dialogue" role="dialog" aria-live="polite"><div id="dlgWho"></div><div id="dlgText"></div><div id="dlgChoices"></div></div><div id="mgPad"><div><button data-mg="left" aria-label="Move left">◀</button><button data-mg="right" aria-label="Move right">▶</button></div><div><button data-mg="block">BLOCK</button><button data-mg="special">SPECIAL</button><button data-mg="kick">KICK</button><button data-mg="punch">PUNCH</button></div></div><button id="mgSkip">SKIP ▶▶</button><div id="fade"></div><button id="phoneBtn" aria-label="Phone">📱</button><div id="phone" role="dialog" aria-label="Phone"><div class="ph-head"><span>PHONE</span><button id="phClose" aria-label="Close phone">✕</button></div><div class="ph-tabs"><button data-ph="msgs" class="on">MESSAGES</button><button data-ph="jobs">JOBS</button></div><div id="phMsgs"></div><div id="phJobs"></div></div><div id="toast" aria-live="polite"></div><div id="shopPanel" role="dialog" aria-modal="true"><div class="dialog"><small id="shopSub"></small><h2 id="shopTitle"></h2><p id="shopCash"></p><div id="shopItems"></div><button id="shopClose">LEAVE</button></div></div><div id="speedo" aria-live="off"></div><div id="banner" aria-live="polite"></div><div id="hint" aria-live="polite"></div><div id="fps"></div><div id="hitFlash"></div><div id="mapcredit">Map data © OpenStreetMap contributors · LINZ</div><script>
+</style><canvas id="miniMap" class="compact" width="180" height="180" aria-label="District minimap, tap to collapse" title="Tap to collapse minimap"></canvas><div id="panel"><div id="menu"><h1>AOTEAROA: UNDERWORLD</h1><p>CHAPTER ZERO: NOBODY KNOWS YOUR NAME</p><p>Friday night on your cousin Manu's couch. A busted old console, a few cans, and a debt somebody needs to collect. Fourteen crews are watching who steps up. Your hometown and your choices change how it plays out.</p><label for="hometown">CHOOSE YOUR HOMETOWN</label><select id="hometown" style="display:block;width:100%;padding:12px;margin:10px 0;background:#152320;color:white;border:1px solid #879b83"></select><p id="originStory"></p><div id="factions"></div><button id="independent">INDEPENDENT / NO FACTION</button><p><small>Choose a crew to approach after the prologue, or stay independent.</small></p><p><small>Playable vertical slice. Fictional characters and story. Desktop: WASD, mouse look, click to punch, hold Q or right mouse to block (tap it while moving to dodge), Space jump / climb, V first/third person, Shift sprint, E talk / shop / get in a car, Space handbrake, Esc pause. Phone: floating left joystick, drag right side to look, HIT, BLOCK, TALK, RUN toggle, pause button. Save is device-local.</small></p><div id="loadState" aria-live="polite">Loading 3D engine…</div><div id="loadBar"><i></i></div><button id="start" disabled title="Loading 3D engine">NEW GAME</button><button id="continue" disabled title="Loading 3D engine">CONTINUE SAVED GAME</button><div id="saveState" aria-live="polite"></div></div></div><div id="hud"><small style="opacity:.65">R21 • BOXING · PARRY · REAL MOVES</small><b id="status">HEALTH 100 | REP 0</b><div id="quest">Find your hometown contact</div><div id="missionDistance"></div><div id="location">CLENDON PARK</div></div><div id="cross">+</div><div id="waypoint" aria-live="off"></div><button id="pauseButton" aria-label="Pause game">Ⅱ</button><div id="notice">Find the yellow diamond above your hometown contact. Press E or TALK nearby.</div><div id="joystick" aria-label="Floating movement joystick"><div id="joyBase"><div id="joyThumb"></div><span id="joyReadout" aria-live="off">MOVE</span></div><span id="controlStatus" aria-live="off">ENGINE WAIT</span></div><div id="touch"><div id="actions"><button id="interact">TALK</button><button id="attack">HIT</button><button data-m="block" id="block" aria-label="Hold to block">BLOCK</button><button data-m="sprint" id="sprint" aria-label="Toggle run" aria-pressed="false">RUN</button><button data-m="jump" id="jump" aria-label="Jump or climb">JUMP</button></div></div><div id="choicePanel" role="dialog" aria-modal="true"><div class="dialog"><h2 id="choiceTitle">Choose your path</h2><p id="choiceText"></p><button id="routeCourier">The quiet job: collect the package</button><button id="routeBrawl">The loud job: win three fights</button><button id="choiceBack">Not yet</button></div></div><div id="pausePanel" role="dialog" aria-modal="true"><div class="dialog"><h2>PAUSED</h2><p>Progress saves automatically on mission changes and periodically on this device.</p><button id="resume">RESUME</button><button id="saveNow">SAVE NOW</button><div id="gfxPanel"><div class="row"><span>GRAPHICS</span><button data-gfx="low">LOW</button><button data-gfx="medium">MEDIUM</button><button data-gfx="high">HIGH</button><button data-gfx="ultra">ULTRA</button></div><div class="row"><span>TIME</span><button data-time="golden">GOLDEN HOUR</button><button data-time="overcast">OVERCAST</button><button data-time="night">NIGHT</button></div><div class="row"><span>WEATHER</span><button data-rain="0">DRY</button><button data-rain="1">DRIZZLE</button><button data-rain="2">RAIN</button></div><div class="row"><span>DISPLAY</span><button id="fpsToggle">SHOW FPS</button><button id="viewToggle">VIEW: FIRST PERSON</button><button id="soundToggle">SOUND: ON</button></div><p id="gfxNote"></p></div><button id="exportSave">EXPORT SAVE FILE</button><button id="importSave">IMPORT SAVE FILE</button><input id="saveFile" type="file" accept=".json,application/json" hidden><p id="transferStatus" role="status" aria-live="polite"></p><button id="restart">NEW GAME (RESTART)</button></div></div><div id="dialogue" role="dialog" aria-live="polite"><div id="dlgWho"></div><div id="dlgText"></div><div id="dlgChoices"></div></div><div id="mgPad"><div><button data-mg="left" aria-label="Move left">◀</button><button data-mg="right" aria-label="Move right">▶</button></div><div><button data-mg="block">BLOCK</button><button data-mg="special">SPECIAL</button><button data-mg="kick">KICK</button><button data-mg="punch">PUNCH</button></div></div><button id="mgSkip">SKIP ▶▶</button><div id="fade"></div><button id="phoneBtn" aria-label="Phone">📱</button><div id="phone" role="dialog" aria-label="Phone"><div class="ph-head"><span>PHONE</span><button id="phClose" aria-label="Close phone">✕</button></div><div class="ph-tabs"><button data-ph="msgs" class="on">MESSAGES</button><button data-ph="jobs">JOBS</button></div><div id="phMsgs"></div><div id="phJobs"></div></div><div id="toast" aria-live="polite"></div><div id="shopPanel" role="dialog" aria-modal="true"><div class="dialog"><small id="shopSub"></small><h2 id="shopTitle"></h2><p id="shopCash"></p><div id="shopItems"></div><button id="shopClose">LEAVE</button></div></div><div id="speedo" aria-live="off"></div><div id="banner" aria-live="polite"></div><div id="hint" aria-live="polite"></div><div id="fps"></div><div id="hitFlash"></div><div id="mapcredit">Map data © OpenStreetMap contributors · LINZ</div><script>
 window.__auEngineReady=false;
 // Render hometown choices even when the external 3D engine cannot be fetched.
 const fallbackHometowns={Northland:['Kaikohe','Kaitaia','Whangārei','Opononi'],Auckland:['South Auckland','West Auckland','Central Auckland','North Shore'],Waikato:['Hamilton','Huntly','Tokoroa'],'Bay of Plenty':['Tauranga','Rotorua','Whakatāne'],'East Coast':['Gisborne','Wairoa'],'Hawke’s Bay':['Napier','Hastings'],'Central North Island':['Taupō','New Plymouth','Whanganui','Palmerston North'],Wellington:['Wellington','Lower Hutt','Porirua'],'Top of South':['Nelson','Blenheim'],Canterbury:['Christchurch','Ashburton','Timaru'],'West Coast':['Greymouth','Hokitika'],Otago:['Dunedin','Queenstown','Wānaka'],Southland:['Invercargill','Bluff'],Islands:['Stewart Island / Rakiura','Chatham Islands']};
@@ -2894,7 +2894,9 @@ function trackAt(tr, u) {
 }
 // Guard hand spots relative to each shoulder in the chest's frame, in arm lengths (x outward, y up, z forward).
 // Orthodox: left hand leads at the chin, right hand by the jaw.
-const GUARD = { lead: [-0.18, 0.23, 0.48], rear: [-0.2, 0.27, 0.25], block: [-0.22, 0.38, 0.53], weapon: [0.25, 0.32, 0.15] };
+const GUARD = { lead: [-0.18, 0.23, 0.48], rear: [-0.2, 0.27, 0.25], block: [-0.22, 0.38, 0.53], weapon: [0.25, 0.32, 0.15],
+  // Arms folded: left hand to the right biceps, right hand tucked under the left elbow.
+  foldL: [-0.64, -0.28, 0.27], foldR: [-0.58, -0.41, 0.21] };
 // Strikes for anyone throwing them (player body and every fighter). Hand keys are relative to the shoulder in
 // the body frame ('G' guard, 'W' weapon guard); torso tracks add to the guard stance (yaws in radians, steps in m).
 // hit = the impact moment, which the fight code lines up with damage.
@@ -2985,7 +2987,9 @@ class Human {
     this.phase = rnd() * TAU; this.idleSeed = rnd() * 100; this.mode = 'idle'; this.speed = 0; this.punchT = 0; this.hitT = 0; this.downT = 0;
     this.pose = o.pose || 'relaxed'; this.lookYaw = 0; this.heading = 0; this.lean = 0;
     this.hipRest = new THREE.Vector3(0, 0.95, 0);
-    if (o.look) PEOPLE.get(o.look).then(d => d && this.applyReal(d)).catch(() => { });
+    // A dropped download shouldn't leave someone as a stand-in all session: try again a few times.
+    const tryReal = n => PEOPLE.get(o.look).then(d => { if (d) this.applyReal(d); else if (n > 0 && PEOPLE.enabled) setTimeout(() => tryReal(n - 1), 5000 + Math.random() * 3000); }).catch(() => { });
+    if (o.look) tryReal(4);
   }
   // Swap the stand-in body for a realistic MakeHuman one: same bones, rest joints from the model.
   applyReal(d) {
@@ -3153,11 +3157,9 @@ class Human {
     aR.rotation.set(-S * cyc + 0.1 * run + 0.03, 0.25 * run * Math.max(0, cyc), -(this.real ? 0.0 : 0.07) - 0.1 * run - breath);
     fL.rotation.x = -(lerp(0.18, 1.3, run) + lerp(0.2, 0.3, run) * Math.max(0, -cyc) * moveW);
     fR.rotation.x = -(lerp(0.18, 1.3, run) + lerp(0.2, 0.3, run) * Math.max(0, cyc) * moveW);
-    if (this.pose === 'crossed' && sp < 0.1 && !guardMode && !C) {
-      aL.rotation.set(-0.4, 0, 0.06); aR.rotation.set(-0.4, 0, -0.06);
-      fL.rotation.set(0, 0.55, -1.72); fR.rotation.set(0, -0.48, 1.68);
-    }
-    const armW = Math.max(gw, cw) * (1 - 0.45 * this.dz);
+    this.fw = lerp(this.fw || 0, this.pose === 'crossed' && sp < 0.3 && !guardMode && !C ? 1 : 0, lab ? 1 : 1 - Math.exp(-dt * 6));
+    const fold = this.fw > 0.01 && gw < 0.5;
+    const armW = fold ? this.fw : Math.max(gw, cw) * (1 - 0.45 * this.dz);
     if (armW > 0.01) {
       hips.updateMatrix(); spine.updateMatrix(); chest.updateMatrix();
       const Mc = _M[2].multiplyMatrices(hips.matrix, spine.matrix).multiply(chest.matrix), Mci = _M[3].copy(Mc).invert();
@@ -3165,9 +3167,9 @@ class Human {
       for (let s = 0; s < 2; s++) {
         const sg = s ? -1 : 1, A = s ? R.armR : R.armL, uses = C && (C.d.arm === 'B' || (C.d.arm === 'L') === !s);
         _Qa[s].copy(A.up.quaternion); _Qb[s].copy(A.lo.quaternion);
-        const gk = block ? GUARD.block : this.weapon && s ? GUARD.weapon : s ? GUARD.rear : GUARD.lead;
+        const gk = fold ? (s ? GUARD.foldR : GUARD.foldL) : block ? GUARD.block : this.weapon && s ? GUARD.weapon : s ? GUARD.rear : GUARD.lead;
         const gp = _V[10].set(gk[0] * sg, gk[1], gk[2]).multiplyScalar(R.reach).add(A.up.position).applyMatrix4(Mc);
-        const pole = _V[11].set((block ? 0.15 : 0.35) * sg, -1, block ? 0.1 : -0.15);
+        const pole = fold ? _V[11].set(0.8 * sg, -0.6, 0.1) : _V[11].set((block ? 0.15 : 0.35) * sg, -1, block ? 0.1 : -0.15);
         let tgt = gp;
         if (uses) {
           const sh = _V[12].copy(A.up.position).applyMatrix4(Mc), keys = C.d.hand, n = keys.length;
@@ -3270,10 +3272,11 @@ class Fists {
       return g;
     });
     this.punch = [0, 0]; this.next = 0; this.bob = 0;
-    PEOPLE.fparms().then(r => {
-      if (!r) return;
+    const tryArms = n => PEOPLE.fparms().then(r => {
+      if (!r) { if (n > 0 && PEOPLE.enabled) setTimeout(() => tryArms(n - 1), 6000); return; }
       for (const g of this.hands) { const m = g.children[0]; m.geometry = r[g.userData.side > 0 ? 'R' : 'L']; m.material = r.material; }
     }).catch(() => { });
+    tryArms(4);
     // A held weapon (cricket bat, softball bat, pipe) gripped in the right fist (hand frame: knuckle line
     // along x, so the bat runs out of the thumb side and up past the knuckles).
     this.weapon = new THREE.Group(); this.weapon.visible = false;
@@ -3379,7 +3382,7 @@ const PEOPLE = {
   fparms() {
     if (this._fp) return this._fp;
     return (this._fp = (async () => {
-      const pl = await this.get('player'); if (!pl) return null;
+      const pl = await this.get('player'); if (!pl) { this._fp = null; return null; }
       const buf = await this.fetchBin('people/fparms.bin'), dv = new DataView(buf), hl = dv.getUint32(4, true), head = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 8, hl)));
       let o = 8 + hl; const take = (T, n, bytes) => { const a = new T(buf, o, n); o += Math.ceil(n * bytes / 4) * 4; return a; };
       const out = { material: new THREE.MeshStandardMaterial({ map: pl.material.map, normalMap: pl.material.normalMap, roughness: 0.62, metalness: 0 }) };
@@ -3390,7 +3393,7 @@ const PEOPLE = {
         g.setIndex(new THREE.BufferAttribute(new Uint16Array(ix), 1)); g.computeBoundingSphere(); out[side] = g;
       }
       return out;
-    })().catch(e => { console.info('First-person arms unavailable', e?.message); return null; }));
+    })().catch(e => { console.info('First-person arms unavailable for now', e?.message); this._fp = null; return null; }));
   },
   async fetchBin(path) {
     for (const b of this.bases) { try { const r = await fetch(b + path); if (r.ok) return await r.arrayBuffer(); } catch (_) { } }
@@ -3400,7 +3403,7 @@ const PEOPLE = {
     if (!this.enabled) return Promise.resolve(null);
     this.bases = this.bases || assetBases();
     if (!this.bases.length) return Promise.resolve(null);
-    return this.cache[look] || (this.cache[look] = this.load(look).catch(e => { console.info('Realistic people unavailable, keeping stand-ins.', e?.message); return null; }));
+    return this.cache[look] || (this.cache[look] = this.load(look).catch(e => { console.info('Realistic people unavailable for now, will retry.', look, e?.message); delete this.cache[look]; return null; }));
   },
   async load(look) {
     const tl = new THREE.TextureLoader();
@@ -5804,7 +5807,7 @@ function createGame(world) {
   function lab(list) {
     list.forEach((o, i) => {
       let p = labPeople[i]; if (!p) { p = person(o.x, o.z, { look: o.look || 'player', seed: 77 + i, pose: 'relaxed' }); labPeople.push(p); }
-      p.visible = true; p.position.set(o.x, groundHeight(o.x, o.z), o.z); p.rotation.y = o.ry || 0;
+      p.visible = true; p.position.set(o.x, groundHeight(o.x, o.z), o.z); p.rotation.y = o.ry || 0; p.userData.human.pose = o.pose || 'relaxed';
       const h = p.userData.human; if (o.down == null && h.downT > 0) h.reset(); h.mode = o.mode || 'idle'; h.weapon = !!o.weapon; h.lab = o; h.react = o.react ? { kind: o.react, side: o.side || 1, t: o.rt ?? 0.06 } : null;
     });
     for (let i = list.length; i < labPeople.length; i++) labPeople[i].visible = false;
