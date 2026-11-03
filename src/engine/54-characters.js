@@ -176,7 +176,7 @@ const CLIPS = {
     chest: [[0, 0], [0.13, 0.85], [0.22, 0.8], [0.4, 0]], hips: [[0, 0], [0.13, 0.5], [0.4, 0]], lean: [[0, 0], [0.13, 0.12], [0.4, 0]], heel: [[0, 0], [0.13, 0.07], [0.3, 0.04], [0.4, 0]], pivot: [[0, 0], [0.13, 0.55], [0.4, 0]] },
   hook: { arm: 'L', dur: 0.44, hit: 0.17, pole: [1, 0.8, -0.5], hand: [[0, 'G'], [0.07, [0.38, 0.0, 0.42]], [0.17, [-0.42, 0.03, 0.75]], [0.25, [-0.55, 0.0, 0.55]], [0.44, 'G']],
     chest: [[0, 0], [0.07, -0.2], [0.17, 0.75], [0.25, 0.85], [0.44, 0]], hips: [[0, 0], [0.07, -0.05], [0.17, 0.4], [0.44, 0]], lean: [[0, 0], [0.17, 0.05], [0.44, 0]], leadHeel: [[0, 0], [0.17, 0.04], [0.44, 0]], leadPivot: [[0, 0], [0.17, 0.4], [0.44, 0]] },
-  upper: { arm: 'R', dur: 0.5, hit: 0.2, pole: [0.3, -1, -0.5], hand: [[0, 'G'], [0.08, [0.06, -0.48, 0.35]], [0.2, [-0.16, 0.42, 0.62]], [0.28, [-0.16, 0.52, 0.5]], [0.5, 'G']],
+  upper: { arm: 'R', dur: 0.5, hit: 0.2, pole: [0.3, -1, -0.5], hand: [[0, 'G'], [0.08, [0.06, -0.48, 0.35]], [0.2, [-0.18, 0.3, 0.66]], [0.28, [-0.18, 0.38, 0.55]], [0.5, 'G']],
     chest: [[0, 0], [0.08, -0.15], [0.2, 0.7], [0.5, 0]], hips: [[0, 0], [0.2, 0.35], [0.5, 0]], lean: [[0, 0], [0.08, 0.12], [0.2, -0.06], [0.5, 0]], drop: [[0, 0], [0.08, 0.08], [0.2, -0.02], [0.5, 0]],
     roll: [[0, 0], [0.08, 0.14], [0.2, -0.08], [0.5, 0]], heel: [[0, 0], [0.2, 0.06], [0.5, 0]], pivot: [[0, 0], [0.2, 0.45], [0.5, 0]] },
   hay: { arm: 'R', dur: 1.0, hit: 0.62, pole: [1, 0.5, -0.4], hand: [[0, 'G'], [0.42, [0.62, 0.25, -0.35]], [0.62, [-0.32, 0.05, 0.62]], [0.74, [-0.62, -0.12, 0.38]], [1.0, 'G']],
@@ -371,7 +371,7 @@ class Human {
     const cyc = Math.cos(TAU * L.ph), syc = Math.sin(TAU * L.ph);
     const sway = 0.022 * (1 - run * 0.7) * syc * moveW * (1 - gw) * R.k;
     const hx = this.hipRest.x + sway * L.dz, hz = this.hipRest.z - sway * L.dx;
-    let hy = this.hipRest.y - (0.035 * run + 0.1 * gw + 0.03 * this.dz + 0.12 * dg) * R.k - tr('drop') * R.k;
+    let hy = this.hipRest.y - (0.035 * run + 0.065 * gw + 0.03 * this.dz + 0.12 * dg) * R.k - tr('drop') * R.k;
     if (rk === 'body') hy -= 0.07 * re * R.k;
     let anyStance = false;
     for (let i = 0; i < 2; i++) {
@@ -411,7 +411,7 @@ class Human {
       for (let i = 0; i < 2; i++) {
         const F = R.feet[i], leg = i ? R.legR : R.legL;
         const tgt = _V[8].copy(F.p).sub(hips.position).applyQuaternion(hqi);
-        const pole = _V[9].set(Math.sin(F.yaw) + (i ? -0.15 : 0.15), 0, Math.cos(F.yaw)).applyQuaternion(hqi);
+        const pole = _V[9].set(Math.sin(F.yaw * 0.7) + (i ? -0.06 : 0.06), 0, Math.cos(F.yaw * 0.7)).applyQuaternion(hqi);
         ik2(leg, tgt, pole, 1);
         _EU.set(F.pitch, F.yaw, 0, 'YXZ');
         leg.en.quaternion.copy(_Q[3].copy(hq).multiply(leg.up.quaternion).multiply(leg.lo.quaternion).invert()).multiply(_Q[2].setFromEuler(_EU));
