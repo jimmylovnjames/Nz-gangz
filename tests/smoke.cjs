@@ -305,7 +305,7 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   };
   await brawl();
   await page.waitForFunction(() => window.__auGame.state().stage === 'c1-wait', null, { timeout: 20000 }).catch(() => { });
-  check('beating the rival boys clears the dairy', (await state(page)).stage === 'c1-wait');
+  check('beating the rival boys clears the dairy', (await state(page)).stage === 'c1-wait', JSON.stringify({ s: await state(page), f: await page.evaluate(() => window.__auGame.fight()), r: (await page.evaluate(() => window.__auGame.c1())).rivals.slice(0, 3), heat: await page.evaluate(() => window.__auGame.heat()), story: await page.evaluate(() => window.__auStory.active), car: await page.evaluate(() => window.__auGame.drive()) }));
   await page.evaluate(() => window.__auGame.skipTimers());
   await page.waitForFunction(() => window.__auGame.state().stage === 'c1-manu', null, { timeout: 90000 }).catch(() => { });
   check('Manu texts that he got jumped at the station', (await state(page)).stage === 'c1-manu');
