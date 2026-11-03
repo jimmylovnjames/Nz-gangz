@@ -330,7 +330,7 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   const boom = await page.evaluate(() => { const c = window.__auDebug.camera.position, s = window.__auGame.state(); return Math.hypot(c.x - s.x, c.z - s.z); });
   check('third-person view puts the camera behind you', boom > 1.2, `camera ${boom.toFixed(2)}m back`);
   await page.evaluate(() => window.__auGame.view(false));
-  await page.waitForTimeout(800);
+  await page.waitForFunction(() => { const c = window.__auDebug.camera.position, s = window.__auGame.state(); return Math.hypot(c.x - s.x, c.z - s.z) < 0.3; }, null, { timeout: 20000, polling: 'raf' }).catch(() => { });
   check('first-person view puts it back at your eyes', (await page.evaluate(() => { const c = window.__auDebug.camera.position, s = window.__auGame.state(); return Math.hypot(c.x - s.x, c.z - s.z); })) < 0.3);
   await page.evaluate(() => window.__auGame.startHustle('pays'));
   await page.waitForFunction(() => window.__auGame.feel().beacon, null, { timeout: 20000 }).catch(() => { });
