@@ -2903,7 +2903,7 @@ const CLIPS = {
     chest: [[0, 0], [0.1, -0.25], [0.32, 0]], hips: [[0, 0], [0.1, -0.08], [0.32, 0]], lean: [[0, 0], [0.1, 0.08], [0.32, 0]], lead: [[0, 0], [0.1, 0.12], [0.32, 0]] },
   cross: { arm: 'R', dur: 0.4, hit: 0.13, pole: [0.5, -1, -0.25], hand: [[0, 'G'], [0.13, [-0.2, 0.08, 0.97]], [0.2, [-0.2, 0.07, 0.94]], [0.4, 'G']],
     chest: [[0, 0], [0.13, 0.85], [0.22, 0.8], [0.4, 0]], hips: [[0, 0], [0.13, 0.5], [0.4, 0]], lean: [[0, 0], [0.13, 0.12], [0.4, 0]], heel: [[0, 0], [0.13, 0.07], [0.3, 0.04], [0.4, 0]], pivot: [[0, 0], [0.13, 0.55], [0.4, 0]] },
-  hook: { arm: 'L', dur: 0.44, hit: 0.17, pole: [1, 0.8, -0.5], hand: [[0, 'G'], [0.07, [0.38, 0.0, 0.42]], [0.17, [-0.42, 0.03, 0.75]], [0.25, [-0.55, 0.0, 0.55]], [0.44, 'G']],
+  hook: { arm: 'L', dur: 0.44, hit: 0.17, pole: [1, 0.8, -0.5], hand: [[0, 'G'], [0.07, [0.38, 0.0, 0.42]], [0.17, [-0.42, 0.04, 0.9]], [0.25, [-0.58, 0.0, 0.62]], [0.44, 'G']],
     chest: [[0, 0], [0.07, -0.2], [0.17, 0.75], [0.25, 0.85], [0.44, 0]], hips: [[0, 0], [0.07, -0.05], [0.17, 0.4], [0.44, 0]], lean: [[0, 0], [0.17, 0.05], [0.44, 0]], leadHeel: [[0, 0], [0.17, 0.04], [0.44, 0]], leadPivot: [[0, 0], [0.17, 0.4], [0.44, 0]] },
   upper: { arm: 'R', dur: 0.5, hit: 0.2, pole: [0.3, -1, -0.5], hand: [[0, 'G'], [0.08, [0.06, -0.48, 0.35]], [0.2, [-0.18, 0.3, 0.66]], [0.28, [-0.18, 0.38, 0.55]], [0.5, 'G']],
     chest: [[0, 0], [0.08, -0.15], [0.2, 0.7], [0.5, 0]], hips: [[0, 0], [0.2, 0.35], [0.5, 0]], lean: [[0, 0], [0.08, 0.12], [0.2, -0.06], [0.5, 0]], drop: [[0, 0], [0.08, 0.08], [0.2, -0.02], [0.5, 0]],
@@ -5805,7 +5805,7 @@ function createGame(world) {
     list.forEach((o, i) => {
       let p = labPeople[i]; if (!p) { p = person(o.x, o.z, { look: o.look || 'player', seed: 77 + i, pose: 'relaxed' }); labPeople.push(p); }
       p.visible = true; p.position.set(o.x, groundHeight(o.x, o.z), o.z); p.rotation.y = o.ry || 0;
-      const h = p.userData.human; h.mode = o.mode || 'idle'; h.weapon = !!o.weapon; h.lab = o; h.react = o.react ? { kind: o.react, side: o.side || 1, t: o.rt ?? 0.06 } : null;
+      const h = p.userData.human; if (o.down == null && h.downT > 0) h.reset(); h.mode = o.mode || 'idle'; h.weapon = !!o.weapon; h.lab = o; h.react = o.react ? { kind: o.react, side: o.side || 1, t: o.rt ?? 0.06 } : null;
     });
     for (let i = list.length; i < labPeople.length; i++) labPeople[i].visible = false;
   }

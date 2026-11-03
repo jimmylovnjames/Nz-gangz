@@ -1293,7 +1293,7 @@ function createGame(world) {
     list.forEach((o, i) => {
       let p = labPeople[i]; if (!p) { p = person(o.x, o.z, { look: o.look || 'player', seed: 77 + i, pose: 'relaxed' }); labPeople.push(p); }
       p.visible = true; p.position.set(o.x, groundHeight(o.x, o.z), o.z); p.rotation.y = o.ry || 0;
-      const h = p.userData.human; h.mode = o.mode || 'idle'; h.weapon = !!o.weapon; h.lab = o; h.react = o.react ? { kind: o.react, side: o.side || 1, t: o.rt ?? 0.06 } : null;
+      const h = p.userData.human; if (o.down == null && h.downT > 0) h.reset(); h.mode = o.mode || 'idle'; h.weapon = !!o.weapon; h.lab = o; h.react = o.react ? { kind: o.react, side: o.side || 1, t: o.rt ?? 0.06 } : null;
     });
     for (let i = list.length; i < labPeople.length; i++) labPeople[i].visible = false;
   }
