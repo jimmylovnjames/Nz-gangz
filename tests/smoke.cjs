@@ -296,7 +296,7 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   await page.waitForFunction(() => window.__auGame.feel().bars > 0, null, { timeout: 20000 }).catch(() => { });
   check('health bars show over the people you fight', (await page.evaluate(() => window.__auGame.feel().bars)) > 0);
   const brawl = async () => {
-    for (let k = 0; k < 40; k++) {
+    for (let k = 0; k < 60; k++) {
       const alive = (await page.evaluate(() => window.__auGame.c1().rivals)).filter(r => r.alive);
       if (!alive.length) break;
       await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 2.2, z); g.face(Math.atan2(2.2, 0)); g.setHp(100); }, [alive[0].x, alive[0].z]);
