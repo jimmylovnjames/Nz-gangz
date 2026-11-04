@@ -936,7 +936,7 @@ function createGame(world) {
     if (st.windup > 0) {
       const A = EATK[st.atk] || EATK.cross;
       // Step in behind the punch.
-      if (p && d > 1.05) { const ux = (eye.position.x - p.position.x) / d, uz = (eye.position.z - p.position.z) / d, s0 = Math.min(2.6 * dt, d - 1.0); slideMove(p.position, ux * s0, uz * s0, 0.4); }
+      if (p && d > 1.2) { const ux = (eye.position.x - p.position.x) / d, uz = (eye.position.z - p.position.z) / d, s0 = Math.min(2.2 * dt, d - 1.15); slideMove(p.position, ux * s0, uz * s0, 0.4); }
       st.windup -= dt;
       if (st.windup <= 0) {
         SFX.play('whoosh', A.heavy ? 1.2 : 0.75);
@@ -950,7 +950,7 @@ function createGame(world) {
       return;
     }
     st.attackT = (st.attackT ?? 0.6) - dt;
-    if (d < 1.6 && st.attackT <= 0 && !(st.blockT > 0) && (fightToken === st || !fightToken)) {
+    if (d < 1.75 && st.attackT <= 0 && !(st.blockT > 0) && (fightToken === st || !fightToken)) {
       st.atk = st.chain || pickAttack(styleOf(st)); st.chain = null;
       const A = EATK[st.atk]; st.windup = A.wu; h.attack(st.atk, A.wu); h.mode = 'guard';
       if (A.heavy) SFX.play('tell');
@@ -963,7 +963,7 @@ function createGame(world) {
     if (d > 6) sp *= 1.8; // jog in from range
     const ux = (eye.position.x - pos.x) / d, uz = (eye.position.z - pos.z) / d;
     if ((st.circleT = (st.circleT ?? 0) - dt) <= 0) { st.circle = rnd() < 0.5 ? 1 : -1; st.circleT = 1.2 + rnd() * 2; }
-    const attacker = fightToken === st || !fightToken, want = attacker ? 1.2 : 2.7;
+    const attacker = fightToken === st || !fightToken, want = attacker ? 1.35 : 2.7;
     let fwd = d > want + 0.25 ? 1 : d < want - 0.3 ? -0.7 : 0, side = attacker ? (d < 2.2 ? 0.25 : 0) : 0.7;
     if (st.blockT > 0 || st.windup > 0) { fwd = Math.min(fwd, 0); side = 0; }
     if (d > 6) { fwd = 1; side = 0; }
@@ -1084,6 +1084,7 @@ function createGame(world) {
   beacon.visible = false; scene.add(beacon);
   let beaconTarget = null;
   const _f = new THREE.Vector3(), _r = new THREE.Vector3(), _head = new THREE.Vector3(), _want = new THREE.Vector3();
+  let fightCam = 0;
   function syncCamera(dt, t) {
     const tp = thirdPerson && !drive.car && !inPrologue;
     playerBody.visible = tp && started;
@@ -1098,7 +1099,9 @@ function createGame(world) {
       h.mode = guardingNow && dodgeT <= 0 ? 'block' : hostiles().length || pmove ? 'guard' : 'idle'; h.dodge = dodgeT > 0; h.update(dt, t);
       _f.set(-Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw) * Math.cos(pitch)); _r.set(Math.cos(yaw), 0, -Math.sin(yaw));
       _head.copy(eye.position).y -= 0.05;
-      _want.copy(_head).addScaledVector(_r, 0.7).addScaledVector(_f, -3.7); _want.y += 0.45;
+      // In a fight the boom swings wider and higher so your own body doesn't hide the person you're fighting.
+      fightCam = lerp(fightCam, hostiles().some(([p]) => dist(p.position) < 6) ? 1 : 0, 1 - Math.exp(-dt * 3));
+      _want.copy(_head).addScaledVector(_r, 0.7 + 0.55 * fightCam).addScaledVector(_f, -3.7 - 0.4 * fightCam); _want.y += 0.45 + 0.35 * fightCam;
       // Pull the camera in rather than through walls and fences.
       let k = 1; for (let i = 1; i <= 10; i++) { const f = i / 10, x = lerp(_head.x, _want.x, f), z = lerp(_head.z, _want.z, f); if (collision.collides(x, z, 0.22)) { k = Math.max(0.15, (i - 1) / 10); break; } }
       _want.lerpVectors(_head, _want, k); _want.y = Math.max(_want.y, groundHeight(_want.x, _want.z) + 0.35);

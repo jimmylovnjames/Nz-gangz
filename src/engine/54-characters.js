@@ -365,7 +365,7 @@ class Human {
       }
       along -= 0.2 * run * R.k; // runners land under themselves and push off well behind
       if (back) pitch *= 0.3;
-      const bx = lerp(sg * lerp(0.12, 0.09, run) * R.k, (i ? -0.16 : 0.15) * R.k, gw), bz = lerp(0, (i ? -0.2 : 0.19) * R.k, gw) + (i ? 0 : tr('lead') * R.k);
+      const bx = lerp(sg * lerp(0.12, 0.09, run) * R.k, (i ? -0.15 : 0.14) * R.k, gw), bz = lerp(0, (i ? -0.17 : 0.16) * R.k, gw) + (i ? 0 : tr('lead') * R.k);
       F.p.set(bx + L.dx * along * moveW, lerp(R.ankleY, y, moveW) + (i ? tr('heel') : tr('leadHeel')) * R.k, bz + L.dz * along * moveW);
       F.pitch = pitch * moveW + (i ? tr('heel') : tr('leadHeel')) * 5;
       F.yaw = lerp(sg * 0.12, i ? -0.75 : -0.25, gw) + (i ? tr('pivot') : tr('leadPivot'));
@@ -375,7 +375,7 @@ class Human {
     const cyc = Math.cos(TAU * L.ph), syc = Math.sin(TAU * L.ph);
     const sway = 0.022 * (1 - run * 0.7) * syc * moveW * (1 - gw) * R.k;
     const hx = this.hipRest.x + sway * L.dz, hz = this.hipRest.z - sway * L.dx;
-    let hy = this.hipRest.y - (0.035 * run + 0.065 * gw + 0.03 * this.dz + 0.12 * dg) * R.k - tr('drop') * R.k;
+    let hy = this.hipRest.y - (0.035 * run + 0.05 * gw + 0.03 * this.dz + 0.12 * dg) * R.k - tr('drop') * R.k;
     if (rk === 'body') hy -= 0.07 * re * R.k;
     let anyStance = false;
     for (let i = 0; i < 2; i++) {
@@ -390,8 +390,8 @@ class Human {
     hips.position.set(hx, L.hy, hz);
     const bank = clamp(-L.yr * sp * 0.025, -0.25, 0.25) * (1 - gw);
     const list = lerp(0.045, 0.025, run) * syc * moveW * (1 - gw);
-    let hipsYaw = lerp(-lerp(0.1, 0.07, run) * cyc * fwdW, -0.3, gw) + tr('hips');
-    let chestYaw = lerp(lerp(0.06, 0.16, run) * cyc * fwdW, -0.45, gw) + tr('chest');
+    let hipsYaw = lerp(-lerp(0.1, 0.07, run) * cyc * fwdW, -0.22, gw) + tr('hips');
+    let chestYaw = lerp(lerp(0.06, 0.16, run) * cyc * fwdW, -0.34, gw) + tr('chest');
     let lean = lerp(0.04 + 0.1 * run + 0.08 * smoothstep(sn, 5, 8), 0.12, gw) * (back ? 0.3 : 1) + tr('lean') + 0.1 * this.dz;
     let roll = tr('roll') - L.dx * 0.4 * dg, headX = 0, headY = 0, headZ = 0, armOut = 0; lean += L.dz * 0.25 * dg;
     if (rk) {
@@ -440,7 +440,7 @@ class Human {
         _Qa[s].copy(A.up.quaternion); _Qb[s].copy(A.lo.quaternion);
         const gk = fold ? (s ? GUARD.foldR : GUARD.foldL) : block ? GUARD.block : this.weapon && s ? GUARD.weapon : s ? GUARD.rear : GUARD.lead;
         const gp = _V[10].set(gk[0] * sg, gk[1], gk[2]).multiplyScalar(R.reach).add(A.up.position).applyMatrix4(Mc);
-        const pole = fold ? _V[11].set(0.8 * sg, -0.6, 0.1) : _V[11].set((block ? 0.15 : 0.35) * sg, -1, block ? 0.1 : -0.15);
+        const pole = fold ? _V[11].set(0.8 * sg, -0.6, 0.1) : _V[11].set((block ? 0.12 : 0.18) * sg, -1, block ? 0.1 : -0.05);
         let tgt = gp;
         if (uses) {
           const sh = _V[12].copy(A.up.position).applyMatrix4(Mc), keys = C.d.hand, n = keys.length;

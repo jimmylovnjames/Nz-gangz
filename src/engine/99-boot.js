@@ -35,8 +35,10 @@ async function boot() {
   for (let i = 0; i < names.length; i++) { forge.make(names[i]); if (i % 3 === 2) { setLoad(0.05 + 0.2 * i / names.length); await nextTick(); } }
   const lib = new MaterialLib(forge, q);
   const photo = new PhotoAssets(renderer, lib, q);
-  // Realistic people need texture detail (MEDIUM and up); LOW keeps the light stand-in bodies.
-  PEOPLE.enabled = q.tex >= 1024 && new URLSearchParams(location.search).get('people') !== 'off'; PEOPLE.msaa = q.msaa > 0;
+  // Realistic people on any phone that can take them, whatever the graphics setting (LOW used to swap in the
+  // blocky stand-ins, which read as the people "going back to funny looking"). Only genuinely weak or software
+  // GPUs keep the stand-ins.
+  PEOPLE.enabled = (q.tex >= 1024 || detected.tier !== 'low') && new URLSearchParams(location.search).get('people') !== 'off'; PEOPLE.msaa = q.msaa > 0;
   for (const look of ['manu', 'darren', 'shorty', 'kev', 'mikey', 'pita', 'crewA', 'crewB', 'crewC', 'pedF1', 'pedF2', 'pedF3', 'pedM1', 'pedM2', 'player']) PEOPLE.get(look);
   sky.photo = photo;
 
