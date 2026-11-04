@@ -37,7 +37,7 @@ Read this first in any new session. It is the full context needed to keep workin
   - `window.__auStory`: advance, choose, skip, phone, minigame.
   - `window.__auDebug`: scene, camera, city, updateCull, THREE.
   - `window.__auStats`: fps, draw calls, triangles.
-- Realistic people only load at MEDIUM and above (LOW uses the stand-in bodies). At MEDIUM click `#start` with `page.evaluate(() => document.getElementById('start').click())`: a Playwright click times out on the slow frames.
+- Realistic people load on any GPU not detected as weak/software, whatever the graphics setting (Run 21c: LOW used to swap in the blocky stand-ins and the user read that as the people looking funny again). SwiftShader is detected LOW, so tests at `?gfx=low` still use stand-ins; screenshot at MEDIUM to see the real bodies. At MEDIUM click `#start` with `page.evaluate(() => document.getElementById('start').click())`: a Playwright click times out on the slow frames.
 - Screenshot scripts live in the session scratchpad (gone next session). Write a small Playwright script:
   1. Serve the repo.
   2. Click `#start`.
