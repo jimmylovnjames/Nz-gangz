@@ -46,8 +46,30 @@ const SFX = {
       case 'dodge': this.burst(t, 0.18, 400, 1, 0.15, 'bandpass', 1800); break;
       case 'parry': this.tone(t, 0.2, 1500, 0.16, 'triangle', 900); this.tone(t, 0.12, 2300, 0.06, 'sine', 1800); this.burst(t, 0.12, 2400, 1.5, 0.12, 'bandpass', 600); break;
       case 'tell': this.tone(t, 0.16, 150, 0.12, 'sawtooth', 95); this.burst(t, 0.1, 380, 1.2, 0.08, 'lowpass'); break;
+      case 'bark': this.burst(t, 0.09, 620, 2.2, 0.32 * k, 'bandpass', 380); this.tone(t, 0.1, 330, 0.18 * k, 'square', 210); this.burst(t + 0.16, 0.08, 560, 2.2, 0.26 * k, 'bandpass', 360); this.tone(t + 0.16, 0.09, 300, 0.14 * k, 'square', 200); break;
+      case 'yelp': this.tone(t, 0.22, 1100, 0.18, 'triangle', 520); this.burst(t, 0.15, 1400, 2, 0.12, 'bandpass', 700); break;
+      case 'kick': this.burst(t, 0.05, 700, 1, 0.16 * k, 'lowpass'); this.tone(t, 0.07, 160, 0.12 * k, 'sine', 80); break;
+      case 'thump': this.tone(t, 0.18, 70, 0.32 * k, 'sine', 38); this.burst(t, 0.04, 220, 1, 0.08 * k, 'lowpass'); break;
+      case 'sirenFar': for (let i = 0; i < 4; i++) { this.tone(t + i * 1.4, 0.7, 620, 0.018, 'sine', 980); this.tone(t + i * 1.4 + 0.7, 0.7, 980, 0.018, 'sine', 620); } break;
       case 'banner': this.tone(t, 0.18, 660, 0.12, 'triangle'); this.tone(t + 0.12, 0.3, 990, 0.12, 'triangle'); break;
     }
+  },
+  // The ice-cream van: the first half of Greensleeves on a music-box tone (traditional, public domain).
+  chime(g) {
+    if (!this.on || g <= 0.01) return; this.ensure(); if (!this.ac) return;
+    const t0 = this.ac.currentTime + 0.05, e = 0.17, mid = n => 440 * Math.pow(2, (n - 69) / 12);
+    const tune = [[69, 1], [72, 2], [74, 1], [76, 1.5], [77, 0.5], [76, 1], [74, 2], [71, 1], [67, 1.5], [69, 0.5], [71, 1], [72, 2], [69, 1], [69, 1.5], [68, 0.5], [69, 1], [71, 2], [68, 1], [64, 2], [69, 1], [72, 2], [74, 1], [76, 1.5], [77, 0.5], [76, 1], [74, 2], [71, 1], [67, 1.5], [69, 0.5], [71, 1], [72, 1.5], [71, 0.5], [69, 1], [68, 1.5], [66, 0.5], [68, 1], [69, 3]];
+    let tt = t0; for (const [n, d] of tune) { this.tone(tt, d * e * 0.95, mid(n + 12), 0.05 * g, 'triangle'); this.tone(tt, d * e * 0.6, mid(n + 24), 0.012 * g, 'sine'); tt += d * e; }
+  },
+  // Lawn mower: a two-stroke drone, louder the closer you are (0 = off).
+  mower(level) {
+    if (!this.ac || !this.on) return;
+    if (!this.mw && level > 0.01) {
+      const ac = this.ac, o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), f = ac.createBiquadFilter();
+      o.type = 'sawtooth'; o.frequency.value = 52; o2.type = 'square'; o2.frequency.value = 104.5; f.type = 'lowpass'; f.frequency.value = 520; g.gain.value = 0;
+      o.connect(f); o2.connect(f); f.connect(g); g.connect(this.master); o.start(); o2.start(); this.mw = { g, o };
+    }
+    if (this.mw) this.mw.g.gain.setTargetAtTime(Math.min(1, level) * 0.045, this.ac.currentTime, 0.2);
   },
   // Called every frame with the night factor (0 day .. 1 night).
   ambience(dt, night) {

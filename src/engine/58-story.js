@@ -14,6 +14,7 @@ const CAST = {
   rawiri: { name: 'RAWIRI', color: '#c8e0a0' },
   lani: { name: 'AUNTY LANI', color: '#ffb8d8' },
   rival: { name: 'RIVAL', color: '#ff7070' }, // renamed to the rival crew's name
+  uce: { name: 'BRO', color: '#d6d6d6' }, aunty: { name: 'AUNTY', color: '#ffc8a8' }, kid: { name: 'KID', color: '#a8e0ff' }, van: { name: 'MR SWIRL', color: '#ff9ccf' }, local: { name: 'LOCAL', color: '#dddddd' },
 };
 const SCRIPT = {
   proIntro: [
@@ -241,6 +242,66 @@ Object.assign(SCRIPT, {
   hustleRefuses: [{ who: 'debtor', id: 'hus_05', text: 'Shorty can come get it himself. You wanna go, bro?' }],
   hustleBeaten: [{ who: 'debtor', id: 'hus_06', text: 'Okay! Okay. It\'s in my pocket. Take it.' }],
   hustleAgain: [{ who: 'debtor', id: 'hus_07', text: 'I already paid, bro. Leave me alone.' }],
+});
+// The living street (Run 22): what locals say as you pass (speech bubbles), and the street moments.
+Object.assign(SCRIPT, {
+  ambGreet: [
+    { who: 'local', id: 'amb_g1', text: 'Chur.' }, { who: 'local', id: 'amb_g2', text: 'Sup, uce.' }, { who: 'local', id: 'amb_g3', text: 'Kia ora, bro.' },
+    { who: 'local', id: 'amb_g4', text: 'How\'s it, cuz?' }, { who: 'local', id: 'amb_g5', text: 'Sweet as.' }, { who: 'local', id: 'amb_g6', text: 'Malo, bro.' },
+    { who: 'local', id: 'amb_g7', text: 'All good, bro?' }, { who: 'local', id: 'amb_g8', text: 'Mean shoes, uce.' },
+  ],
+  ambNight: [{ who: 'local', id: 'amb_n1', text: 'Bit late to be out, eh.' }, { who: 'local', id: 'amb_n2', text: 'Cold one tonight.' }, { who: 'local', id: 'amb_n3', text: 'Mind how you go, bro.' }],
+  ambKnown: [{ who: 'local', id: 'amb_w1', text: 'That\'s the fulla who sorted Darren!' }, { who: 'local', id: 'amb_w2', text: 'Heard about you, uce.' }, { who: 'local', id: 'amb_w3', text: 'Respect, bro.' }, { who: 'local', id: 'amb_w4', text: 'Don\'t want no trouble, eh.' }],
+  ambHeat: [{ who: 'local', id: 'amb_h1', text: 'Cops are looking for you, bro.' }, { who: 'local', id: 'amb_h2', text: 'The feds were just round here.' }, { who: 'local', id: 'amb_h3', text: 'Keep your head down, eh.' }],
+  ambWeapon: [{ who: 'local', id: 'amb_a1', text: 'Whoa, easy with that, bro.' }, { who: 'local', id: 'amb_a2', text: 'Put that away, eh.' }, { who: 'local', id: 'amb_a3', text: 'Nah, don\'t bring that round here.' }],
+  ambKid: [{ who: 'kid', id: 'amb_y1', text: 'Uncle! Watch this!' }, { who: 'kid', id: 'amb_y2', text: 'Hi!' }, { who: 'kid', id: 'amb_y3', text: 'You play league?' }],
+  ambBump: [{ who: 'local', id: 'amb_b6', text: 'Oi! Watch it, egg!' }, { who: 'local', id: 'amb_b7', text: 'Bro, what the?' }, { who: 'local', id: 'amb_b8', text: 'Eyes up, uce!' }, { who: 'local', id: 'amb_b9', text: 'Ow! Watch where you\'re going.' }],
+  ambFightStart: [{ who: 'local', id: 'amb_f1', text: 'Fight! Fight!' }, { who: 'local', id: 'amb_f2', text: 'Ohhh it\'s going down!' }, { who: 'local', id: 'amb_f3', text: 'Get the phones out!' }, { who: 'local', id: 'amb_f4', text: 'Bro, they\'re scrapping!' }],
+  ambFightCheer: [{ who: 'local', id: 'amb_f5', text: 'Ooooh!' }, { who: 'local', id: 'amb_f6', text: 'Get him!' }, { who: 'local', id: 'amb_f7', text: 'Hands up, bro!' }, { who: 'local', id: 'amb_f8', text: 'He felt that!' }, { who: 'local', id: 'amb_f9', text: 'Chur!' }],
+  ambFlee: [{ who: 'local', id: 'amb_x1', text: 'Nah, I\'m out!' }, { who: 'local', id: 'amb_x2', text: 'Run!' }, { who: 'local', id: 'amb_x3', text: 'Not getting involved, eh.' }],
+  ambSmoke: [
+    { who: 'uce', id: 'amb_s1', text: 'Bro. You got a smoke?' },
+    { choice: [
+      { text: 'Here, have a couple. ($2)', id: 'amb_sc1', result: 'give' },
+      { text: 'Nah, sorry bro.', id: 'amb_sc2', result: 'no' },
+    ] },
+  ],
+  ambSmokeYes: [{ who: 'uce', id: 'amb_s2', text: 'Chur, bro. Here, I\'ll tell you something for free.' }],
+  ambSmokeNo: [{ who: 'uce', id: 'amb_s3', text: 'All good, eh.' }],
+  ambRumour1: [{ who: 'uce', id: 'amb_r1', text: 'Cops like to park up at the Southmall car park. Drive nice round there.' }],
+  ambRumour2: [{ who: 'uce', id: 'amb_r2', text: 'That gym on Great South Road. Train there and you hit way harder.' }],
+  ambRumour3: [{ who: 'uce', id: 'amb_r3', text: 'Grab an energy drink from the dairy and you can run all day.' }],
+  ambRumour4: [{ who: 'uce', id: 'amb_r4', text: 'Shorty always has work if you\'re keen. Keep your phone on.' }],
+  ambRumour5: [{ who: 'uce', id: 'amb_r5', text: 'Tap block right as they swing and they\'re wide open. Learnt that the hard way.' }],
+  ambRumour6: [{ who: 'uce', id: 'amb_r6', text: 'Ice cream van does the rounds in the day. Follow the music.' }],
+  ambBags: [
+    { who: 'aunty', id: 'amb_b1', text: 'Son, can you help Aunty carry these to the car?' },
+    { choice: [
+      { text: 'Yeah, no worries, Aunty.', id: 'amb_bc1', result: 'yes' },
+      { text: 'Sorry Aunty, I\'m busy.', id: 'amb_bc2', result: 'no' },
+    ] },
+  ],
+  ambBagsGo: [{ who: 'aunty', id: 'amb_b2', text: 'Oh, bless you. It\'s just over here.' }],
+  ambBagsDone: [{ who: 'aunty', id: 'amb_b3', text: 'Thank you, my boy. Here, buy yourself a feed.' }],
+  ambBagsLost: [{ who: 'aunty', id: 'amb_b4', text: 'Hmph. Kids these days.' }],
+  ambBagsNo: [{ who: 'aunty', id: 'amb_b5', text: 'Okay, dear.' }],
+  ambBall: [
+    { who: 'kid', id: 'amb_k1', text: 'Uncle! Our ball went over the fence. Can you get it?' },
+    { choice: [
+      { text: 'Yeah, hold on.', id: 'amb_kc1', result: 'yes' },
+      { text: 'Not now, kids.', id: 'amb_kc2', result: 'no' },
+    ] },
+  ],
+  ambBallDone: [{ who: 'kid', id: 'amb_k3', text: 'Chur, uncle! You\'re the best!' }],
+  ambVan: [
+    { who: 'van', id: 'amb_v1', text: 'Kia ora! One cone? Four bucks.' },
+    { choice: [
+      { text: 'Hokey pokey, thanks. ($4)', id: 'amb_vc1', result: 'buy' },
+      { text: 'Nah, just looking.', id: 'amb_vc2', result: 'no' },
+    ] },
+  ],
+  ambVanBuy: [{ who: 'van', id: 'amb_v2', text: 'There you go, my bro. Don\'t get brain freeze.' }],
+  ambVanBroke: [{ who: 'van', id: 'amb_v3', text: 'Sorry bro. No money, no ice cream.' }],
 });
 const TEXTS = {
   c1Call: [

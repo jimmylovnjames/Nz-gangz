@@ -492,3 +492,215 @@ _Winded._
 | id | who | line |
 |---|---|---|
 | `hus_07` | DEBTOR | I already paid, bro. Leave me alone. |
+
+## ambGreet
+
+| id | who | line |
+|---|---|---|
+| `amb_g1` | local | Chur. |
+| `amb_g2` | local | Sup, uce. |
+| `amb_g3` | local | Kia ora, bro. |
+| `amb_g4` | local | How's it, cuz? |
+| `amb_g5` | local | Sweet as. |
+| `amb_g6` | local | Malo, bro. |
+| `amb_g7` | local | All good, bro? |
+| `amb_g8` | local | Mean shoes, uce. |
+
+## ambNight
+
+| id | who | line |
+|---|---|---|
+| `amb_n1` | local | Bit late to be out, eh. |
+| `amb_n2` | local | Cold one tonight. |
+| `amb_n3` | local | Mind how you go, bro. |
+
+## ambKnown
+
+| id | who | line |
+|---|---|---|
+| `amb_w1` | local | That's the fulla who sorted Darren! |
+| `amb_w2` | local | Heard about you, uce. |
+| `amb_w3` | local | Respect, bro. |
+| `amb_w4` | local | Don't want no trouble, eh. |
+
+## ambHeat
+
+| id | who | line |
+|---|---|---|
+| `amb_h1` | local | Cops are looking for you, bro. |
+| `amb_h2` | local | The feds were just round here. |
+| `amb_h3` | local | Keep your head down, eh. |
+
+## ambWeapon
+
+| id | who | line |
+|---|---|---|
+| `amb_a1` | local | Whoa, easy with that, bro. |
+| `amb_a2` | local | Put that away, eh. |
+| `amb_a3` | local | Nah, don't bring that round here. |
+
+## ambKid
+
+| id | who | line |
+|---|---|---|
+| `amb_y1` | kid | Uncle! Watch this! |
+| `amb_y2` | kid | Hi! |
+| `amb_y3` | kid | You play league? |
+
+## ambBump
+
+| id | who | line |
+|---|---|---|
+| `amb_b6` | local | Oi! Watch it, egg! |
+| `amb_b7` | local | Bro, what the? |
+| `amb_b8` | local | Eyes up, uce! |
+| `amb_b9` | local | Ow! Watch where you're going. |
+
+## ambFightStart
+
+| id | who | line |
+|---|---|---|
+| `amb_f1` | local | Fight! Fight! |
+| `amb_f2` | local | Ohhh it's going down! |
+| `amb_f3` | local | Get the phones out! |
+| `amb_f4` | local | Bro, they're scrapping! |
+
+## ambFightCheer
+
+| id | who | line |
+|---|---|---|
+| `amb_f5` | local | Ooooh! |
+| `amb_f6` | local | Get him! |
+| `amb_f7` | local | Hands up, bro! |
+| `amb_f8` | local | He felt that! |
+| `amb_f9` | local | Chur! |
+
+## ambFlee
+
+| id | who | line |
+|---|---|---|
+| `amb_x1` | local | Nah, I'm out! |
+| `amb_x2` | local | Run! |
+| `amb_x3` | local | Not getting involved, eh. |
+
+## ambSmoke
+
+| id | who | line |
+|---|---|---|
+| `amb_s1` | uce | Bro. You got a smoke? |
+| `amb_sc1` | YOU | (choice) Here, have a couple. ($2) |
+| `amb_sc2` | YOU | (choice) Nah, sorry bro. |
+
+## ambSmokeYes
+
+| id | who | line |
+|---|---|---|
+| `amb_s2` | uce | Chur, bro. Here, I'll tell you something for free. |
+
+## ambSmokeNo
+
+| id | who | line |
+|---|---|---|
+| `amb_s3` | uce | All good, eh. |
+
+## ambRumour1
+
+| id | who | line |
+|---|---|---|
+| `amb_r1` | uce | Cops like to park up at the Southmall car park. Drive nice round there. |
+
+## ambRumour2
+
+| id | who | line |
+|---|---|---|
+| `amb_r2` | uce | That gym on Great South Road. Train there and you hit way harder. |
+
+## ambRumour3
+
+| id | who | line |
+|---|---|---|
+| `amb_r3` | uce | Grab an energy drink from the dairy and you can run all day. |
+
+## ambRumour4
+
+| id | who | line |
+|---|---|---|
+| `amb_r4` | uce | Shorty always has work if you're keen. Keep your phone on. |
+
+## ambRumour5
+
+| id | who | line |
+|---|---|---|
+| `amb_r5` | uce | Tap block right as they swing and they're wide open. Learnt that the hard way. |
+
+## ambRumour6
+
+| id | who | line |
+|---|---|---|
+| `amb_r6` | uce | Ice cream van does the rounds in the day. Follow the music. |
+
+## ambBags
+
+| id | who | line |
+|---|---|---|
+| `amb_b1` | aunty | Son, can you help Aunty carry these to the car? |
+| `amb_bc1` | YOU | (choice) Yeah, no worries, Aunty. |
+| `amb_bc2` | YOU | (choice) Sorry Aunty, I'm busy. |
+
+## ambBagsGo
+
+| id | who | line |
+|---|---|---|
+| `amb_b2` | aunty | Oh, bless you. It's just over here. |
+
+## ambBagsDone
+
+| id | who | line |
+|---|---|---|
+| `amb_b3` | aunty | Thank you, my boy. Here, buy yourself a feed. |
+
+## ambBagsLost
+
+| id | who | line |
+|---|---|---|
+| `amb_b4` | aunty | Hmph. Kids these days. |
+
+## ambBagsNo
+
+| id | who | line |
+|---|---|---|
+| `amb_b5` | aunty | Okay, dear. |
+
+## ambBall
+
+| id | who | line |
+|---|---|---|
+| `amb_k1` | kid | Uncle! Our ball went over the fence. Can you get it? |
+| `amb_kc1` | YOU | (choice) Yeah, hold on. |
+| `amb_kc2` | YOU | (choice) Not now, kids. |
+
+## ambBallDone
+
+| id | who | line |
+|---|---|---|
+| `amb_k3` | kid | Chur, uncle! You're the best! |
+
+## ambVan
+
+| id | who | line |
+|---|---|---|
+| `amb_v1` | van | Kia ora! One cone? Four bucks. |
+| `amb_vc1` | YOU | (choice) Hokey pokey, thanks. ($4) |
+| `amb_vc2` | YOU | (choice) Nah, just looking. |
+
+## ambVanBuy
+
+| id | who | line |
+|---|---|---|
+| `amb_v2` | van | There you go, my bro. Don't get brain freeze. |
+
+## ambVanBroke
+
+| id | who | line |
+|---|---|---|
+| `amb_v3` | van | Sorry bro. No money, no ice cream. |

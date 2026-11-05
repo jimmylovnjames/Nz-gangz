@@ -317,7 +317,7 @@ class Human {
       let dyaw = ry - L.ly; dyaw = Math.atan2(Math.sin(dyaw), Math.cos(dyaw)); L.yr = lerp(L.yr, clamp(dyaw / dt, -8, 8), 1 - Math.exp(-dt * 8));
     }
     L.lx = rp.x; L.lz = rp.z; L.ly = ry;
-    const cy = Math.cos(ry), sy = Math.sin(ry), sc = this.mesh.scale.x || 1;
+    const cy = Math.cos(ry), sy = Math.sin(ry), sc = (this.mesh.scale.x || 1) * (this.root.scale.x || 1); // kids are scaled at the root
     let lvx = (wvx * cy - wvz * sy) / sc, lvz = (wvx * sy + wvz * cy) / sc; const ls = Math.hypot(lvx, lvz); if (ls > 9) { lvx *= 9 / ls; lvz *= 9 / ls; }
     const kv = 1 - Math.exp(-dt * 10); L.vx = lerp(L.vx, lvx, kv); L.vz = lerp(L.vz, lvz, kv);
     const lab = this.lab; if (lab) { L.vx = lab.vx || 0; L.vz = lab.vz || 0; if (lab.down != null) { this.downT = lab.down; this.upT = 0; } }
@@ -370,6 +370,9 @@ class Human {
       F.pitch = pitch * moveW + (i ? tr('heel') : tr('leadHeel')) * 5;
       F.yaw = lerp(sg * 0.12, i ? -0.75 : -0.25, gw) + (i ? tr('pivot') : tr('leadPivot'));
     }
+    // Sitting (bus-stop bench, kerb, front step): feet planted out front, knees bent by the leg IK.
+    const sitL = this.sit != null ? this.sit / sc : null;
+    if (sitL != null) for (let i = 0; i < 2; i++) { const F = R.feet[i], sg = i ? -1 : 1; F.p.set(sg * 0.14 * R.k, R.ankleY, (0.34 + 0.18 * Math.min(1, sitL / 0.45)) * R.k); F.st = 0; F.pitch = 0; F.yaw = sg * 0.12; }
     const kn = tr('knee'); if (kn) { const F = R.feet[1]; F.p.lerp(_V[8].set(-0.06 * R.k, R.ankleY + 0.45 * R.k, 0.3 * R.k), kn); F.pitch = lerp(F.pitch, 0.6, kn); F.st = 0; }
     // ---- pelvis and torso ---------------------------------------------------------------------------
     const cyc = Math.cos(TAU * L.ph), syc = Math.sin(TAU * L.ph);
@@ -385,14 +388,15 @@ class Human {
       if (top < hy) hy = top;
     }
     if (!anyStance) hy += 0.025 * R.k * run;
+    if (sitL != null) hy = sitL + 0.11 * R.k;
     hy += gw * 0.012 * R.k * Math.sin(t * 10.5 + this.idleSeed) * (1 - moveW * 0.6);
-    L.hy = hy < L.hy || lab ? hy : lerp(L.hy, hy, 1 - Math.exp(-dt * 14));
+    L.hy = hy < L.hy || lab || sitL != null ? hy : lerp(L.hy, hy, 1 - Math.exp(-dt * 14));
     hips.position.set(hx, L.hy, hz);
     const bank = clamp(-L.yr * sp * 0.025, -0.25, 0.25) * (1 - gw);
     const list = lerp(0.045, 0.025, run) * syc * moveW * (1 - gw);
     let hipsYaw = lerp(-lerp(0.1, 0.07, run) * cyc * fwdW, -0.22, gw) + tr('hips');
     let chestYaw = lerp(lerp(0.06, 0.16, run) * cyc * fwdW, -0.34, gw) + tr('chest');
-    let lean = lerp(0.04 + 0.1 * run + 0.08 * smoothstep(sn, 5, 8), 0.12, gw) * (back ? 0.3 : 1) + tr('lean') + 0.1 * this.dz;
+    let lean = lerp(0.04 + 0.1 * run + 0.08 * smoothstep(sn, 5, 8), 0.12, gw) * (back ? 0.3 : 1) + tr('lean') + 0.1 * this.dz + (sitL != null ? 0.14 : 0);
     let roll = tr('roll') - L.dx * 0.4 * dg, headX = 0, headY = 0, headZ = 0, armOut = 0; lean += L.dz * 0.25 * dg;
     if (rk) {
       if (rk === 'jab' || rk === 'cross') { headX -= 0.65 * re; lean -= 0.2 * re; headY += rs * 0.2 * re; }
@@ -430,7 +434,23 @@ class Human {
     fR.rotation.x = -(lerp(0.18, 1.3, run) + lerp(0.2, 0.3, run) * Math.max(0, cyc) * moveW);
     this.fw = lerp(this.fw || 0, this.pose === 'crossed' && sp < 0.3 && !guardMode && !C ? 1 : 0, lab ? 1 : 1 - Math.exp(-dt * 6));
     const fold = this.fw > 0.01 && gw < 0.5;
-    const armW = fold ? this.fw : Math.max(gw, cw) * (1 - 0.45 * this.dz);
+    // Everyday actions for locals: talking with their hands, on the phone, filming a fight, cheering, resting.
+    const act = !C && !guardMode && !fold ? this.act || (sitL != null ? 'rest' : null) : null;
+    if (act) this.actKind = act;
+    this.aw = lerp(this.aw || 0, act ? 1 : 0, lab ? 1 : 1 - Math.exp(-dt * 6)); const aw = this.aw, ak = this.actKind;
+    const useAct = aw > 0.01 && !fold && gw < 0.5 && !C;
+    const armW = fold ? this.fw : useAct ? aw : Math.max(gw, cw) * (1 - 0.45 * this.dz);
+    const actHand = (s, t) => {
+      if (ak === 'talk') { const who = Math.floor(t / 2.6 + this.idleSeed) % 2; return who === s ? [-0.15 + 0.06 * Math.sin(t * 2.3 + s), -0.12 + 0.1 * Math.sin(t * 3.1 + 1), 0.5 + 0.06 * Math.sin(t * 1.7)] : null; }
+      if (ak === 'phone') return s ? [-0.36, -0.18, 0.45] : [-0.33, -0.21, 0.42];
+      if (ak === 'film') return s ? [-0.25, 0.28, 0.72] : null;
+      if (ak === 'cheer') return [0.05, 0.62 + 0.18 * Math.sin(t * 7 + s * Math.PI), 0.22];
+      if (ak === 'rest') return [-0.1, -0.6, 0.62];
+      if (ak === 'push') return [-0.2, -0.36, 0.74]; // hands on the mower handle
+      return null;
+    };
+    if (this._phoneM) this._phoneM.visible = aw > 0.5 && (ak === 'phone' || ak === 'film');
+    if (aw > 0.5 && (ak === 'phone' || ak === 'film') && !this._phoneM) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.15, 0.012), new THREE.MeshStandardMaterial({ color: 0x111214, roughness: 0.3, metalness: 0.4 })); m.position.set(0, -0.09, 0.035); b('handR').add(m); this._phoneM = m; }
     if (armW > 0.01) {
       hips.updateMatrix(); spine.updateMatrix(); chest.updateMatrix();
       const Mc = _M[2].multiplyMatrices(hips.matrix, spine.matrix).multiply(chest.matrix), Mci = _M[3].copy(Mc).invert();
@@ -438,9 +458,11 @@ class Human {
       for (let s = 0; s < 2; s++) {
         const sg = s ? -1 : 1, A = s ? R.armR : R.armL, uses = C && (C.d.arm === 'B' || (C.d.arm === 'L') === !s);
         _Qa[s].copy(A.up.quaternion); _Qb[s].copy(A.lo.quaternion);
-        const gk = fold ? (s ? GUARD.foldR : GUARD.foldL) : block ? GUARD.block : this.weapon && s ? GUARD.weapon : s ? GUARD.rear : GUARD.lead;
+        const ah = useAct && !fold ? actHand(s, t) : null;
+        if (useAct && !fold && !ah) continue; // this arm just hangs
+        const gk = fold ? (s ? GUARD.foldR : GUARD.foldL) : ah ? ah : block ? GUARD.block : this.weapon && s ? GUARD.weapon : s ? GUARD.rear : GUARD.lead;
         const gp = _V[10].set(gk[0] * sg, gk[1], gk[2]).multiplyScalar(R.reach).add(A.up.position).applyMatrix4(Mc);
-        const pole = fold ? _V[11].set(0.8 * sg, -0.6, 0.1) : _V[11].set((block ? 0.12 : 0.18) * sg, -1, block ? 0.1 : -0.05);
+        const pole = fold ? _V[11].set(0.8 * sg, -0.6, 0.1) : ah ? (ak === 'cheer' ? _V[11].set(0.6 * sg, -0.2, -0.6) : _V[11].set(0.4 * sg, -1, -0.2)) : _V[11].set((block ? 0.12 : 0.18) * sg, -1, block ? 0.1 : -0.05);
         let tgt = gp;
         if (uses) {
           const sh = _V[12].copy(A.up.position).applyMatrix4(Mc), keys = C.d.hand, n = keys.length;
@@ -459,6 +481,7 @@ class Human {
       }
     }
     // ---- head: steady gaze, looks at whoever it's watching -------------------------------------------
+    if (useAct) { if (ak === 'phone') headX += 0.45 * aw; else if (ak === 'cheer') headX -= 0.2 * aw; else if (ak === 'talk') headY += 0.08 * Math.sin(t * 1.3) * aw; else if (ak === 'listen') headX += 0.06 * Math.sin(t * 2.1) * aw; }
     const look = lerp(clamp(this.lookYaw, -1.1, 1.1), 0, gw), torso = chestYaw;
     b('neck').rotation.set(-lean * 0.25, (look - torso) * 0.3, 0);
     b('head').rotation.set(-lean * 0.35 + gw * 0.1 + Math.sin(t * 0.7 + this.idleSeed) * 0.03 + headX + Math.sin(t * 5) * 0.12 * this.dz, (look - torso) * 0.7 + headY, headZ + Math.sin(t * 3.7) * 0.1 * this.dz);

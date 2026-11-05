@@ -105,7 +105,7 @@ class Pedestrians {
       a.p.visible = true; a.h.reset(); a.h.mode = 'idle'; return true;
     }
   }
-  update(dt, px, pz, collide) {
+  update(dt, px, pz, collide, fightAt) {
     // One new walker every 0.4 s while there are free slots (steady, not frame-rate dependent).
     this.spawnT = (this.spawnT ?? 0) - dt;
     if (this.spawnT <= 0) { const free = this.agents.find(a => !a.active); if (free) this.spawn(free, px, pz); this.spawnT = 0.4; }
@@ -114,6 +114,14 @@ class Pedestrians {
       const p = a.p, d = Math.hypot(p.position.x - px, p.position.z - pz);
       if (d > 160) { a.active = false; p.visible = false; continue; }
       if (a.down > 0) { a.down -= dt; a.h.speed = 0; if (a.down <= 0) { a.h.getUp(); a.flee = 5; } continue; }
+      // A scrap nearby: stop and watch from the footpath (filming, cheering), then carry on.
+      if (fightAt && a.flee <= 0 && Math.hypot(p.position.x - fightAt.x, p.position.z - fightAt.z) < 28) {
+        if (!a.watching) { a.watching = { ang: Math.atan2(p.position.x - fightAt.x, p.position.z - fightAt.z) + (Math.random() - 0.5) * 0.5, r: 6.5 + Math.random() * 2.5, kind: Math.random() < 0.5 ? 'film' : 'cheer' }; }
+        const w = a.watching, tx = fightAt.x + Math.sin(w.ang) * w.r, tz = fightAt.z + Math.cos(w.ang) * w.r, ex = tx - p.position.x, ez = tz - p.position.z, el = Math.hypot(ex, ez);
+        if (el > 0.5) { const st = Math.min(el, 2.4 * dt); collide(p.position, ex / el * st, ez / el * st); p.rotation.y = Math.atan2(ex, ez); a.h.act = null; }
+        else { p.rotation.y = Math.atan2(fightAt.x - p.position.x, fightAt.z - p.position.z); a.h.act = w.kind; }
+        p.position.y = groundHeight(p.position.x, p.position.z); continue;
+      } else if (a.watching) { a.watching = null; a.h.act = null; }
       if (a.flee > 0) {
         a.flee -= dt; const ux = (p.position.x - px) / (d || 1), uz = (p.position.z - pz) / (d || 1), b0 = p.position.clone();
         collide(p.position, ux * 4.6 * dt, uz * 4.6 * dt);
@@ -136,7 +144,7 @@ class Pedestrians {
       a.h.speed = a.speed;
     }
   }
-  scare(x, z, r = 30) { for (const a of this.agents) if (a.active && a.down <= 0 && Math.hypot(a.p.position.x - x, a.p.position.z - z) < r) a.flee = 6; }
+  scare(x, z, r = 30) { for (const a of this.agents) if (a.active && a.down <= 0 && Math.hypot(a.p.position.x - x, a.p.position.z - z) < r) { a.flee = 6; a.watching = null; a.h.act = null; } }
   knock(a) { a.down = 6; a.flee = 0; a.h.knockDown(); }
   near(x, z, r) { return this.agents.filter(a => a.active && a.down <= 0 && Math.hypot(a.p.position.x - x, a.p.position.z - z) < r); }
 }

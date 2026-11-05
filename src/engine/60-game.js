@@ -481,6 +481,7 @@ function createGame(world) {
     if (stage === 'c1-manu' && dist(manu.position) < 4.5 && !c1.rivals.slice(3).some(r => r.alive)) { faceEachOther(manu); manu.userData.human.reset(); dlg.run('c1ManuDown', { rival: rivalCrew() }, () => advance('c1-home', 'Get Manu into a car and take him home.')); return; }
     if (stage === 'c1-done' || stage === 'complete') { if (dist(manu.position) < 4.5) { faceEachOther(manu); dlg.run('manuAfter', storyVars(), null); return; } }
     if (hustle && dist(hustle.npc.position) < 4.5 && hustle.npc.visible) { talkHustle(); return; }
+    if (talkAmbient()) return;
     const pk = nearestPickup(); if (pk && !weapon) { scene.remove(pk.g); pickups.splice(pickups.indexOf(pk), 1); setWeapon({ kind: pk.kind, uses: WEAPON_DEF[pk.kind].uses }); say(`Picked up a ${WEAPON_DEF[pk.kind].name}. Hits hard, swings slow, and the cops won't like it. TALK with nothing around to drop it.`); return; }
     const shop = shops.nearest(eye.position); if (shop) { openShop(shop); return; }
     const car = drive.nearest(eye.position); if (car) { enterCar(car); return; }
@@ -516,7 +517,10 @@ function createGame(world) {
   let hustle = null, hustleTimer = 90;
   // People on the footpaths (realistic bodies on MEDIUM and up).
   const PED_LOOKS = ['pedF1', 'pedM1', 'pedF2', 'pedM2', 'pedF3', 'crewC', 'pedF1', 'pedM2'];
+  // A fence segment near (x, z) that a ball could go over (for the kids' street moment).
+  function fenceNear(x, z, r = 14) { let best = null, bd = r; for (const o of collision.list) { if (o.tag !== 'fence' || o.t !== 2 || o.top > 1.9 || o.top < 0.8) continue; const mx = (o.ax + o.bx) / 2, mz = (o.az + o.bz) / 2, d = Math.hypot(mx - x, mz - z); if (d < bd && Math.hypot(o.bx - o.ax, o.bz - o.az) > 2.5) { bd = d; best = o; } } return best; }
   const peds = new Pedestrians(world, traffic.nodes, PED_LOOKS.slice(0, world.pedCount ?? 6).map((look, i) => { const p = person(0, 0, { look, seed: 900 + i * 53, top: [0x7a2a3a, 0x2a4a6a, 0xd8d0c0, 0x3a5a3a][i % 4], pants: 0x2a2a30, face: [ATLAS.faceA, ATLAS.faceB][i % 2], pose: 'relaxed' }); p.visible = false; return p; }));
+  const ambient = new AmbientLife(world, { person, collides, slide: (p, dx, dz, r = 0.35) => slideMove(p, dx, dz, r), traffic, fenceNear });
   // ---- Chapter One cast: Tipene (the fixer), Rawiri, Aunty Lani, the rival crew ------------------
   const rivalCrew = () => FACTIONS[((FACTIONS.indexOf(chosen) + 18) % FACTIONS.length + FACTIONS.length) % FACTIONS.length] || 'Southside Hornets';
   const rawiri = person(places.southmallCarpark.pos.x, places.southmallCarpark.pos.z, { look: 'crewB', seed: 1201, top: 0x3a3a3a, pants: 0x2a2a2a, face: ATLAS.faceC, pose: 'crossed' });
@@ -589,7 +593,8 @@ function createGame(world) {
   // Knockouts by who it was (story fights move the story on).
   function koTarget(p, st, finisher) {
     if (finisher) { slowMo = 1.1; rep += 3; banner('FINISHER', '+3 REP'); }
-    heat.add(0.4); peds.scare(p.position.x, p.position.z);
+    // A knockout draws a cheer from the crowd; it's only a weapon that sends them running.
+    heat.add(0.4); if (weapon) peds.scare(p.position.x, p.position.z); else ambient.cheer();
     if (st === darrenState) {
       darrenState.down = true; darrenState.hostile = false; darren.userData.human.knockDown(); rep += 5; say('Darren is down.');
       setTimeout(() => dlg.run('darrenBeaten', storyVars(), () => { debtCash = 400; darren.userData.human.reset(); darrenState.down = false; advance('debt-return', 'Darren handed over the full $400. Take it to Manu.'); }), 1400);
@@ -638,6 +643,54 @@ function createGame(world) {
   function pop(text, color = '#fff') {
     lastPop = text; lastPopT = simT; popEl.textContent = text; popEl.style.color = color; popEl.style.opacity = '1'; popEl.style.transform = 'translate(-50%,-50%) scale(1.1)';
     clearTimeout(popTimer); popTimer = setTimeout(() => { popEl.style.opacity = '0'; popEl.style.transform = 'translate(-50%,-50%) scale(1)'; }, 560);
+  }
+  // ---- the living street: street moments (a smoke, Aunty's bags, the kids' ball) and the ice-cream van ----
+  let ballQuest = null, bagsQuest = null;
+  const RUMOURS = ['ambRumour1', 'ambRumour2', 'ambRumour3', 'ambRumour4', 'ambRumour5', 'ambRumour6'];
+  const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), new THREE.MeshStandardMaterial({ color: 0xd8642a, roughness: 0.7 })); ballMesh.visible = false; ballMesh.castShadow = true; scene.add(ballMesh);
+  function talkAmbient() {
+    if (ballQuest) {
+      if (!ballQuest.held && Math.hypot(ballMesh.position.x - eye.position.x, ballMesh.position.z - eye.position.z) < 1.8) { ballQuest.held = true; ballMesh.visible = false; SFX.play('click'); say('Got the ball. Take it back to the kids.'); return true; }
+      const k = ballQuest.kid;
+      if (ballQuest.held && dist(k.p.position) < 3) { faceEachOther(k.p); dlg.run('ambBallDone', {}, () => { rep += 2; ballQuest = null; k.moment = null; if (k.marker) k.marker.visible = false; rewardCheck('HELPED THE KIDS'); updateHUD(); }); return true; }
+    }
+    const V = ambient.vanNear(eye.position);
+    if (V) {
+      dlg.run('ambVan', {}, r => {
+        if (r !== 'buy') return;
+        if (cash < 4) { dlg.run('ambVanBroke', {}, null); return; }
+        cash -= 4; hp = Math.min(100, hp + 25); SFX.play('cash'); V.served = true; V.stopT = 4; dlg.run('ambVanBuy', {}, null); updateHUD(); store();
+      });
+      return true;
+    }
+    const a = ambient.momentNear(eye.position); if (!a) return false;
+    a.p.rotation.y = Math.atan2(eye.position.x - a.p.position.x, eye.position.z - a.p.position.z); a.h.act = null;
+    const done = () => { a.moment = null; if (a.marker) a.marker.visible = false; };
+    if (a.moment === 'smoke') dlg.run('ambSmoke', {}, r => {
+      if (r === 'give' && cash >= 2) { cash -= 2; rep += 1; dlg.run('ambSmokeYes', {}, () => dlg.run(RUMOURS[Math.floor(rnd() * RUMOURS.length)], {}, null)); }
+      else dlg.run('ambSmokeNo', {}, null);
+      done(); updateHUD();
+    });
+    else if (a.moment === 'bags') dlg.run('ambBags', {}, r => {
+      done(); if (r !== 'yes') { dlg.run('ambBagsNo', {}, null); return; }
+      // She walks to her car; stay with her.
+      let best = null, bd = 45; for (const c of world.city.cars) { if (c.taken) continue; const d = Math.hypot(c.x - a.p.position.x, c.z - a.p.position.z); if (d < bd && d > 6) { bd = d; best = c; } }
+      const tgt = best ? safeSpawn(best.x + Math.cos(best.h || 0) * 1.8, best.z - Math.sin(best.h || 0) * 1.8) : { x: a.p.position.x + 12, z: a.p.position.z };
+      dlg.run('ambBagsGo', {}, null);
+      bagsQuest = { a, far: 0 }; a.state = 'follow'; a.h.act = null;
+      a.follow = { x: tgt.x, z: tgt.z, done: () => { if (bagsQuest && bagsQuest.a === a) { bagsQuest = null; dlg.run('ambBagsDone', {}, () => { cash += 10; rep += 3; rewardCheck('HELPED AUNTY'); updateHUD(); store(); }); } } };
+    });
+    else if (a.moment === 'ball') dlg.run('ambBall', {}, r => {
+      if (r !== 'yes') { done(); return; }
+      const f = fenceNear(a.p.position.x, a.p.position.z); if (!f) { done(); return; }
+      // The ball lands on the far side of the nearest fence: climb over (JUMP) or go round.
+      const mx = (f.ax + f.bx) / 2, mz = (f.az + f.bz) / 2, L = Math.hypot(f.bx - f.ax, f.bz - f.az), nx = -(f.bz - f.az) / L, nz = (f.bx - f.ax) / L;
+      const side = Math.sign((a.p.position.x - mx) * nx + (a.p.position.z - mz) * nz) || 1;
+      const b = safeSpawn(mx - nx * side * 1.6, mz - nz * side * 1.6);
+      ballMesh.position.set(b.x, groundHeight(b.x, b.z) + 0.11, b.z); ballMesh.visible = true;
+      ballQuest = { kid: a, held: false }; say('The ball\'s over the fence. JUMP at the fence to climb it, TALK to pick the ball up.');
+    });
+    return true;
   }
   function hit() {
     if (drive.car) { drive.audio.horn(); return; }
@@ -707,7 +760,10 @@ function createGame(world) {
     }
     // Innocent bystanders: they go down, everyone else scatters, and the cops hear about it.
     const ped = peds.near(eye.position.x, eye.position.z, def ? 4 : 3.5).find(a => { const v = a.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position).normalize(); return v.dot(forward) > cone; });
-    if (ped) { peds.knock(ped); bloodAt(ped.p.position); world.shake = 0.18; SFX.play('hit'); heat.add(def ? 1.5 : 1); peds.scare(eye.position.x, eye.position.z); say('You just laid out a random. Someone\'s calling the cops.'); updateHUD(); }
+    if (ped) { peds.knock(ped); bloodAt(ped.p.position); world.shake = 0.18; SFX.play('hit'); heat.add(def ? 1.5 : 1); peds.scare(eye.position.x, eye.position.z); say('You just laid out a random. Someone\'s calling the cops.'); updateHUD(); return; }
+    const loc = ambient.near(eye.position.x, eye.position.z, def ? 4 : 3.5).find(a => { const v = a.p.position.clone().add(new THREE.Vector3(0, 1.2 * a.p.scale.y, 0)).sub(eye.position).normalize(); return v.dot(forward) > cone; });
+    if (loc) { ambient.knock(loc); bloodAt(loc.p.position); world.shake = 0.18; SFX.play('hit'); heat.add(loc.kid ? 2.5 : def ? 1.5 : 1); peds.scare(eye.position.x, eye.position.z); say(loc.kid ? 'You hit a kid. The whole street saw that.' : 'You just laid out a local. Someone\'s calling the cops.'); updateHUD(); return; }
+    if (ambient.hitDog(eye.position.x + forward.x * 1.2, eye.position.z + forward.z * 1.2, 1.6)) { heat.add(0.4); say('You hit someone\'s dog. Not a good look.'); }
   }
   // A block tapped just before their punch lands: it's knocked aside and they're wide open.
   function parry(st, h) {
@@ -1049,10 +1105,13 @@ function createGame(world) {
     const near = [];
     for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.filter(e => e.alive).map(e => e.p), ...debtors.filter(d => d.visible)]) if (p.parent && Math.abs(p.position.x - drive.car.x) < 30 && Math.abs(p.position.z - drive.car.z) < 30) near.push({ x: p.position.x, z: p.position.z, r: 0.45 });
     for (const a of peds.agents) if (a.active && a.down <= 0) near.push({ x: a.p.position.x, z: a.p.position.z, r: 0.4, ped: a });
+    for (const a of ambient.near(drive.car.x, drive.car.z, 30)) near.push({ x: a.p.position.x, z: a.p.position.z, r: 0.4, amb: a });
+    near.push(...ambient.obstacles());
     drive.update(dt, throttle, steer, !!keys.Space, [...traffic.obstacles(), ...police.obstacles(), ...near]);
     if (drive.hit) {
       const o = drive.hit, v = drive.lastImpact || 0; drive.hit = null;
       if (o.ped && v > 4) { peds.knock(o.ped); heat.add(2); peds.scare(drive.car.x, drive.car.z); say('You hit someone. That\'s heat.'); }
+      else if (o.amb && v > 4) { ambient.knock(o.amb); heat.add(2); peds.scare(drive.car.x, drive.car.z); say('You hit someone. That\'s heat.'); }
       else if (o.police && v > 3) { heat.add(1.5); say('You rammed a cop car.'); }
       else if (o.car && v > 7) heat.add(0.6);
     }
@@ -1072,6 +1131,10 @@ function createGame(world) {
       if (drive.car) t = Math.abs(drive.car.v) < 1 ? 'TALK / E: get out' : '';
       else if (hostiles().some(([p]) => dist(p.position) < 2.1) && !weapon) t = grab ? 'HIT: knee · TALK: throw' : lastPop === 'BLOCKED' && simT - lastPopT < 2 ? 'BLOCKED · TALK: grab · 4th hit breaks guard' : 'TALK: grab';
       else if (hustle && hustle.state === 'open' && dist(hustle.npc.position) < 4.5) t = `TALK: ${hustle.name}`;
+      else if (ballQuest && !ballQuest.held && Math.hypot(ballMesh.position.x - eye.position.x, ballMesh.position.z - eye.position.z) < 1.8) t = 'TALK: pick up the ball';
+      else if (ballQuest && ballQuest.held && dist(ballQuest.kid.p.position) < 3) t = 'TALK: give the ball back';
+      else if (ambient.vanNear(eye.position)) t = 'TALK: Mr Swirl ice cream ($4)';
+      else if (ambient.momentNear(eye.position)) t = 'TALK';
       else if (nearestPickup() && !weapon) t = `TALK: pick up ${WEAPON_DEF[nearestPickup().kind].name}`;
       else { const sh = shops.nearest(eye.position); if (sh) t = `TALK: ${sh.name}`; else if (drive.nearest(eye.position)) t = 'TALK / E: get in'; }
     }
@@ -1171,7 +1234,14 @@ function createGame(world) {
       }
       traffic.update(dt, drive.car ? { x: drive.car.x, z: drive.car.z } : eye.position, drive.car);
       const me = drive.car ? { x: drive.car.x, z: drive.car.z } : eye.position;
-      peds.update(dt, me.x, me.z, (pp, dx, dz) => slideMove(pp, dx, dz, 0.35));
+      // A scrap nearby draws a crowd; weapons, or the cops on your tail, scatter it.
+      const H = hostiles().filter(([p]) => dist(p.position) < 12);
+      let fightAt = null; if (H.length && !drive.car) { fightAt = { x: eye.position.x, z: eye.position.z }; for (const [p] of H) { fightAt.x += p.position.x; fightAt.z += p.position.z; } fightAt.x /= H.length + 1; fightAt.z /= H.length + 1; }
+      const danger = (!!weapon && H.length > 0) || (heat.level > 1 && policeSeen);
+      peds.update(dt, me.x, me.z, (pp, dx, dz) => slideMove(pp, dx, dz, 0.35), fightAt);
+      ambient.update(dt, t, me, { fightAt, danger, yaw, speed: drive.car ? 0 : vel.length(), heat: heat.level > 0, weapon: !!weapon, rep, inCar: !!drive.car, camera });
+      if (bagsQuest) { const q = bagsQuest; if (!q.a.spot || q.a.state !== 'follow') bagsQuest = null; else if (dist(q.a.p.position) > 14) { if ((q.far += dt) > 3) { ambient.bubble(q.a.p, SCRIPT.ambBagsLost[0].text); q.a.state = 'return'; q.a.follow = null; bagsQuest = null; } } else q.far = 0; }
+      if (ballQuest && (dist(ballQuest.kid.p.position) > 70 || !ballQuest.kid.spot)) { ballQuest = null; ballMesh.visible = false; }
       heat.update(dt, policeSeen);
       const pr = police.update(dt, t, heat, me, !!drive.car);
       policeSeen = pr.closest < 70;
@@ -1241,7 +1311,7 @@ function createGame(world) {
         if (!talking && !drive.car) meleeAI(kevRun, h, d, 14, KO_KEV, dt, kev);
       }
       // Mikey bolts when you get close: sprint bursts, then he blows out and you can catch him.
-      if (stage === 'shorty-jobs' && jobState.mikey === 'open' && !talking) {
+      if (stage === 'shorty-jobs' && jobState.mikey === 'open' && (!talking || dlg.key === 'mikeyRuns')) { // he keeps running while he shouts
         const mk = JOBS.mikey.npc, h = mk.userData.human, d = dist(mk.position);
         if (mikeyRun.escapedT > 0) {
           if ((mikeyRun.escapedT -= dt) <= 0) { const p = safeSpawn(JOBS.mikey.spot.pos.x, JOBS.mikey.spot.pos.z); mk.position.set(p.x, groundHeight(p.x, p.z), p.z); mikeyRun.fleeing = false; mikeyRun.barked = false; mk.visible = true; }
@@ -1283,7 +1353,7 @@ function createGame(world) {
     eye.rotation.set(pitch + (Math.random() - 0.5) * sh * 0.12, yaw + (Math.random() - 0.5) * sh * 0.12, 0);
     syncCamera(dt, t);
     // Animate characters near the camera every frame, distant ones at a lower rate.
-    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.map(e => e.p), ...debtors, ...peds.people, rawiri, lani, ...c1.rivals.map(r => r.p), ...labPeople]) {
+    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.map(e => e.p), ...debtors, ...peds.people, rawiri, lani, ...c1.rivals.map(r => r.p), ...labPeople, ...ambient.people]) {
       if (!p.parent || !p.visible) continue;
       const d = p.position.distanceTo(eye.position);
       const h = p.userData.human;
@@ -1321,6 +1391,7 @@ function createGame(world) {
     nearFence: () => { let best = null, bd = 1e9; for (const o of collision.list) { if (o.tag !== 'fence' || o.t !== 2 || o.top > 1.9 || o.top < 0.8) continue; const mx = (o.ax + o.bx) / 2, mz = (o.az + o.bz) / 2, d = Math.hypot(mx - eye.position.x, mz - eye.position.z); if (d < bd && Math.hypot(o.bx - o.ax, o.bz - o.az) > 3) { bd = d; best = o; } } return best && { ax: best.ax, az: best.az, bx: best.bx, bz: best.bz, top: best.top }; },
     fight: () => ({ move: pmove && pmove.name, busy: !!pmove, combo: comboIdx, pop: lastPop, windups: hostiles().map(([, st]) => st.windup || 0), blocks: hostiles().map(([, st]) => st.blockT || 0) }),
     block: on => { move.block = !!on; },
+    ambient: () => ({ active: ambient.agents.filter(a => a.spot && a.p.visible).length, kids: ambient.agents.filter(a => a.spot && a.kid).length, watching: ambient.agents.filter(a => a.watch).length + peds.agents.filter(a => a.watching).length, dogs: ambient.dogs.filter(d => d.home).length, van: !!(ambient.van && ambient.van.on), moments: ambient.agents.filter(a => a.spot && a.moment).length }),
     grabbed: () => !!grab, weapon: () => weapon && { ...weapon }, pickups: () => pickups.map(q => ({ kind: q.kind, x: q.x, z: q.z })), carHealth: () => drive.car ? drive.car.health : null,
     view: v => { if (v != null) setView(!!v); return thirdPerson; }, feel: () => ({ vel: vel.length(), dodgeT, token: !!fightToken, beacon: beacon.visible, bars: [...enemies, darrenState, kevRun, ...c1.rivals].filter(s => s && s._bar && s._bar.g.visible).length }),
     dodge: () => { prevBlock = false; move.block = true; setTimeout(() => { move.block = false; }, 120); },

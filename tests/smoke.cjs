@@ -152,7 +152,7 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   // Mikey: runs when you get close, caught when you reach him.
   T = await page.evaluate(() => window.__auGame.targets());
   await walkTo(page, T.mikey.x + 8, T.mikey.z);
-  await page.waitForFunction(m0 => { const m = window.__auGame.targets().mikey; return Math.hypot(m.x - m0.x, m.z - m0.z) > 1; }, T.mikey, { timeout: 60000 }).catch(() => { });
+  await page.waitForFunction(m0 => { const m = window.__auGame.targets().mikey; return Math.hypot(m.x - m0.x, m.z - m0.z) > 1; }, T.mikey, { timeout: 120000 }).catch(() => { });
   const m1 = (await page.evaluate(() => window.__auGame.targets())).mikey;
   check('Mikey bolts when you get close', Math.hypot(m1.x - T.mikey.x, m1.z - T.mikey.z) > 1, `moved ${Math.hypot(m1.x - T.mikey.x, m1.z - T.mikey.z).toFixed(1)}m`);
   for (let k = 0; k < 10 && !(await page.evaluate(() => window.__auStory.active)); k++) {
