@@ -155,7 +155,9 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   await page.waitForFunction(m0 => { const m = window.__auGame.targets().mikey; return Math.hypot(m.x - m0.x, m.z - m0.z) > 1; }, T.mikey, { timeout: 120000 }).catch(() => { });
   const m1 = (await page.evaluate(() => window.__auGame.targets())).mikey;
   check('Mikey bolts when you get close', Math.hypot(m1.x - T.mikey.x, m1.z - T.mikey.z) > 1, `moved ${Math.hypot(m1.x - T.mikey.x, m1.z - T.mikey.z).toFixed(1)}m`);
-  for (let k = 0; k < 10 && !(await page.evaluate(() => window.__auStory.active)); k++) {
+  // Chase until the caught conversation starts (his "not today" shout plays while he runs, so any line won't do).
+  const caughtTalk = () => page.evaluate(() => { const s = window.__auStory, l = s.line; return !!(s.active && l && l.id && l.id !== 'mikey_01'); });
+  for (let k = 0; k < 16 && !(await caughtTalk()) && (await page.evaluate(() => window.__auGame.jobs())).mikey === 'open'; k++) {
     const m = (await page.evaluate(() => window.__auGame.targets())).mikey;
     await page.evaluate(([x, z]) => window.__auGame.teleport(x + 1.0, z), [m.x, m.z]);
     await page.waitForTimeout(400);
