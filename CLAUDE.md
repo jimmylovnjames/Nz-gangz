@@ -24,7 +24,7 @@ Read this first in any new session. It is the full context needed to keep workin
 - `node tools/build.mjs`: concatenates `src/engine/*.js` (sorted) into one inline module inside `src/shell.html` and writes `index.html`.
   - Module scripts can't load from `file://`, hence the single file.
   - Always rebuild after editing `src/`.
-- `node tests/smoke.cjs`: Playwright with headless SwiftShader at `?gfx=low`. **74 checks**, the whole story end to end plus every mechanic; takes ~15 min.
+- `node tests/smoke.cjs`: Playwright with headless SwiftShader at `?gfx=low`. **77 checks**, the whole story end to end plus every mechanic; takes ~15 min.
   - Run it alone: a second SwiftShader page (e.g. a MEDIUM screenshot run) halves the frame rate and the Mikey chase times out.
   - Strikes resolve a few frames after the tap, so fight loops use the `strike(page)` helper (tap, wait until `fight().busy` is false).
   - Run it in the background and wait on the log.
@@ -63,7 +63,8 @@ Read this first in any new session. It is the full context needed to keep workin
 | 61-drive | PlayerCars (enter any parked car, weighted drift handling, damage, smoke, engine audio), Traffic (road graph from map vertices, drive on the left) |
 | 62-shops | 110 real shops from map signs: food heals, energy drinks, barber/supermarket rep, gym punch power |
 | 63-street | Heat (stars), Police (Battenburg cars chasing on the road graph, bust = Manurewa Police Station + 30% fine), Pedestrians (spatial-grid spawns, scatter, knockdown) |
-| 64-sfx | synthesised WebAudio SFX and ambience (birds, crickets, traffic) |
+| 64-sfx | synthesised WebAudio SFX and ambience (birds, crickets, traffic, dog barks, distant sirens, car-stereo thump, the Greensleeves van chime `SFX.chime`, lawn mower drone `SFX.mower`) |
+| 65-ambient | `AmbientLife` (Run 22): pooled locals assigned to real spots near the player (bus stops/shelters, shop fronts, courts/fields, named places, front yards: chat groups, phone, bench/chair sitting, mowing, kids with a ball), crowds that watch fights (`fightAt`) and flee on `danger`, greetings/bump lines as DOM speech bubbles, `Dog`s (procedural skinned), the Mr Swirl ice-cream van on the residential road graph, street moments (`moment`: smoke / bags / ball, handled in 60-game `talkAmbient`). Human gained `act` (talk, listen, phone, film, cheer, rest, push) and `sit` (seat height, IK legs) |
 | 99-boot | boot sequence, settings panel, frame loop, adaptive DPR |
 
 Story stages (in order): `prologue, debt-find, debt-fight, debt-return, shorty-wait, shorty-meet, shorty-jobs, shorty-return, recruit, faction-choice, mission-courier/brawl, mission-return, complete, c1-call, c1-car, c1-pickup, c1-deliver, c1-dairy, c1-rivals, c1-wait, c1-manu, c1-home, c1-done`. After `recruit`, Shorty texts repeatable hustles.
@@ -85,7 +86,7 @@ Story stages (in order): `prologue, debt-find, debt-fight, debt-return, shorty-w
 - **Textures/HDRIs**: Poly Haven CC0 (`https://api.polyhaven.com/files/<id>`); mapping in `25-photo.js` `PHOTO`. Credits in `assets/README.md`.
 - **Voice**: `node tools/voice-script.mjs` regenerates `VOICE_SCRIPT.md` (134 lines) from SCRIPT. Recordings go in `voice/` and are listed in `voice/manifest.js` (`window.AU_VOICE = { id: 'file.m4a' }`).
 
-## State at handoff (Run 21)
+## State at handoff (Run 22)
 Done:
 - Real map.
 - Realistic people.
@@ -114,10 +115,15 @@ Done:
   - loose fists baked into all bodies, a fixed tight fist for first person;
   - fights: damage on the impact frame, jab-cross-hook-uppercut string with input buffering, soft lock-on, enemy jab/cross/hook/haymaker mix with telegraphs (bar orange, white for a haymaker), enemies cover up (bar blue; the uppercut breaks it, grabs beat it), parry (BLOCK tapped within 0.26 s of their impact), counter-hits on wind-ups, whiffs stagger them; Darren quick, Kev heavy.
 
-Unverified (ask the user): feel and tuning (parry window 0.26 s, enemy block chance 0.25-0.4, combo damage 0.6/0.9/1.15/1.6, lock-on strength, gait cadence/stride, aim assist, dodge, enemy aggression, walk speed 4.4, drift amount, climb triggering, grab and bat strength) and phone performance (the IK adds per-character CPU; ~20-40 animated people). A busy view at MEDIUM is ~1.5–2.7M tris and ~350–450 draw calls. Each tuning knob is a single constant in 60-game.js / 61-drive.js.
+- Run 22:
+  - fixes: busted no longer leaves you inside the station wall (all respawns use `safeSpawn`, plus a wedged-player safety net); car collisions check rotation, slide along obstacles, take damage from the normal speed, and `unstick` a car already overlapping;
+  - the living street (65-ambient) and Mikey keeps running while he shouts.
+
+Unverified (ask the user): feel and tuning (parry window 0.26 s, enemy block chance 0.25-0.4, combo damage 0.6/0.9/1.15/1.6, lock-on strength, gait cadence/stride, aim assist, dodge, enemy aggression, walk speed 4.4, drift amount, climb triggering, grab and bat strength) and phone performance (the IK adds per-character CPU; ~20-40 animated people; Run 22 adds 9/13/18 pooled locals by tier plus 2-3 dogs, each one draw call + shadow). A busy view at MEDIUM is ~1.5–2.7M tris and ~350–450 draw calls. Each tuning knob is a single constant in 60-game.js / 61-drive.js.
 
 Known rough edges:
 - Hands are one bone: fists are baked, so open-hand gestures aren't possible.
+- Kids are scaled-down adult bodies; dogs are a primitive build; speech bubbles are text only until voiced.
 - Punch contact is approximate (no hand-to-head collision); reach is generous for phones.
 - Cars are parametric shapes, not models.
 - Faint traces of the MakeHuman print on some tees.
