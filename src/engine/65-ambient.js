@@ -315,10 +315,11 @@ class AmbientLife {
     const K = world.city.carKit; if (!K || !K.protos[5]) return null;
     const g = new THREE.Group(), white = new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: 0.35, metalness: 0.3 });
     g.add(new THREE.Mesh(K.protos[5].body, white), new THREE.Mesh(K.protos[5].rest, K.rest));
-    // Pink and blue stripes, a big cone on the roof, a swirl sign.
-    for (const [y, c] of [[0.78, 0xe86aa0], [0.66, 0x56b7e6]]) for (const s of [1, -1]) { const st = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.1, 3.9), new THREE.MeshStandardMaterial({ color: c, roughness: 0.5 })); st.position.set(s * 0.94, y, -0.1); g.add(st); }
-    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.7, 14).rotateX(Math.PI), new THREE.MeshStandardMaterial({ color: 0xd9a35a, roughness: 0.7 })); cone.position.set(0, 2.55, 0.6); g.add(cone);
-    const scoop = new THREE.Mesh(new THREE.SphereGeometry(0.3, 14, 10), new THREE.MeshStandardMaterial({ color: 0xfbe6ef, roughness: 0.6 })); scoop.position.set(0, 2.95, 0.6); g.add(scoop);
+    // Pink and blue stripes down the sides and a big cone on the roof, sized off the van body itself.
+    const bb = new THREE.Box3().setFromBufferAttribute(K.protos[5].body.attributes.position), L = bb.max.z - bb.min.z, H = bb.max.y - bb.min.y, cz = (bb.max.z + bb.min.z) / 2;
+    for (const [f, c] of [[0.42, 0xe86aa0], [0.34, 0x56b7e6]]) for (const sd of [1, -1]) { const st = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.1, L * 0.8), new THREE.MeshStandardMaterial({ color: c, roughness: 0.5 })); st.position.set(sd * (bb.max.x + 0.012), bb.min.y + H * f, cz - L * 0.05); g.add(st); }
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.55, 14).rotateX(Math.PI), new THREE.MeshStandardMaterial({ color: 0xd9a35a, roughness: 0.7 })); cone.position.set(0, bb.max.y + 0.27, cz + L * 0.12); g.add(cone);
+    const scoop = new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 10), new THREE.MeshStandardMaterial({ color: 0xfbe6ef, roughness: 0.6 })); scoop.position.set(0, bb.max.y + 0.62, cz + L * 0.12); g.add(scoop);
     g.traverse(o => { if (o.isMesh) o.castShadow = true; }); g.visible = false; this.scene.add(g);
     return { g, on: false, x: 0, z: 0, h: 0, from: -1, to: -1, t: 0, stopT: 0, chimeT: 0, cruise: 0 };
   }
