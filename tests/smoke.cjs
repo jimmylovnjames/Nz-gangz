@@ -264,6 +264,11 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   }
   const bustedState = await state(page);
   check('the cops catch you: fine and a night at Manurewa station', bustedState.cash < cashBefore && (await page.evaluate(() => window.__auGame.heat())) === 0, `cash ${cashBefore} -> ${bustedState.cash}`);
+  // Run 22: you used to come out of the cells inside the station's wall and couldn't move.
+  { const a0 = await state(page); await page.evaluate(() => window.__auGame.face(0)); await holdUntil(page, 'KeyW', p0 => Math.hypot(window.__auGame.state().x - p0.x, window.__auGame.state().z - p0.z) > 0.5, { x: a0.x, z: a0.z });
+    let b0 = await state(page), moved = Math.hypot(b0.x - a0.x, b0.z - a0.z);
+    if (moved < 0.5) { await page.evaluate(() => window.__auGame.face(Math.PI)); await holdUntil(page, 'KeyW', p0 => Math.hypot(window.__auGame.state().x - p0.x, window.__auGame.state().z - p0.z) > 0.5, { x: a0.x, z: a0.z }); b0 = await state(page); moved = Math.hypot(b0.x - a0.x, b0.z - a0.z); }
+    check('after the cells you can walk away from the station', moved > 0.5, `moved ${moved.toFixed(2)}m`); }
   // Chapter One.
   await page.evaluate(() => window.__auGame.skipTimers());
   await page.waitForFunction(() => window.__auGame.state().stage === 'c1-car', null, { timeout: 90000 }).catch(() => { });
@@ -410,6 +415,23 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   const carW = await page.evaluate(() => window.__auGame.nearestCar());
   await page.evaluate(([x, z]) => { window.__auGame.teleport(x + 2.2, z); window.__auGame.talk(); }, [carW.x, carW.z]);
   check('cars have health', (await page.evaluate(() => window.__auGame.carHealth())) === 100);
+  // Run 22: drive into something, then back out (cars used to rotate into walls and get stuck shaking).
+  if (await page.evaluate(() => !!window.__auGame.drive())) {
+    const aim = await page.evaluate(() => { const g = window.__auGame, c = g.drive(); for (let k = 0; k < 32; k++) { const h = k / 32 * Math.PI * 2; for (let d = 4; d < 12; d += 0.5) if (g.collides(c.x + Math.sin(h) * d, c.z + Math.cos(h) * d, 0.3)) return { h, d }; } return null; });
+    if (aim) {
+      await page.evaluate(h => window.__auGame.carAim(h), aim.h);
+      const c0 = await page.evaluate(() => window.__auGame.drive());
+      await page.keyboard.down('KeyW');
+      await page.waitForFunction(([p0, d]) => { const c = window.__auGame.drive(); return Math.hypot(c.x - p0.x, c.z - p0.z) > d - 3.5; }, [c0, aim.d], { timeout: 90000, polling: 200 }).catch(() => { });
+      await page.waitForTimeout(4000); await page.keyboard.up('KeyW');
+      const c1 = await page.evaluate(() => window.__auGame.drive());
+      await page.keyboard.down('KeyS');
+      await page.waitForFunction(p0 => { const c = window.__auGame.drive(); return Math.hypot(c.x - p0.x, c.z - p0.z) > 1; }, c1, { timeout: 60000, polling: 200 }).catch(() => { });
+      await page.keyboard.up('KeyS');
+      const c2 = await page.evaluate(() => window.__auGame.drive());
+      check('a car that hits a wall can back out', Math.hypot(c2.x - c1.x, c2.z - c1.z) > 1, `drove ${Math.hypot(c1.x - c0.x, c1.z - c0.z).toFixed(1)}m toward a wall ${aim.d}m off, then reversed ${Math.hypot(c2.x - c1.x, c2.z - c1.z).toFixed(1)}m`);
+    } else check('a car that hits a wall can back out', false, 'no wall near the test car');
+  }
   if (await page.evaluate(() => !!window.__auGame.drive())) await page.evaluate(() => window.__auGame.talk());
   await page.click('#pauseButton'); await page.click('#saveNow');
   for (const sel of ['[data-time="night"]', '[data-rain="2"]', '[data-gfx="medium"]', '[data-time="golden"]', '[data-gfx="low"]']) { await page.click(sel); await page.waitForTimeout(400); }

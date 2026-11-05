@@ -905,7 +905,7 @@ function createGame(world) {
     if (hp <= 0) {
       const lost = Math.round(cash * 0.1); cash -= lost; hp = 100; rep = Math.max(0, rep - (ko.rep || 0));
       if (drive.car) exitCar();
-      const p = ko.at(); eye.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z);
+      const p0 = ko.at(), p = safeSpawn(p0.x, p0.z); eye.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z); vel.set(0, 0);
       say(`${ko.msg}${lost ? ` You got rolled for $${lost} while you were out.` : ''}${ko.rep ? ` Reputation -${ko.rep}.` : ''}`);
       banner('KNOCKED OUT', lost ? `-$${lost}` : 'Back on your feet'); bnCash = cash; bnRep = rep;
       // Retry: whoever beat you is back to full and still there.
@@ -1007,7 +1007,8 @@ function createGame(world) {
     const lost = Math.round(cash * 0.3); cash -= lost; heat.level = 0; police.clear();
     if (drive.car) exitCar();
     if (c1.manuInCar) manuOut(home.pos.x, home.pos.z);
-    const p = police.station; eye.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z);
+    // Out the front of the station on a clear bit of footpath (the old spot was inside the building: stuck).
+    const p = safeSpawn(police.station.x, police.station.z); eye.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z); vel.set(0, 0);
     say(`Busted. A night in the cells at Manurewa station and a $${lost} fine.`);
     banner('BUSTED', lost ? `-$${lost} fine` : 'A night in the cells'); bnCash = cash;
     // Busted on the parcel run: the cops keep it, Rawiri has one more.
@@ -1125,7 +1126,7 @@ function createGame(world) {
   soundToggle((() => { try { return localStorage.getItem('au-sound') !== '0'; } catch (_) { return true; } })());
 
   // ---- per-frame simulation ---------------------------------------------------------------
-  let lastHud = 0, bobT = 0;
+  let lastHud = 0, bobT = 0, wedgedT = 0;
   const forward = new THREE.Vector3();
   function update(dt, now, t) {
     if (hitStop > 0) { hitStop -= dt; dt *= 0.08; }
@@ -1162,6 +1163,8 @@ function createGame(world) {
       if (drive.car) driveFrame(dt, talking ? 0 : clamp(-back, -1, 1), talking ? 0 : clamp(right, -1, 1));
       else {
         const jumpNow = !!(keys.Space || move.jump); if (jumpNow && !prevJump && !talking) tryJump(); prevJump = jumpNow;
+        // Safety net: if you're ever wedged inside something (a spawn or story move into a wall), ease out.
+        if (!climb && !air && collides(eye.position.x, eye.position.z, 0.4, Math.max(0, feetUp()))) { if ((wedgedT += dt) > 0.25) { const f = safeSpawn(eye.position.x, eye.position.z); eye.position.x = f.x; eye.position.z = f.z; wedgedT = 0; } } else wedgedT = 0;
         if (!climb) slideMove(eye.position, mx * (air ? 0.85 : 1), mz * (air ? 0.85 : 1), 0.55, Math.max(0, feetUp()));
         bobT += dt * (moving && !air ? (sprinting ? 13 : 9) * Math.min(1, len) : 0);
         verticalFrame(dt, moving);
@@ -1324,6 +1327,7 @@ function createGame(world) {
     pedDebug: () => peds.agents.map(a => ({ active: a.active, x: Math.round(a.p.position.x), z: Math.round(a.p.position.z), flee: a.flee, down: a.down, vis: a.p.visible })),
     heat: () => heat.level, addHeat: n => heat.add(n), clearHeat: () => { heat.level = 0; police.clear(); }, police: () => police.cars.map(c => ({ x: c.x, z: c.z })), peds: () => peds.agents.filter(a => a.active).length,
     carTo: (x, z) => { if (drive.car) { drive.car.x = x; drive.car.z = z; drive.car.v = 0; } },
+    carAim: h => { const c = drive.car; if (c) { c.h = h; c.vx = c.vz = 0; c.v = 0; c.w = 0; } },
     c1: () => ({ manuInCar: c1.manuInCar, rawiri: rawiri.position.clone(), lani: lani.position.clone(), home: home.pos.clone(), rivals: c1.rivals.map(r => ({ x: r.p.position.x, z: r.p.position.z, alive: r.alive, hostile: r.hostile, hp: r.hp, down: r.downT || 0, stagger: r.stagger || 0 })) }),
     skipTimers: () => { if (c1.timer < 1e8) c1.timer = 0; }, // not once a text is already on its way
     jobs: () => ({ ...jobState }),

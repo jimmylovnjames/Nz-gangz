@@ -79,14 +79,24 @@ class PlayerCars {
     _q.setFromEuler(new THREE.Euler(car.pitch + (car.dive || 0), car.h, car.roll || 0, 'YXZ'));
     car.group.position.set(car.x, car.y, car.z); car.group.quaternion.copy(_q);
   }
-  blocked(car, x, z, h, others) {
+  // The car's footprint as four circles down its length. record: remember what we hit (people, cars) for the game.
+  blocked(car, x, z, h, others, record = true) {
     const D = CAR_DIM[car.type], fx = Math.sin(h), fz = Math.cos(h), half = D.L / 2 - 0.85;
     for (const s of [-half, -half / 3, half / 3, half]) {
       const px = x + fx * s, pz = z + fz * s;
       if (this.world.collision.collides(px, pz, 0.9)) return true;
-      for (const o of others) if ((o.x - px) ** 2 + (o.z - pz) ** 2 < (0.9 + o.r) ** 2) { this.hit = o; return true; }
+      for (const o of others) if ((o.x - px) ** 2 + (o.z - pz) ** 2 < (0.9 + o.r) ** 2) { if (record) this.hit = o; return true; }
     }
     return x < MAP_BOUNDS.x0 || x > MAP_BOUNDS.x1 || z < MAP_BOUNDS.z0 || z > MAP_BOUNDS.z1;
+  }
+  // Already overlapping something (a car nosed into you, a bad stop against a fence): ease out to the nearest
+  // free spot instead of being stuck vibrating against it.
+  unstick(car, others) {
+    for (const r of [0.15, 0.3, 0.5, 0.8, 1.2, 1.8, 2.6]) for (let k = 0; k < 12; k++) {
+      const a = k / 12 * TAU, x = car.x + Math.cos(a) * r, z = car.z + Math.sin(a) * r;
+      if (!this.blocked(car, x, z, car.h, others, false)) { car.x = x; car.z = z; return true; }
+    }
+    return false;
   }
   // Handling with weight: the car carries momentum, tyres only grip so hard, the handbrake breaks the
   // rear loose (drift), the body rolls in corners and dives under braking. Impacts cost health; below
@@ -115,21 +125,34 @@ class PlayerCars {
     car.w = lerp(car.w, wTarget, 1 - Math.exp(-dt * (brake ? 3 : 6.5)));
     const nh = car.h + car.w * dt, nfx = Math.sin(nh), nfz = Math.cos(nh), nrx = -nfz, nrz = nfx;
     car.vx = nfx * vf + nrx * vr; car.vz = nfz * vf + nrz * vr; car.v = vf;
-    // Integrate with substeps; on impact bounce, lose speed, take damage.
-    const speed = Math.hypot(car.vx, car.vz), steps = Math.max(1, Math.ceil(speed * dt / 0.4));
+    // Integrate with substeps. Turning is checked too (the nose mustn't swing into a wall, which used to leave
+    // the car stuck shaking against it); on contact the car slides along the obstacle and only loses the speed
+    // it carried into it, so a scrape is a scrape and a head-on is a crash.
+    if (this.blocked(car, car.x, car.z, car.h, others, false)) this.unstick(car, others);
+    const impact = v => {
+      this.lastImpact = v;
+      if (v > 6) this.world.shake = Math.min(0.55, v * 0.03);
+      if (v > 4) { car.health = Math.max(0, car.health - (v - 4) * 4.5); SFX.play(v > 10 ? 'heavy' : 'hit', 0.8); } else if (v > 1.5) SFX.play('block', 0.5);
+    };
+    const speed = Math.hypot(car.vx, car.vz), steps = Math.max(1, Math.ceil(speed * dt / 0.3));
     let h = car.h;
     for (let k = 0; k < steps; k++) {
-      const sdt = dt / steps; h += car.w * sdt;
+      const sdt = dt / steps, nh = h + car.w * sdt;
+      if (this.blocked(car, car.x, car.z, nh, others, false)) car.w *= 0.2; else h = nh;
       const nx = car.x + car.vx * sdt, nz = car.z + car.vz * sdt;
-      if (this.blocked(car, nx, nz, h, others)) {
-        const imp = Math.hypot(car.vx, car.vz);
-        if (imp > 6) this.world.shake = Math.min(0.55, imp * 0.03);
-        this.lastImpact = imp; if (imp > 4) { car.health = Math.max(0, car.health - (imp - 4) * 4.5); SFX.play(imp > 10 ? 'heavy' : 'hit', 0.8); }
-        car.vx *= -0.22; car.vz *= -0.22; car.w *= 0.3; car.v = -car.v * 0.22; break;
+      if (!this.blocked(car, nx, nz, h, others, true)) { car.x = nx; car.z = nz; continue; }
+      const sp = Math.hypot(car.vx, car.vz); if (sp < 1e-3) break;
+      const ux = car.vx / sp, uz = car.vz / sp; let slid = false;
+      for (const a of [0.3, -0.3, 0.6, -0.6, 0.9, -0.9, 1.2, -1.2]) {
+        const c = Math.cos(a), sn = Math.sin(a), dx = ux * c - uz * sn, dz = ux * sn + uz * c, keep = c * 0.92;
+        const tx = car.x + dx * sp * keep * sdt, tz = car.z + dz * sp * keep * sdt;
+        if (this.blocked(car, tx, tz, h, others, false)) continue;
+        impact(sp * Math.abs(sn)); car.vx = dx * sp * keep; car.vz = dz * sp * keep; car.x = tx; car.z = tz; car.w *= 0.7; slid = true; break;
       }
-      car.x = nx; car.z = nz;
+      if (!slid) { impact(sp); car.vx *= -0.2; car.vz *= -0.2; car.w *= 0.3; }
+      break;
     }
-    car.h = h;
+    car.h = h; car.v = car.vx * Math.sin(h) + car.vz * Math.cos(h);
     // Ride: kerb bumps pitch the car; cornering rolls it; braking and accelerating dive/squat it.
     const half = D.wb / 2, yf = groundHeight(car.x + Math.sin(car.h) * half, car.z + Math.cos(car.h) * half), yb = groundHeight(car.x - Math.sin(car.h) * half, car.z - Math.cos(car.h) * half);
     car.y = lerp(car.y, (yf + yb) / 2, 1 - Math.exp(-dt * 12)); car.pitch = lerp(car.pitch, Math.atan2(yb - yf, D.wb), 1 - Math.exp(-dt * 10));
