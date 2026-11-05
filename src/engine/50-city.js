@@ -511,7 +511,7 @@ class City {
     // Bus stops: AT flag pole, shelters on the busier roads.
     for (const [x, z, rot, name, shelter] of MAPDATA.busStops) {
       this.inst('busSign', { x, y: kh, z, rot }); this.collision.addCircle(x, z, 0.1, 'pole');
-      if (shelter) { const sx = x - Math.sin(rot) * -1.4 + Math.cos(rot) * 3, sz = z - Math.cos(rot) * -1.4 - Math.sin(rot) * 3; this.inst('busShelter', { x: sx, y: kh, z: sz, rot }); this.collision.addOBB(sx, sz, 1.8, 0.5, -rot, 'shelter', 2.6); }
+      if (shelter) { const sx = x - Math.sin(rot) * -1.4 + Math.cos(rot) * 3, sz = z - Math.cos(rot) * -1.4 - Math.sin(rot) * 3; this.inst('busShelter', { x: sx, y: kh, z: sz, rot: rot + Math.PI }); /* open side to the road */ this.collision.addOBB(sx, sz, 1.8, 0.5, -rot, 'shelter', 2.6); }
     }
     // Signals: four poles round each signalised junction, on the first footpath cell outward.
     for (const [x, z] of MAPDATA.signals) for (let q = 0; q < 4; q++) {

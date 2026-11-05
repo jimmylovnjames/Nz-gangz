@@ -97,8 +97,9 @@ class AmbientLife {
     for (const [x, z, rot, , shelter] of MAPDATA.busStops) {
       const r = this.roadDir(x, z), face = r ? r.a : rot;
       if (shelter) {
-        const sx = x - Math.sin(rot) * -1.4 + Math.cos(rot) * 3, sz = z - Math.cos(rot) * -1.4 - Math.sin(rot) * 3, lz = 0.2;
-        this.addSpot({ kind: 'bench', x: sx + lz * Math.sin(rot), z: sz + lz * Math.cos(rot), face: rot + Math.PI, axis: rot, seat: 0.5, n: hash2(x, z) > 0.55 ? 2 : 1 });
+        // Same placement as 50-city; the shelter's open side faces the road (rot + PI), the bench is near its back.
+        const sx = x - Math.sin(rot) * -1.4 + Math.cos(rot) * 3, sz = z - Math.cos(rot) * -1.4 - Math.sin(rot) * 3, lz = 0.2, srot = rot + Math.PI;
+        this.addSpot({ kind: 'bench', x: sx + lz * Math.sin(srot), z: sz + lz * Math.cos(srot), face: srot + Math.PI, axis: srot, seat: 0.5, n: hash2(x, z) > 0.55 ? 2 : 1 });
       } else this.addSpot({ kind: 'wait', x: x - Math.sin(face) * 1.1, z: z - Math.cos(face) * 1.1, face, n: hash2(x, z) > 0.7 ? 2 : 1 });
     }
     // Shop fronts: a couple of people yarning outside (not every shop, or it's a crowd).
