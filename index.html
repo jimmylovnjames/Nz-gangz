@@ -6717,11 +6717,18 @@ class AmbientLife {
     s.agents = [];
     if (s.chair) { s.chair.visible = false; s.chair = null; } if (s.mower) { this.mower.visible = false; s.mower = false; } if (s.ball) { s.ball.m.visible = false; s.ball.spot = null; s.ball = null; }
   }
-  assign(s) {
-    if (s.day && this.night()) return;
+  assign(s, me) {
+    if (s.day && this.night()) return true;
     const want = s.kind === 'play' ? 'kid' : 'adult';
-    const free = this.agents.filter(a => !a.spot && (want === 'kid' ? a.kid : !a.kid));
-    if (free.length < (s.kind === 'chat' ? 2 : 1)) return;
+    let free = this.agents.filter(a => !a.spot && (want === 'kid' ? a.kid : !a.kid));
+    const need = s.kind === 'chat' ? 2 : 1;
+    if (free.length < need && me) {
+      // Everyone's out at spots further away: pull the furthest lot in to where you actually are.
+      const d = Math.hypot(s.x - me.x, s.z - me.z);
+      const far = this.spots.filter(o => o.agents.length && o.agents.some(a => a.kid === (want === 'kid'))).map(o => [o, Math.hypot(o.x - me.x, o.z - me.z)]).sort((a, b) => b[1] - a[1])[0];
+      if (far && far[1] > d + 30 && far[1] > 55) { this.release(far[0]); free = this.agents.filter(a => !a.spot && (want === 'kid' ? a.kid : !a.kid)); }
+    }
+    if (free.length < need) return false;
     if (s.kind === 'chair') { const c = this.chairs.find(c => !c.visible); if (!c) return; s.chair = c; c.visible = true; c.position.set(s.x, groundHeight(s.x, s.z), s.z); c.rotation.y = s.face; }
     if (s.kind === 'mow') { if (this.mower.visible) return; this.mower.visible = true; s.mower = true; }
     if (s.kind === 'play') { s.chaser = 0; const bl = this.balls.find(b => !b.spot); if (bl) { s.ball = bl; bl.spot = s; bl.m.visible = true; bl.m.position.set(s.x, groundHeight(s.x, s.z) + 0.11, s.z); bl.vx = bl.vz = 0; } }
@@ -6759,7 +6766,7 @@ class AmbientLife {
       for (const [s, d] of near) {
         if (d > 105 || s.agents.length) continue;
         const ahead = ((s.x - me.x) * fx + (s.z - me.z) * fz) / Math.max(d, 1);
-        if (this.first || d > 45 || ahead < 0.2) this.assign(s); // don't pop people in right in front of you
+        if (this.first || d > 45 || ahead < 0.2) this.assign(s, me); // don't pop people in right in front of you
       }
       this.first = false; this.lastMe = { x: me.x, z: me.z };
     }
