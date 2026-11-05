@@ -253,6 +253,10 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
   // Run 18: pedestrians, police heat and a bust, then Chapter One end to end.
   await page.waitForFunction(() => window.__auGame.peds() > 0, null, { timeout: 90000 }).catch(() => { });
   check('people walk the footpaths', (await page.evaluate(() => window.__auGame.peds())) > 0);
+  // Run 22: the living street.
+  await page.waitForFunction(() => window.__auGame.ambient().active > 0, null, { timeout: 60000, polling: 500 }).catch(() => { });
+  const amb = await page.evaluate(() => window.__auGame.ambient());
+  check('locals hang out around you (bus stops, shops, yards)', amb.active > 0, JSON.stringify(amb));
   const cashBefore = (await state(page)).cash;
   await page.evaluate(() => window.__auGame.addHeat(2));
   await page.waitForFunction(() => window.__auGame.police().length > 0, null, { timeout: 60000 }).catch(() => { });

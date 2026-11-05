@@ -163,6 +163,9 @@ class AmbientLife {
   // ---- per frame ---------------------------------------------------------------------------------------
   update(dt, t, me, info) {
     this.fightAt = info.fightAt; this.danger = info.danger;
+    // A jump in position (respawn, the cells, a loaded save): fill what's around you straight away.
+    if (this.lastMe && Math.hypot(me.x - this.lastMe.x, me.z - this.lastMe.z) > 25) this.first = true;
+    this.lastMe = { x: me.x, z: me.z };
     if ((this.timer -= dt) <= 0) {
       this.timer = 0.5;
       const cx = Math.floor(me.x / 80), cz = Math.floor(me.z / 80), near = [];
@@ -175,7 +178,7 @@ class AmbientLife {
         const ahead = ((s.x - me.x) * fx + (s.z - me.z) * fz) / Math.max(d, 1);
         if (this.first || d > 45 || ahead < 0.2) this.assign(s); // don't pop people in right in front of you
       }
-      this.first = false;
+      this.first = false; this.lastMe = { x: me.x, z: me.z };
     }
     this.globalTalk -= dt;
     const tmp = {};
