@@ -6215,7 +6215,7 @@ function createGame(world) {
     block: on => { move.block = !!on; },
     ambient: () => ({ active: ambient.agents.filter(a => a.spot && a.p.visible).length, kids: ambient.agents.filter(a => a.spot && a.kid).length, watching: ambient.agents.filter(a => a.watch).length + peds.agents.filter(a => a.watching).length, dogs: ambient.dogs.filter(d => d.home).length, van: !!(ambient.van && ambient.van.on), moments: ambient.agents.filter(a => a.spot && a.moment).length }),
     event: k => { const E = events.start(k, eye.position, yaw, true); return E ? { kind: E.kind, x: E.x, z: E.z } : null; },
-    eventInfo: () => { const E = events.active; return E ? { kind: E.kind, state: E.state, x: E.x, z: E.z, t: E.t, actors: E.actors.filter(a => a.p.visible).map(a => ({ role: a.role, x: a.p.position.x, z: a.p.position.z, down: !!a.down, act: a.h.act, st: !!a.st })), hostiles: events.hostiles.length } : null; },
+    eventInfo: () => { const E = events.active; return E ? { kind: E.kind, state: E.state, x: E.x, z: E.z, t: E.t, face: E.face ?? null, actors: E.actors.filter(a => a.p.visible).map(a => ({ role: a.role, x: a.p.position.x, z: a.p.position.z, down: !!a.down, act: a.h.act, st: !!a.st })), hostiles: events.hostiles.length } : null; },
     endEvent: () => events.end(),
     saveNow: () => store(),
     setRep: n => { rep = n; updateHUD(); },
@@ -7632,7 +7632,7 @@ class StreetEvents {
   start_party(E, me, yaw, force) {
     const hs = this.ctx.houses.filter(h => force ? Math.hypot(h.pos.x - me.x, h.pos.z - me.z) < 130 && Math.hypot(h.pos.x - me.x, h.pos.z - me.z) > 15 : this.okSpot(h.pos.x, h.pos.z, me, yaw)).sort(() => Math.random() - 0.5)[0]; if (!hs) return false;
     const nx = Math.sin(hs.rot), nz = Math.cos(hs.rot), tx = Math.cos(hs.rot), tz = -Math.sin(hs.rot);
-    E.x = hs.pos.x; E.z = hs.pos.z; E.house = hs;
+    E.x = hs.pos.x; E.z = hs.pos.z; E.house = hs; E.face = hs.rot;
     const cast = this.take(5); if (cast.length < 3) return false;
     cast.forEach((a, i) => { const ang = i / cast.length * TAU, px = E.x + nx * 0.6 + Math.sin(ang) * 1.4, pz = E.z + nz * 0.6 + Math.cos(ang) * 1.4; this.put(a, px, pz, Math.atan2(E.x - px, E.z - pz)); a.h.act = i === 0 ? 'talk' : i % 2 ? 'cheer' : 'listen'; a.role = 'guest'; E.actors.push(a); });
     cast[0].talk = 'party'; this.marker(cast[0]);
