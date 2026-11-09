@@ -158,6 +158,19 @@ function createGame(world) {
   const heat = new Heat(), police = new Police(world, traffic);
   let policeSeen = false;
   let stage = 'prologue', cash = 0, missionRoute = '', pauseOpen = false, saveAllowed = true, debtRoute = '', debtCash = 0, inPrologue = false;
+  // What each part of the district thinks of you: respect (r, -100..100) and fear (f, 0..100). Saved with the game.
+  // Help people and it goes up; knock out locals and they fear you but don't like you. Fear clears the footpath,
+  // respect gets you greetings, a discount at the shops, and lets you break up a scrap with a word.
+  const AREA_NAMES = { clendon: 'Clendon Park', manurewa: 'Manurewa', homai: 'Homai' };
+  let areas = {};
+  const areaAt = (x, z) => x < -480 ? 'clendon' : z < -760 && x < 700 ? 'homai' : 'manurewa';
+  const standing = k => areas[k] || (areas[k] = { r: 0, f: 0 });
+  const areaTitle = s => s.r > 60 ? 'LOCAL LEGEND' : s.f > 60 ? 'FEARED' : s.r > 35 ? 'RESPECTED' : s.f > 40 ? 'FEARED' : s.r > 10 ? 'KNOWN' : s.r < -20 ? 'NOT WELCOME' : 'NOBODY';
+  function nudge(dr, df, x = eye.position.x, z = eye.position.z) {
+    const k = areaAt(x, z), s = standing(k), before = areaTitle(s);
+    s.r = clamp(s.r + dr, -100, 100); s.f = clamp(s.f + df, 0, 100);
+    const after = areaTitle(s); if (after !== before) setTimeout(() => banner(AREA_NAMES[k].toUpperCase(), `YOU'RE ${after === 'NOBODY' ? 'NOBODY HERE' : after}`), 1600);
+  }
   function hometownHash(name) { let h = 2166136261; for (const c of name) h = Math.imul(h ^ c.codePointAt(0), 16777619) >>> 0; return h >>> 0; }
   // Darren's hangout depends on your hometown, so different origins send you to different corners of the district.
   const titleCase = n => n.toLowerCase().replace(/\b\w/g, c => c.toUpperCase()).replace(/'S\b/g, "'s");
@@ -264,7 +277,7 @@ function createGame(world) {
   function store() {
     if (!saveAllowed || !started) return;
     try {
-      const data = { version: 2, map: MAP_VERSION, strength, stage, hometown, originRegion, chosen, rep, hp, cash, defeated, missionRoute, stamina, debtRoute, debtCash, jobs: jobState, phone: phone.log.slice(-40), enemyHP: enemies.map(e => e.hp), enemyAlive: enemies.map(e => e.alive), enemyPositions: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z })), x: drive.car ? drive.car.x : eye.position.x, z: drive.car ? drive.car.z : eye.position.z, yaw, pitch };
+      const data = { version: 2, map: MAP_VERSION, strength, stage, hometown, originRegion, chosen, rep, hp, cash, defeated, missionRoute, stamina, debtRoute, debtCash, jobs: jobState, phone: phone.log.slice(-40), enemyHP: enemies.map(e => e.hp), enemyAlive: enemies.map(e => e.alive), enemyPositions: enemies.map(e => ({ x: e.p.position.x, z: e.p.position.z })), clock: world.clock ? Math.round(world.clock.min) : undefined, day: world.clock?.day, areas, x: drive.car ? drive.car.x : eye.position.x, z: drive.car ? drive.car.z : eye.position.z, yaw, pitch };
       localStorage.setItem(SAVE_KEY, JSON.stringify(data)); $('saveState').textContent = 'Saved on this device';
     } catch (e) { $('saveState').textContent = 'Local save unavailable in this browser'; }
   }
@@ -315,7 +328,7 @@ function createGame(world) {
   function closeMenus() { $('panel').style.display = 'none'; $('choicePanel').style.display = 'none'; $('pausePanel').style.display = 'none'; pauseOpen = false; started = true; updateHUD(); }
   function resetEnemy(e, i) { e.alive = true; e.hp = 3; e.dyingT = 0; e.p.userData.human.reset(); e.p.position.set(enemySpawns[i].x, groundHeight(enemySpawns[i].x, enemySpawns[i].z), enemySpawns[i].z); if (!e.p.parent) scene.add(e.p); }
   function beginNew() {
-    saveAllowed = true; stage = 'prologue'; hp = 100; cash = 0; rep = 0; chapter = 0; defeated = 0; missionRoute = ''; stamina = 100; debtRoute = ''; debtCash = 0; strength = 0; endHustle(true);
+    saveAllowed = true; stage = 'prologue'; areas = {}; events.end(); hp = 100; cash = 0; rep = 0; chapter = 0; defeated = 0; missionRoute = ''; stamina = 100; debtRoute = ''; debtCash = 0; strength = 0; endHustle(true);
     if (drive.car) exitCar();
     grab = null; climb = null; air = false; setWeapon(null);
     heat.level = 0; police.clear(); c1.timer = 25; stage = 'prologue'; placeChapterOne();
@@ -333,6 +346,7 @@ function createGame(world) {
     CHIP.ensure(); SFX.ensure(); bnCash = cash; bnRep = rep;
     prologue.start(storyVars(), () => {
       inPrologue = false; stage = 'debt-find';
+      if (world.clock?.live) world.clock.set(1060); // out the door at twenty to six, Friday evening
       const sp = home.spawn;
       eye.position.set(sp.pos.x, groundHeight(sp.pos.x, sp.pos.z) + EYE, sp.pos.z); yaw = sp.rot + Math.PI; pitch = 0;
       closeMenus(); say(`Darren owes Manu $400. Find him ${hangout.label}.`); store();
@@ -349,6 +363,8 @@ function createGame(world) {
     jobState = { kev: okJob(sj.kev) ? sj.kev : 'open', mikey: okJob(sj.mikey) ? sj.mikey : 'open', pita: okJob(sj.pita) ? sj.pita : 'open' };
     if (jobState.mikey === 'fight') jobState.mikey = 'open';
     phone.load(Array.isArray(s.phone) ? s.phone.slice(-40) : []); shortyTimer = 6; refreshJobs(); rep = Math.max(0, Number(s.rep) || 0); hp = Math.min(100, Math.max(1, Number(s.hp) || 100)); cash = Math.max(0, Number(s.cash) || 0);
+    if (world.clock?.live && Number.isFinite(s.clock)) { world.clock.set(s.clock); world.clock.day = Math.max(0, s.day | 0); }
+    areas = {}; if (s.areas && typeof s.areas === 'object') for (const k of Object.keys(AREA_NAMES)) { const a = s.areas[k]; if (a) areas[k] = { r: clamp(Number(a.r) || 0, -100, 100), f: clamp(Number(a.f) || 0, 0, 100) }; }
     defeated = Math.max(0, Number(s.defeated) || 0); missionRoute = s.missionRoute || '';
     stamina = Number.isFinite(s.stamina) ? Math.max(0, Math.min(100, s.stamina)) : 100;
     strength = clamp(Math.floor(Number(s.strength) || 0), 0, 3);
@@ -481,6 +497,8 @@ function createGame(world) {
     if (stage === 'c1-manu' && dist(manu.position) < 4.5 && !c1.rivals.slice(3).some(r => r.alive)) { faceEachOther(manu); manu.userData.human.reset(); dlg.run('c1ManuDown', { rival: rivalCrew() }, () => advance('c1-home', 'Get Manu into a car and take him home.')); return; }
     if (stage === 'c1-done' || stage === 'complete') { if (dist(manu.position) < 4.5) { faceEachOther(manu); dlg.run('manuAfter', storyVars(), null); return; } }
     if (hustle && dist(hustle.npc.position) < 4.5 && hustle.npc.visible) { talkHustle(); return; }
+    if (talkTransit()) return;
+    if (talkEvent()) return;
     if (talkAmbient()) return;
     const pk = nearestPickup(); if (pk && !weapon) { scene.remove(pk.g); pickups.splice(pickups.indexOf(pk), 1); setWeapon({ kind: pk.kind, uses: WEAPON_DEF[pk.kind].uses }); say(`Picked up a ${WEAPON_DEF[pk.kind].name}. Hits hard, swings slow, and the cops won't like it. TALK with nothing around to drop it.`); return; }
     const shop = shops.nearest(eye.position); if (shop) { openShop(shop); return; }
@@ -506,7 +524,7 @@ function createGame(world) {
     started = false; if (document.pointerLockElement) document.exitPointerLock();
     shops.open(shop, {
       cash: () => cash, spend: n => { cash -= n; }, heal: n => { hp = Math.min(100, hp + n); }, energy: (n, b) => { stamina = Math.min(100, stamina + n); boostT = Math.max(boostT, b); },
-      rep: n => { rep += n; }, strength: () => strength, train: () => { strength = Math.min(3, strength + 1); }, say,
+      rep: n => { rep += n; }, strength: () => strength, train: () => { strength = Math.min(3, strength + 1); }, say, hour: () => world.clock ? world.clock.hour : 18, discount: () => standing(areaAt(eye.position.x, eye.position.z)).r > 35 ? 0.9 : 1,
       close: () => { started = true; updateHUD(); store(); },
     });
   }
@@ -521,6 +539,29 @@ function createGame(world) {
   function fenceNear(x, z, r = 14) { let best = null, bd = r; for (const o of collision.list) { if (o.tag !== 'fence' || o.t !== 2 || o.top > 1.9 || o.top < 0.8) continue; const mx = (o.ax + o.bx) / 2, mz = (o.az + o.bz) / 2, d = Math.hypot(mx - x, mz - z); if (d < bd && Math.hypot(o.bx - o.ax, o.bz - o.az) > 2.5) { bd = d; best = o; } } return best; }
   const peds = new Pedestrians(world, traffic.nodes, PED_LOOKS.slice(0, world.pedCount ?? 6).map((look, i) => { const p = person(0, 0, { look, seed: 900 + i * 53, top: [0x7a2a3a, 0x2a4a6a, 0xd8d0c0, 0x3a5a3a][i % 4], pants: 0x2a2a30, face: [ATLAS.faceA, ATLAS.faceB][i % 2], pose: 'relaxed' }); p.visible = false; return p; }));
   const ambient = new AmbientLife(world, { person, collides, slide: (p, dx, dz, r = 0.35) => slideMove(p, dx, dz, r), traffic, fenceNear });
+  peds.setHomes(world.city.houses, collides);
+  // ---- Run 23: buses and trains, and things happening on the street ------------------------------------------
+  const transit = new Transit(world, {
+    traffic,
+    // Doors open: whoever's waiting gets on, someone gets off.
+    onBusStop: (B, S, door) => { ambient.board(S.x, S.z, door); const n = rnd() < 0.55 ? 1 + (rnd() < 0.35 ? 1 : 0) : 0; for (let i = 0; i < n; i++) setTimeout(() => peds.spawnAt(door.x, door.z), 600 + i * 900); },
+    onTrainStop: (R, P) => { if (!P) return; let g = R.cars[0], bd = 1e9; for (const c of R.cars) { const d = Math.hypot(c.position.x - P.x, c.position.z - P.z); if (d < bd) { bd = d; g = c; } } const ux = (P.x - g.position.x) / (bd || 1), uz = (P.z - g.position.z) / (bd || 1); ambient.board(P.x, P.z, { x: g.position.x + ux * 1.5, z: g.position.z + uz * 1.5 }, 60); },
+  });
+  traffic.extra = transit.buses;
+  const sayBubble = (p, key) => { const pool = SCRIPT[key]; if (pool) ambient.bubble(p, pool[Math.floor(Math.random() * pool.length)].text); };
+  const events = new StreetEvents(world, {
+    person, collides, slide: (p, dx, dz, r = 0.35) => slideMove(p, dx, dz, r), traffic, houses: world.city.houses, signs: world.city.signs, places,
+    frontOf: (x, z) => ambient.frontOf(x, z), spots: () => ambient.spots, cars: () => world.city.cars, policeCar: () => police.make(), bubble: sayBubble,
+    onEvent: (kind, E) => eventHappened(kind, E),
+  });
+  let racerHitT = 0;
+  function eventHappened(kind, E) {
+    if (kind === 'thiefCaught') { dlg.run('evThiefCaught', {}, () => { cash += 30; rep += 4; nudge(6, 1, E.x, E.z); rewardCheck('CAUGHT THE THIEF'); updateHUD(); store(); }); }
+    else if (kind === 'thiefGone') say('He got away. Next time, run him down before the alarm spooks him.');
+    else if (kind === 'copNotice') { heat.add(0.6); say('The constable clocked you. Keep walking.'); }
+    else if (kind === 'racerHit' && simT - racerHitT > 2) { racerHitT = simT; hurtPlayer(22, KO_STREET); say('Get out of the ring, egg.'); }
+  }
+  const KO_STREET = { at: () => ({ x: eye.position.x + 3, z: eye.position.z + 3 }), msg: 'You got knocked out in the street. Someone dragged you onto the footpath.', rep: 3 };
   // ---- Chapter One cast: Tipene (the fixer), Rawiri, Aunty Lani, the rival crew ------------------
   const rivalCrew = () => FACTIONS[((FACTIONS.indexOf(chosen) + 18) % FACTIONS.length + FACTIONS.length) % FACTIONS.length] || 'Southside Hornets';
   const rawiri = person(places.southmallCarpark.pos.x, places.southmallCarpark.pos.z, { look: 'crewB', seed: 1201, top: 0x3a3a3a, pants: 0x2a2a2a, face: ATLAS.faceC, pose: 'crossed' });
@@ -593,6 +634,7 @@ function createGame(world) {
   // Knockouts by who it was (story fights move the story on).
   function koTarget(p, st, finisher) {
     if (finisher) { slowMo = 1.1; rep += 3; banner('FINISHER', '+3 REP'); }
+    nudge(st.event ? 1 : 0, 2, p.position.x, p.position.z); // word gets round: you can scrap
     // A knockout draws a cheer from the crowd; it's only a weapon that sends them running.
     heat.add(0.4); if (weapon) peds.scare(p.position.x, p.position.z); else ambient.cheer();
     if (st === darrenState) {
@@ -605,6 +647,7 @@ function createGame(world) {
       hustle.state = 'down'; const n = hustle.npc; n.userData.human.knockDown();
       setTimeout(() => { CAST.debtor.name = hustle.name; dlg.run('hustleBeaten', {}, () => { n.userData.human.reset(); hustlePaid(3); }); }, 1300);
     } else if (c1.rivals.includes(st)) { st.alive = false; p.userData.human.knockDown(); rep += 4; heat.add(0.1); }
+    else if (st.event) { events.ko(st); rep += 3; say('He\'s down. The crowd loved that.'); }
     else if (enemies.includes(st)) {
       st.alive = false; st.dyingT = 0.0001; p.userData.human.knockDown(); rep += 5;
       if (stage === 'mission-brawl') { defeated++; if (defeated >= 3) { advance('mission-return', `You won the fights. Your ${hometown} fixer wants to see you.`); return; } }
@@ -648,11 +691,62 @@ function createGame(world) {
   let ballQuest = null, bagsQuest = null;
   const RUMOURS = ['ambRumour1', 'ambRumour2', 'ambRumour3', 'ambRumour4', 'ambRumour5', 'ambRumour6'];
   const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), new THREE.MeshStandardMaterial({ color: 0xd8642a, roughness: 0.7 })); ballMesh.visible = false; ballMesh.castShadow = true; scene.add(ballMesh);
+  // The bus: pick a stop across the district, pay the fare, get off there a few minutes later.
+  function talkTransit() {
+    const B = transit.busNear(eye.position); if (!B) return false;
+    const here = transit.nearestStop(eye.position.x, eye.position.z);
+    const dests = [['Southmall', places.southmallCarpark], ['Manurewa station', places.station], ['Great South Road shops', places.greatSouthRd], ['Clendon shops', places.clendonShops], ['Te Matariki library', places.teMatariki], ['Clendon skate park', places.skatepark], ["Manu's place", home && home.spawn]]
+      .filter(([, p]) => p && p.pos).map(([name, p]) => ({ name, S: transit.nearestStop(p.pos.x, p.pos.z) })).filter(d => d.S && d.S !== here && Math.hypot(d.S.x - eye.position.x, d.S.z - eye.position.z) > 150);
+    if (!dests.length) { say('This bus doesn\'t go anywhere you need.'); return true; }
+    openShop({ kind: 'bus', name: `BUS TO ${B.dest || 'MANUKAU'}`, sub: 'Tap a stop · $3 fare', items: dests.map(d => ({ name: d.name, price: 3, note: `${(Math.hypot(d.S.x - eye.position.x, d.S.z - eye.position.z) / 1000).toFixed(1)} km`, go: () => rideBus(d) })) });
+    return true;
+  }
+  function rideBus(d) {
+    const S = d.S, km = Math.hypot(S.x - eye.position.x, S.z - eye.position.z) / 1000;
+    if (drive.car) exitCar();
+    const f = $('fade'); f.style.transition = 'none'; f.style.opacity = '1';
+    if (world.clock?.live) world.clock.advance(Math.round(4 + km * 4));
+    transit.busAt(S);
+    // Step off on the footpath beside the stop, facing the road.
+    const r = ambient.roadDir(S.x, S.z), ax = r ? -Math.sin(r.a) : 0, az = r ? -Math.cos(r.a) : 0, p = safeSpawn(S.x + ax * 1.2, S.z + az * 1.2);
+    eye.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z); vel.set(0, 0); if (r) { yaw = r.a + Math.PI; pitch = -0.05; }
+    setTimeout(() => { f.style.transition = 'opacity 1.2s'; f.style.opacity = '0'; setTimeout(() => { f.style.transition = ''; }, 1300); }, 500);
+    say(`Off the bus at ${d.name}.`); updateHUD(); store();
+  }
+  // Street events: the party host, the sizzle, the constable, a scrap, the boy racers.
+  function talkEvent() {
+    const T = events.talkable(eye.position); if (!T) return false;
+    const { E, a } = T; a.p.rotation.y = Math.atan2(eye.position.x - a.p.position.x, eye.position.z - a.p.position.z);
+    const S = standing(areaAt(E.x, E.z));
+    if (a.talk === 'party') {
+      if (S.r < -20) { dlg.run('evPartyNo', {}, null); return true; }
+      dlg.run('evParty', {}, r => {
+        if (r === 'feed') { hp = Math.min(100, hp + 40); nudge(1, 0, E.x, E.z); dlg.run('evPartyFeed', {}, null); updateHUD(); }
+        else if (r === 'dance') { nudge(2, 0, E.x, E.z); dlg.run('evPartyDance', {}, null); }
+      });
+    } else if (a.talk === 'sizzle') {
+      openShop({ kind: 'sizzle', name: 'SAUSAGE SIZZLE', sub: 'School camp fundraiser · koha welcome', items: [{ name: 'Sausage in bread', price: 3, hp: 30, note: '+30 health' }, { name: 'Sausage with onions', price: 4, hp: 35, note: '+35 health · the good one' }, { name: 'Can of drink', price: 2, energy: 25, note: '+25 energy' }] });
+    } else if (a.talk === 'cop') dlg.run(heat.level > 0 ? 'evCopHeat' : 'evCop', {}, () => { if (heat.level > 0) heat.add(0.5); });
+    else if (a.talk === 'scuffle') {
+      dlg.run('evScuffle', {}, r => {
+        const [A, B] = E.fighters;
+        if (r === 'stop') {
+          if (S.r >= 15 || rep >= 150) { E.state = 'stopped'; rep += 3; nudge(4, 0, E.x, E.z); dlg.run('evScuffleStop', {}, () => { rewardCheck('BROKE IT UP'); updateHUD(); store(); }); }
+          else { E.state = 'stopped'; events.turn(A.down ? B : A); dlg.run('evScuffleTurn', {}, () => say('He wants you instead. Put him down.')); }
+        } else if (r === 'bet') {
+          if (cash < 10) { dlg.run('evBetBroke', {}, null); return; }
+          const win = rnd() < 0.5; cash += win ? 10 : -10; const loser = win ? B : A;
+          dlg.run(win ? 'evBetWin' : 'evBetLose', {}, () => { if (!loser.down) { loser.down = true; loser.h.knockDown(); E.state = 'over'; } updateHUD(); store(); });
+        }
+      });
+    } else if (a.talk === 'racers') dlg.run('evRacers', {}, null);
+    return true;
+  }
   function talkAmbient() {
     if (ballQuest) {
       if (!ballQuest.held && Math.hypot(ballMesh.position.x - eye.position.x, ballMesh.position.z - eye.position.z) < 1.8) { ballQuest.held = true; ballMesh.visible = false; SFX.play('click'); say('Got the ball. Take it back to the kids.'); return true; }
       const k = ballQuest.kid;
-      if (ballQuest.held && dist(k.p.position) < 3) { faceEachOther(k.p); dlg.run('ambBallDone', {}, () => { rep += 2; ballQuest = null; k.moment = null; if (k.marker) k.marker.visible = false; rewardCheck('HELPED THE KIDS'); updateHUD(); }); return true; }
+      if (ballQuest.held && dist(k.p.position) < 3) { faceEachOther(k.p); dlg.run('ambBallDone', {}, () => { rep += 2; nudge(4, 0); ballQuest = null; k.moment = null; if (k.marker) k.marker.visible = false; rewardCheck('HELPED THE KIDS'); updateHUD(); }); return true; }
     }
     const V = ambient.vanNear(eye.position);
     if (V) {
@@ -667,7 +761,7 @@ function createGame(world) {
     a.p.rotation.y = Math.atan2(eye.position.x - a.p.position.x, eye.position.z - a.p.position.z); a.h.act = null;
     const done = () => { a.moment = null; if (a.marker) a.marker.visible = false; };
     if (a.moment === 'smoke') dlg.run('ambSmoke', {}, r => {
-      if (r === 'give' && cash >= 2) { cash -= 2; rep += 1; dlg.run('ambSmokeYes', {}, () => dlg.run(RUMOURS[Math.floor(rnd() * RUMOURS.length)], {}, null)); }
+      if (r === 'give' && cash >= 2) { cash -= 2; rep += 1; nudge(2, 0); dlg.run('ambSmokeYes', {}, () => dlg.run(RUMOURS[Math.floor(rnd() * RUMOURS.length)], {}, null)); }
       else dlg.run('ambSmokeNo', {}, null);
       done(); updateHUD();
     });
@@ -678,7 +772,7 @@ function createGame(world) {
       const tgt = best ? safeSpawn(best.x + Math.cos(best.h || 0) * 1.8, best.z - Math.sin(best.h || 0) * 1.8) : { x: a.p.position.x + 12, z: a.p.position.z };
       dlg.run('ambBagsGo', {}, null);
       bagsQuest = { a, far: 0 }; a.state = 'follow'; a.h.act = null;
-      a.follow = { x: tgt.x, z: tgt.z, done: () => { if (bagsQuest && bagsQuest.a === a) { bagsQuest = null; dlg.run('ambBagsDone', {}, () => { cash += 10; rep += 3; rewardCheck('HELPED AUNTY'); updateHUD(); store(); }); } } };
+      a.follow = { x: tgt.x, z: tgt.z, done: () => { if (bagsQuest && bagsQuest.a === a) { bagsQuest = null; dlg.run('ambBagsDone', {}, () => { cash += 10; rep += 3; nudge(5, 0); rewardCheck('HELPED AUNTY'); updateHUD(); store(); }); } } };
     });
     else if (a.moment === 'ball') dlg.run('ambBall', {}, r => {
       if (r !== 'yes') { done(); return; }
@@ -760,10 +854,17 @@ function createGame(world) {
     }
     // Innocent bystanders: they go down, everyone else scatters, and the cops hear about it.
     const ped = peds.near(eye.position.x, eye.position.z, def ? 4 : 3.5).find(a => { const v = a.p.position.clone().add(new THREE.Vector3(0, 1.4, 0)).sub(eye.position).normalize(); return v.dot(forward) > cone; });
-    if (ped) { peds.knock(ped); bloodAt(ped.p.position); world.shake = 0.18; SFX.play('hit'); heat.add(def ? 1.5 : 1); peds.scare(eye.position.x, eye.position.z); say('You just laid out a random. Someone\'s calling the cops.'); updateHUD(); return; }
+    if (ped) { nudge(-6, 5); peds.knock(ped); bloodAt(ped.p.position); world.shake = 0.18; SFX.play('hit'); heat.add(def ? 1.5 : 1); peds.scare(eye.position.x, eye.position.z); say('You just laid out a random. Someone\'s calling the cops.'); updateHUD(); return; }
     const loc = ambient.near(eye.position.x, eye.position.z, def ? 4 : 3.5).find(a => { const v = a.p.position.clone().add(new THREE.Vector3(0, 1.2 * a.p.scale.y, 0)).sub(eye.position).normalize(); return v.dot(forward) > cone; });
-    if (loc) { ambient.knock(loc); bloodAt(loc.p.position); world.shake = 0.18; SFX.play('hit'); heat.add(loc.kid ? 2.5 : def ? 1.5 : 1); peds.scare(eye.position.x, eye.position.z); say(loc.kid ? 'You hit a kid. The whole street saw that.' : 'You just laid out a local. Someone\'s calling the cops.'); updateHUD(); return; }
-    if (ambient.hitDog(eye.position.x + forward.x * 1.2, eye.position.z + forward.z * 1.2, 1.6)) { heat.add(0.4); say('You hit someone\'s dog. Not a good look.'); }
+    if (loc) { nudge(loc.kid ? -15 : -8, 6); ambient.knock(loc); bloodAt(loc.p.position); world.shake = 0.18; SFX.play('hit'); heat.add(loc.kid ? 2.5 : def ? 1.5 : 1); peds.scare(eye.position.x, eye.position.z); say(loc.kid ? 'You hit a kid. The whole street saw that.' : 'You just laid out a local. Someone\'s calling the cops.'); updateHUD(); return; }
+    const ev = events.near(eye.position.x, eye.position.z, def ? 4 : 3.5).find(a => { const v = a.p.position.clone().add(new THREE.Vector3(0, 1.2, 0)).sub(eye.position).normalize(); return v.dot(forward) > cone; });
+    if (ev) {
+      bloodAt(ev.p.position); world.shake = 0.18; SFX.play('hit'); const what = events.knock(ev);
+      if (what === 'thief' || what === 'fighter') { updateHUD(); return; }
+      if (ev.role === 'cop') { heat.add(3); nudge(-4, 8); say('You just dropped a cop. Run.'); } else { heat.add(1); nudge(-6, 5); peds.scare(eye.position.x, eye.position.z); say('You just laid out a local. Someone\'s calling the cops.'); }
+      updateHUD(); return;
+    }
+    if (ambient.hitDog(eye.position.x + forward.x * 1.2, eye.position.z + forward.z * 1.2, 1.6)) { heat.add(0.4); nudge(-4, 1); say('You hit someone\'s dog. Not a good look.'); }
   }
   // A block tapped just before their punch lands: it's knocked aside and they're wide open.
   function parry(st, h) {
@@ -936,6 +1037,7 @@ function createGame(world) {
     if (drive.car) dot(drive.car.x, drive.car.z, '#ffffff', 2);
     c.restore(); c.fillStyle = '#fff'; c.beginPath(); c.moveTo(w / 2, h / 2 - 8); c.lineTo(w / 2 - 6, h / 2 + 7); c.lineTo(w / 2 + 6, h / 2 + 7); c.closePath(); c.fill();
     c.fillStyle = '#b9d5c5'; c.font = '11px sans-serif'; c.fillText(here.suburb.toUpperCase(), 7, 15);
+    { const s = standing(areaAt(eye.position.x, eye.position.z)), tt = areaTitle(s); if (tt !== 'NOBODY') { c.fillStyle = s.r > 10 ? '#9fe3a8' : s.f > 40 ? '#ff9a7a' : '#d9b37a'; c.font = 'bold 9px sans-serif'; c.fillText(tt, 7, 27); } }
   }
 
   // ---- fighting ------------------------------------------------------------------------------
@@ -962,6 +1064,7 @@ function createGame(world) {
       const lost = Math.round(cash * 0.1); cash -= lost; hp = 100; rep = Math.max(0, rep - (ko.rep || 0));
       if (drive.car) exitCar();
       const p0 = ko.at(), p = safeSpawn(p0.x, p0.z); eye.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z); vel.set(0, 0);
+      if (world.clock?.live) world.clock.advance(60); // out cold for an hour
       say(`${ko.msg}${lost ? ` You got rolled for $${lost} while you were out.` : ''}${ko.rep ? ` Reputation -${ko.rep}.` : ''}`);
       banner('KNOCKED OUT', lost ? `-$${lost}` : 'Back on your feet'); bnCash = cash; bnRep = rep;
       // Retry: whoever beat you is back to full and still there.
@@ -1035,6 +1138,7 @@ function createGame(world) {
     if (jobState.kev === 'fight' && !kevRun.down) out.push([JOBS.kev.npc, kevRun]);
     if (hustle && hustle.state === 'fight') out.push([hustle.npc, hustle]);
     for (const r of c1.rivals) if (r.alive && r.hostile && r.p.visible) out.push([r.p, r]);
+    for (const st of events.hostiles) if (!st.a.down && st.p.visible) out.push([st.p, st]);
     return out.filter(([p]) => dist(p.position) < 12);
   }
   function fightDirector(dt) {
@@ -1065,6 +1169,7 @@ function createGame(world) {
     if (c1.manuInCar) manuOut(home.pos.x, home.pos.z);
     // Out the front of the station on a clear bit of footpath (the old spot was inside the building: stuck).
     const p = safeSpawn(police.station.x, police.station.z); eye.position.set(p.x, groundHeight(p.x, p.z) + EYE, p.z); vel.set(0, 0);
+    if (world.clock?.live) world.clock.until(7 * 60 + 10); // out the front at ten past seven the next morning
     say(`Busted. A night in the cells at Manurewa station and a $${lost} fine.`);
     banner('BUSTED', lost ? `-$${lost} fine` : 'A night in the cells'); bnCash = cash;
     // Busted on the parcel run: the cops keep it, Rawiri has one more.
@@ -1107,11 +1212,11 @@ function createGame(world) {
     for (const a of peds.agents) if (a.active && a.down <= 0) near.push({ x: a.p.position.x, z: a.p.position.z, r: 0.4, ped: a });
     for (const a of ambient.near(drive.car.x, drive.car.z, 30)) near.push({ x: a.p.position.x, z: a.p.position.z, r: 0.4, amb: a });
     near.push(...ambient.obstacles());
-    drive.update(dt, throttle, steer, !!keys.Space, [...traffic.obstacles(), ...police.obstacles(), ...near]);
+    drive.update(dt, throttle, steer, !!keys.Space, [...traffic.obstacles(), ...police.obstacles(), ...transit.obstacles(), ...events.obstacles(), ...near]);
     if (drive.hit) {
       const o = drive.hit, v = drive.lastImpact || 0; drive.hit = null;
-      if (o.ped && v > 4) { peds.knock(o.ped); heat.add(2); peds.scare(drive.car.x, drive.car.z); say('You hit someone. That\'s heat.'); }
-      else if (o.amb && v > 4) { ambient.knock(o.amb); heat.add(2); peds.scare(drive.car.x, drive.car.z); say('You hit someone. That\'s heat.'); }
+      if (o.ped && v > 4) { nudge(-6, 3); peds.knock(o.ped); heat.add(2); peds.scare(drive.car.x, drive.car.z); say('You hit someone. That\'s heat.'); }
+      else if (o.amb && v > 4) { nudge(-6, 3); ambient.knock(o.amb); heat.add(2); peds.scare(drive.car.x, drive.car.z); say('You hit someone. That\'s heat.'); }
       else if (o.police && v > 3) { heat.add(1.5); say('You rammed a cop car.'); }
       else if (o.car && v > 7) heat.add(0.6);
     }
@@ -1134,6 +1239,8 @@ function createGame(world) {
       else if (ballQuest && !ballQuest.held && Math.hypot(ballMesh.position.x - eye.position.x, ballMesh.position.z - eye.position.z) < 1.8) t = 'TALK: pick up the ball';
       else if (ballQuest && ballQuest.held && dist(ballQuest.kid.p.position) < 3) t = 'TALK: give the ball back';
       else if (ambient.vanNear(eye.position)) t = 'TALK: Mr Swirl ice cream ($4)';
+      else if (transit.busNear(eye.position)) t = 'TALK: ride the bus ($3)';
+      else if (events.talkable(eye.position)) { const k = events.talkable(eye.position).a.talk; t = k === 'sizzle' ? 'TALK: sausage sizzle ($3)' : k === 'party' ? 'TALK: say hi to the host' : k === 'scuffle' ? 'TALK: step in' : 'TALK'; }
       else if (ambient.momentNear(eye.position)) t = 'TALK';
       else if (nearestPickup() && !weapon) t = `TALK: pick up ${WEAPON_DEF[nearestPickup().kind].name}`;
       else { const sh = shops.nearest(eye.position); if (sh) t = `TALK: ${sh.name}`; else if (drive.nearest(eye.position)) t = 'TALK / E: get in'; }
@@ -1232,6 +1339,8 @@ function createGame(world) {
         bobT += dt * (moving && !air ? (sprinting ? 13 : 9) * Math.min(1, len) : 0);
         verticalFrame(dt, moving);
       }
+      // Busy at rush hour, quiet in the small hours.
+      if (world.clock) { const c = world.clock; traffic.max = Math.max(1, Math.round((world.trafficCount || 0) * (c.between(0.5, 5.5) ? 0.3 : c.between(22, 0.5) ? 0.55 : c.between(7, 9.5) || c.between(15.5, 18.5) ? 1 : 0.8))); }
       traffic.update(dt, drive.car ? { x: drive.car.x, z: drive.car.z } : eye.position, drive.car);
       const me = drive.car ? { x: drive.car.x, z: drive.car.z } : eye.position;
       // A scrap nearby draws a crowd; weapons, or the cops on your tail, scatter it.
@@ -1239,7 +1348,13 @@ function createGame(world) {
       let fightAt = null; if (H.length && !drive.car) { fightAt = { x: eye.position.x, z: eye.position.z }; for (const [p] of H) { fightAt.x += p.position.x; fightAt.z += p.position.z; } fightAt.x /= H.length + 1; fightAt.z /= H.length + 1; }
       const danger = (!!weapon && H.length > 0) || (heat.level > 1 && policeSeen);
       peds.update(dt, me.x, me.z, (pp, dx, dz) => slideMove(pp, dx, dz, 0.35), fightAt);
-      ambient.update(dt, t, me, { fightAt, danger, yaw, speed: drive.car ? 0 : vel.length(), heat: heat.level > 0, weapon: !!weapon, rep, inCar: !!drive.car, camera });
+      if (world.clock) { const c = world.clock; peds.max = Math.max(1, Math.round(peds.agents.length * (c.between(0.5, 5.5) ? 0.25 : c.between(22, 0.5) ? 0.5 : c.between(20, 22) ? 0.75 : 1))); }
+      const area = standing(areaAt(me.x, me.z));
+      ambient.update(dt, t, me, { fightAt, danger, yaw, speed: drive.car ? 0 : vel.length(), heat: heat.level > 0, weapon: !!weapon, rep, inCar: !!drive.car, camera, area });
+      transit.update(dt, me, drive.car ? { x: drive.car.x, z: drive.car.z } : eye.position);
+      events.update(dt, t, me, { yaw, heat: heat.level > 0, inCar: !!drive.car });
+      // Stay off the tracks.
+      if (!drive.car) { const R = transit.trainHit(eye.position.x, eye.position.z); if (R) { const g = R.cars.reduce((b, c) => Math.hypot(c.position.x - eye.position.x, c.position.z - eye.position.z) < Math.hypot(b.position.x - eye.position.x, b.position.z - eye.position.z) ? c : b), fx = Math.sin(g.rotation.y), fz = Math.cos(g.rotation.y), side = Math.sign((eye.position.x - g.position.x) * fz - (eye.position.z - g.position.z) * fx) || 1; world.shake = 0.6; hurtPlayer(100, { at: () => ({ x: eye.position.x + fz * side * 9, z: eye.position.z - fx * side * 9 }), msg: 'Hit by a train. Stay off the tracks, uce.', rep: 0 }, { heavy: true, react: 'heavy', side }); } }
       if (bagsQuest) { const q = bagsQuest; if (!q.a.spot || q.a.state !== 'follow') bagsQuest = null; else if (dist(q.a.p.position) > 14) { if ((q.far += dt) > 3) { ambient.bubble(q.a.p, SCRIPT.ambBagsLost[0].text); q.a.state = 'return'; q.a.follow = null; bagsQuest = null; } } else q.far = 0; }
       if (ballQuest && (dist(ballQuest.kid.p.position) > 70 || !ballQuest.kid.spot)) { ballQuest = null; ballMesh.visible = false; }
       heat.update(dt, policeSeen);
@@ -1275,6 +1390,14 @@ function createGame(world) {
         if (d < 25) sp = brawlerMove(n.position, hustle, d, dt, 1.7);
         faceEachOther(n); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle'; n.position.y = groundHeight(n.position.x, n.position.z);
         if (!talking && !drive.car) meleeAI(hustle, h, d, 9, KO_HOME, dt, n);
+      }
+      // A scrapper from a street fight who turned on you.
+      for (const st of events.hostiles) {
+        const p = st.p, h = p.userData.human, d = dist(p.position); if (st.a.down) continue;
+        if (d > 45) { st.a.down = true; p.visible = false; continue; } // lost interest
+        let sp = 0; if (d < 30) sp = brawlerMove(p.position, st, d, dt, 1.7);
+        faceEachOther(p); h.speed = sp; h.mode = d < 6 ? 'guard' : 'idle'; p.position.y = groundHeight(p.position.x, p.position.z);
+        if (!talking && !drive.car) meleeAI(st, h, d, 8, KO_STREET, dt, p);
       }
       for (const e of enemies) {
         if (!e.alive) continue;
@@ -1353,7 +1476,7 @@ function createGame(world) {
     eye.rotation.set(pitch + (Math.random() - 0.5) * sh * 0.12, yaw + (Math.random() - 0.5) * sh * 0.12, 0);
     syncCamera(dt, t);
     // Animate characters near the camera every frame, distant ones at a lower rate.
-    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.map(e => e.p), ...debtors, ...peds.people, rawiri, lani, ...c1.rivals.map(r => r.p), ...labPeople, ...ambient.people]) {
+    for (const p of [...contacts.map(c => c.p), fixer, manu, darren, shorty, ...Object.values(JOBS).map(j => j.npc), ...enemies.map(e => e.p), ...debtors, ...peds.people, rawiri, lani, ...c1.rivals.map(r => r.p), ...labPeople, ...ambient.people, ...events.people]) {
       if (!p.parent || !p.visible) continue;
       const d = p.position.distanceTo(eye.position);
       const h = p.userData.human;
@@ -1392,6 +1515,16 @@ function createGame(world) {
     fight: () => ({ move: pmove && pmove.name, busy: !!pmove, combo: comboIdx, pop: lastPop, windups: hostiles().map(([, st]) => st.windup || 0), blocks: hostiles().map(([, st]) => st.blockT || 0) }),
     block: on => { move.block = !!on; },
     ambient: () => ({ active: ambient.agents.filter(a => a.spot && a.p.visible).length, kids: ambient.agents.filter(a => a.spot && a.kid).length, watching: ambient.agents.filter(a => a.watch).length + peds.agents.filter(a => a.watching).length, dogs: ambient.dogs.filter(d => d.home).length, van: !!(ambient.van && ambient.van.on), moments: ambient.agents.filter(a => a.spot && a.moment).length }),
+    event: k => { const E = events.start(k, eye.position, yaw, true); return E ? { kind: E.kind, x: E.x, z: E.z } : null; },
+    eventInfo: () => { const E = events.active; return E ? { kind: E.kind, state: E.state, x: E.x, z: E.z, t: E.t, actors: E.actors.filter(a => a.p.visible).map(a => ({ role: a.role, x: a.p.position.x, z: a.p.position.z, down: !!a.down, act: a.h.act, st: !!a.st })), hostiles: events.hostiles.length } : null; },
+    endEvent: () => events.end(),
+    saveNow: () => store(),
+    transit: () => ({ buses: transit.buses.map(B => ({ x: B.x, z: B.z, h: B.h, state: B.state, v: B.v, dest: B.dest })), trains: transit.trains.map(R => ({ s: R.s, v: R.v, state: R.state, near: R.near, track: transit.tracks.indexOf(R.T) })), tracks: transit.tracks.map(T => ({ L: T.L, station: T.station })) }),
+    busHere: () => { const S = transit.nearestStop(eye.position.x, eye.position.z); const B = transit.busAt(S); if (!B) return null; for (let i = 0; i < 3; i++) transit.busFrame(B, 0.05, eye.position, eye.position); const d = transit.door(B); return { x: B.x, z: B.z, h: B.h, door: d, stop: { x: S.x, z: S.z } }; },
+    trainNow: (i = 0, stopped = false) => { const R = transit.trainNow(i, stopped); return R ? { s: R.s, station: R.T.station, platform: R.T.platform ? { x: R.T.platform.x, z: R.T.platform.z } : null } : null; },
+    standing: () => JSON.parse(JSON.stringify(areas)),
+    nudge: (r, f) => nudge(r, f),
+    peds: () => peds.agents.filter(a => a.active).map(a => ({ x: a.p.position.x, z: a.p.position.z, house: !!a.house })),
     ambientSpots: (kind, x = eye.position.x, z = eye.position.z) => ambient.spots.filter(s => s.kind === kind).sort((a, b) => Math.hypot(a.x - x, a.z - z) - Math.hypot(b.x - x, b.z - z)).slice(0, 5).map(s => ({ x: s.x, z: s.z, face: s.face ?? 0 })),
     vanHere: () => { const V = ambient.van, T = traffic; if (!V) return false; let bi = -1, bd = 1e9; T.nodes.forEach((n, i) => { const d = Math.hypot(n.x - eye.position.x, n.z - eye.position.z); if (d > 12 && d < bd && n.nb.length && n.nb[0].vmax <= 9.5) { bd = d; bi = i; } }); if (bi < 0) return false; const n = T.nodes[bi]; Object.assign(V, { from: bi, to: n.nb[0].to, t: 0, x: n.x, z: n.z, on: true, stopT: 30, served: false }); V.g.visible = true; return { x: n.x, z: n.z }; },
     fightHere: () => { if (!hustle || hustle.state === 'done') { hustleTimer = 0; startHustle(); } if (!hustle) return false; hustle.type = 'fights'; hustle.state = 'fight'; const n = hustle.npc; n.visible = true; const p = safeSpawn(eye.position.x + 2.2, eye.position.z); n.position.set(p.x, groundHeight(p.x, p.z), p.z); return true; },

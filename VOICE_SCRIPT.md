@@ -704,3 +704,170 @@ _Winded._
 | id | who | line |
 |---|---|---|
 | `amb_v3` | van | Sorry bro. No money, no ice cream. |
+
+## ambFear
+
+| id | who | line |
+|---|---|---|
+| `amb_fe1` | local | Sweet, sweet. No trouble here, bro. |
+| `amb_fe2` | local | All good, uce. We're going. |
+| `amb_fe3` | local | Eyes down, eyes down. |
+| `amb_fe4` | local | Don't want any beef, man. |
+| `amb_fe5` | local | Easy, easy. We're sweet. |
+
+## ambRespect
+
+| id | who | line |
+|---|---|---|
+| `amb_re1` | local | Chur, my bro! Good to see you round. |
+| `amb_re2` | local | There's the main man! |
+| `amb_re3` | local | Kia ora, uce. Heard what you did. Mean. |
+| `amb_re4` | local | Respect, bro. |
+| `amb_re5` | local | You need anything, you just ask, eh. |
+
+## ambDislike
+
+| id | who | line |
+|---|---|---|
+| `amb_di1` | local | Here's trouble. |
+| `amb_di2` | local | Keep walking, eh. |
+| `amb_di3` | local | Not you again. |
+| `amb_di4` | local | Egg. |
+| `amb_di5` | local | Go on, get. |
+
+## evPartyB
+
+| id | who | line |
+|---|---|---|
+| `ev_pb1` | local | Turn it up! |
+| `ev_pb2` | local | Cuz! Grab a plate! |
+| `ev_pb3` | local | Who's on the speaker? |
+| `ev_pb4` | local | Chur chur! |
+| `ev_pb5` | local | Aye, this song! |
+| `ev_pb6` | local | Another round, another round! |
+
+## evParty
+
+| id | who | line |
+|---|---|---|
+| `ev_p1` | host | Kia ora! Come in, come in. There's heaps of kai out the back. |
+| `ev_pc1` | YOU | (choice) Grab a plate. (+40 health) |
+| `ev_pc2` | YOU | (choice) Have a dance. |
+| `ev_pc3` | YOU | (choice) All good, just passing. |
+
+## evPartyFeed
+
+| id | who | line |
+|---|---|---|
+| `ev_p2` | host | Get into it. The boil-up's still hot. |
+
+## evPartyDance
+
+| id | who | line |
+|---|---|---|
+| `ev_p3` | host | Ayyy, look at those moves! Uce can dance! |
+
+## evPartyNo
+
+| id | who | line |
+|---|---|---|
+| `ev_p4` | host | Nah. Not you. Keep walking, we don't want trouble here. |
+
+## evCopB
+
+| id | who | line |
+|---|---|---|
+| `ev_cb1` | cop | Licence, please. |
+| `ev_cb2` | cop | Do you know how fast you were going? |
+| `ev_cb3` | cop | Stay in the vehicle, please. |
+| `ev_cb4` | cop | Have you had anything to drink tonight? |
+| `ev_cb5` | cop | Whose car is this? |
+
+## evCopNotice
+
+| id | who | line |
+|---|---|---|
+| `ev_cn1` | cop | Oi. You. I know your face. |
+| `ev_cn2` | cop | Hey! Don't go far, mate. |
+
+## evCop
+
+| id | who | line |
+|---|---|---|
+| `ev_c1` | cop | Nothing to see here. Move along, please. |
+
+## evCopHeat
+
+| id | who | line |
+|---|---|---|
+| `ev_c2` | cop | Hold on. You match a description. Don't go anywhere. |
+
+## evScuffleB
+
+| id | who | line |
+|---|---|---|
+| `ev_sb1` | local | Come on then! |
+| `ev_sb2` | local | Say it again, I dare you! |
+| `ev_sb3` | local | You wanna go, uce?! |
+| `ev_sb4` | local | Hold my phone! |
+| `ev_sb5` | local | Ooooh! |
+| `ev_sb6` | local | Get him! |
+
+## evScuffle
+
+| id | who | line |
+|---|---|---|
+| `ev_s1` | local | Stay out of it, bro. This is between them. |
+| `ev_sc1` | YOU | (choice) Oi! Break it up, both of you. |
+| `ev_sc2` | YOU | (choice) Ten bucks on the big fella. ($10) |
+| `ev_sc3` | YOU | (choice) Leave them to it. |
+
+## evScuffleStop
+
+| id | who | line |
+|---|---|---|
+| `ev_s2` | local | ...Yeah, all good. Didn't know it was you, bro. We're done. |
+
+## evScuffleTurn
+
+| id | who | line |
+|---|---|---|
+| `ev_s3` | local | Who do you think you are? You want some too? |
+
+## evBetWin
+
+| id | who | line |
+|---|---|---|
+| `ev_s4` | local | Ahh, the big fella dropped him! Here's your ten. |
+
+## evBetLose
+
+| id | who | line |
+|---|---|---|
+| `ev_s5` | local | Ohhh, the big fella's down! Bad luck, your tenner's mine. |
+
+## evBetBroke
+
+| id | who | line |
+|---|---|---|
+| `ev_s6` | local | No money, no bet, egg. |
+
+## evThiefB
+
+| id | who | line |
+|---|---|---|
+| `ev_tb1` | local | Oh, crap! |
+| `ev_tb2` | local | Gotta go! |
+| `ev_tb3` | local | Wasn't me! |
+
+## evThiefCaught
+
+| id | who | line |
+|---|---|---|
+| `ev_t1` | local | That's my car! You got him? Legend, bro. Here, take this for your trouble. |
+
+## evRacers
+
+| id | who | line |
+|---|---|---|
+| `ev_r1` | local | Ayyy! Watch this skid! Stay out of the circle though, they don't stop. |

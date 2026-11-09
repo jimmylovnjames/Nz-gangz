@@ -239,13 +239,15 @@ class Traffic {
     while (this.cars.length < this.max) { const n = this.cars.length; this.spawn(px, pz); if (this.cars.length === n) break; }
     for (let i = this.cars.length - 1; i >= 0; i--) {
       const c = this.cars[i];
-      if (Math.hypot(c.x - px, c.z - pz) > 340) { const M = this.meshes[c.type]; M.body.setMatrixAt(c.slot, ZERO_M); M.rest.setMatrixAt(c.slot, ZERO_M); M.free.push(c.slot); this.cars.splice(i, 1); continue; }
+      const far = Math.hypot(c.x - px, c.z - pz);
+      if (far > 340 || (this.cars.length > this.max && far > 160)) { const M = this.meshes[c.type]; M.body.setMatrixAt(c.slot, ZERO_M); M.rest.setMatrixAt(c.slot, ZERO_M); M.free.push(c.slot); this.cars.splice(i, 1); continue; }
       const a = this.nodes[c.from], b = this.nodes[c.to], dx = b.x - a.x, dz = b.z - a.z, L = Math.hypot(dx, dz) || 0.01, ux = dx / L, uz = dz / L;
       // Brake for anything ahead in the lane: other cars, you on foot, your car.
       let target = c.e.vmax;
       const remain = L - c.t; if (b.nb.length > 2) target = Math.min(target, 4 + remain * 0.7);
       const ahead = (ox, oz, gap) => { const rx = ox - c.x, rz = oz - c.z, along = rx * ux + rz * uz, lat = Math.abs(-rx * uz + rz * ux); return along > 0 && along < gap && lat < 2.2; };
       for (const o of this.cars) if (o !== c && ahead(o.x, o.z, 9)) target = 0;
+      if (this.extra) for (const o of this.extra) if (ahead(o.x, o.z, 13)) target = 0; // buses
       if (ahead(px, pz, 10) || (playerCar && ahead(playerCar.x, playerCar.z, 10))) { target = 0; if (!c.honked) { c.honked = true; c.honkT = 0; } }
       else c.honked = false;
       c.v = target < c.v ? Math.max(target, c.v - 9 * dt) : Math.min(target, c.v + 2.5 * dt);

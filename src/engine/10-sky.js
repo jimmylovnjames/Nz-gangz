@@ -17,6 +17,15 @@ const TIME_PRESETS = {
     shadowTint: [-0.006, 0.0, 0.01], highTint: [0.0, 0.0, 0.0],
     hdri: 'kloofendal_overcast_puresky_1k.hdr', hdriSun: 0.8, hdriExposure: 0.75, hdriEnv: 1.1, bgIntensity: 1.0, hdriFog: 0.0016, hdriContrast: 1.1, hdriSat: 1.0,
   },
+  // Clear midday (the live clock's 8:30 to 4:30); in heavy rain it turns overcast instead.
+  day: {
+    sunElev: 52, sunAzim: 10, sunColor: lin(0xfff1dc), sunIntensity: 3.6,
+    zenith: lin(0x2f64b8), horizon: lin(0xbcd2e8), horizon2: lin(0xa9c0da), ground: lin(0x3a3a36), cloudLit: lin(0xffffff), cloudShade: lin(0x9aa3b2),
+    cover: 0.4, fog: lin(0xb8c6d4), fogSun: lin(0xe8eef2), fogDensity: 0.0012, fogFalloff: 0.03,
+    exposure: 0.9, env: 1.0, night: 0, litFrac: 0.05, sat: 1.04, contrast: 1.08, tone: 0,
+    shadowTint: [-0.006, 0.0, 0.012], highTint: [0.008, 0.004, -0.006],
+    hdri: 'kloofendal_48d_partly_cloudy_puresky_1k.hdr', hdriSun: 2.5, hdriExposure: 0.56, hdriEnv: 1.9, bgIntensity: 1.0, hdriFog: 0.0009, hdriContrast: 1.1, hdriSat: 1.05,
+  },
   night: {
     sunElev: 34, sunAzim: 60, sunColor: lin(0x9fb4e6), sunIntensity: 0.16,
     zenith: lin(0x02040a), horizon: lin(0x2a2120), horizon2: lin(0x14151c), ground: lin(0x070707), cloudLit: lin(0x2a2526), cloudShade: lin(0x0b0b10),
@@ -172,4 +181,23 @@ class SkySystem {
     this.sun.position.copy(target).addScaledVector(this.sunDir, 200);
     this.sun.target.updateMatrixWorld();
   }
+}
+
+// The world clock, in minutes since midnight. One real second is one game minute; the small hours
+// (10 pm to 5 am) go twice as fast, so a full day is about 20 minutes and night about 6 of them.
+// Dawn 5:30 and dusk 4:30 are golden hour, 8:30 to 4:30 is day, 8 pm to 5:30 is night.
+const CLOCK_PERIODS = [[330, 'golden'], [510, 'day'], [990, 'golden'], [1200, 'night']];
+const CLOCK_FIXED = { golden: 1080, day: 750, overcast: 780, night: 1380 }; // the time shown when a sky is picked by hand
+class WorldClock {
+  constructor(min = 1060) { this.min = min; this.day = 0; this.live = true; this.snap = false; }
+  tick(dt) { const h = this.min / 60; this.min += dt * (h >= 22 || h < 5 ? 2 : 1); if (this.min >= 1440) { this.min -= 1440; this.day++; } }
+  get hour() { return this.min / 60; }
+  preset(min = this.min) { let p = 'night'; for (const [m, n] of CLOCK_PERIODS) if (min >= m) p = n; return p; }
+  next() { for (const [m, n] of CLOCK_PERIODS) if (m > this.min) return { in: m - this.min, name: n }; return { in: 1440 - this.min + 330, name: 'golden' }; }
+  between(a, b) { const h = this.hour; return a <= b ? h >= a && h < b : h >= a || h < b; }
+  label(min = this.min) { const m = Math.floor(min), h = Math.floor(m / 60) % 24, mm = m % 60; return `${(h % 12) || 12}:${String(mm).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`; }
+  set(min) { this.min = ((min % 1440) + 1440) % 1440; this.snap = true; }
+  advance(mins) { const t = this.min + mins; this.day += Math.floor(t / 1440); this.set(t); }
+  // Jump forward to the next time it's `min` o'clock (a night in the cells: next morning).
+  until(min) { this.advance(((min - this.min) % 1440 + 1440) % 1440 || 1440); }
 }

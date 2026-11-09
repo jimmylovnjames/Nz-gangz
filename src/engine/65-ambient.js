@@ -102,6 +102,11 @@ class AmbientLife {
         this.addSpot({ kind: 'bench', x: sx + lz * Math.sin(srot), z: sz + lz * Math.cos(srot), face: srot + Math.PI, axis: srot, seat: 0.5, n: hash2(x, z) > 0.55 ? 2 : 1 });
       } else this.addSpot({ kind: 'wait', x: x - Math.sin(face) * 1.1, z: z - Math.cos(face) * 1.1, face, n: hash2(x, z) > 0.7 ? 2 : 1 });
     }
+    // Station platforms: people waiting for the train (they get on when it pulls in).
+    for (const ring of city.map.platforms || []) {
+      const o = city.obb(ring), long = o.w >= o.d ? o.ang : o.ang + Math.PI / 2, half = Math.max(o.w, o.d) / 2;
+      for (const f of [-0.45, 0.1, 0.5]) { const x = o.cx + Math.cos(long) * half * f, z = o.cz + Math.sin(long) * half * f; this.addSpot({ kind: 'wait', x, z, face: -long, n: 2, platform: true }); }
+    }
     // Shop fronts: a couple of people yarning outside (not every shop, or it's a crowd).
     for (const sg of city.signs) { if (hash2(sg.pos.x, sg.pos.z) > 0.45) continue; const c = this.frontOf(sg.pos.x, sg.pos.z); if (c) this.addSpot({ kind: 'chat', x: c.x, z: c.z, n: 2 + (hash2(sg.pos.z, sg.pos.x) > 0.6 ? 1 : 0), shop: true }); }
     // Courts and fields: kids having a kick-around / shooting hoops.
@@ -130,13 +135,28 @@ class AmbientLife {
   }
   // ---- assigning locals to nearby spots ------------------------------------------------------------
   night() { return G.uNight.value > 0.5; }
+  // Who's out when: kids till dark, mowing in working hours, uncles on the chair till late, the bus stops
+  // and platforms from first bus to last, shopfronts while the shops are open. The named hangouts never empty.
+  open(s) {
+    const c = this.world.clock; if (!c) return !(s.day && this.night());
+    const H = s.kind === 'play' ? [7, 20] : s.kind === 'mow' ? [9, 17] : s.kind === 'chair' ? [10, 22] : s.platform ? [5, 0.5] : s.kind === 'bench' || s.kind === 'wait' ? [5.5, 23.5] : s.yard ? [8, 21.5] : s.shop ? [7, 22.5] : null;
+    return !H || c.between(H[0], H[1]);
+  }
+  // The bus/train is in: whoever's waiting at (x, z) walks to the door and gets on.
+  board(x, z, door, r = 14) {
+    for (const s of this.spots) {
+      if ((s.kind !== 'bench' && s.kind !== 'wait') || !s.agents.length || Math.hypot(s.x - x, s.z - z) > r) continue;
+      s.cool = this.now + 120;
+      for (const a of s.agents) { if (a.flee || a.watch) continue; a.state = 'board'; a.boardTo = { x: door.x + (Math.random() - 0.5) * 1.2, z: door.z + (Math.random() - 0.5) * 1.2 }; a.h.sit = null; a.h.act = null; a.boardT = 0; }
+    }
+  }
   release(s) {
     for (const a of s.agents) { a.spot = null; a.role = null; a.p.visible = false; a.h.act = null; a.h.sit = null; a.h.reset(); a.moment = null; if (a.marker) a.marker.visible = false; }
     s.agents = [];
     if (s.chair) { s.chair.visible = false; s.chair = null; } if (s.mower) { this.mower.visible = false; s.mower = false; } if (s.ball) { s.ball.m.visible = false; s.ball.spot = null; s.ball = null; }
   }
   assign(s, me) {
-    if (s.day && this.night()) return true;
+    if (!this.open(s) || (s.cool && this.now < s.cool)) return true;
     const want = s.kind === 'play' ? 'kid' : 'adult';
     let free = this.agents.filter(a => !a.spot && (want === 'kid' ? a.kid : !a.kid));
     const need = s.kind === 'chat' ? 2 : 1;
@@ -170,7 +190,7 @@ class AmbientLife {
   }
   // ---- per frame ---------------------------------------------------------------------------------------
   update(dt, t, me, info) {
-    this.fightAt = info.fightAt; this.danger = info.danger;
+    this.fightAt = info.fightAt; this.danger = info.danger; this.now = (this.now || 0) + dt;
     // A jump in position (respawn, the cells, a loaded save): fill what's around you straight away.
     if (this.lastMe && Math.hypot(me.x - this.lastMe.x, me.z - this.lastMe.z) > 25) this.first = true;
     this.lastMe = { x: me.x, z: me.z };
@@ -178,7 +198,11 @@ class AmbientLife {
       this.timer = 0.5;
       const cx = Math.floor(me.x / 80), cz = Math.floor(me.z / 80), near = [];
       for (let x = cx - 2; x <= cx + 2; x++) for (let z = cz - 2; z <= cz + 2; z++) for (const s of this.grid.get(x + ',' + z) || []) near.push([s, Math.hypot(s.x - me.x, s.z - me.z)]);
-      for (const s of this.spots) if (s.agents.length && Math.hypot(s.x - me.x, s.z - me.z) > 150) this.release(s);
+      for (const s of this.spots) {
+        if (!s.agents.length) continue; const d = Math.hypot(s.x - me.x, s.z - me.z);
+        // Too far, or knock-off time (only once you're not watching: they don't vanish in front of you).
+        if (d > 150 || (!this.open(s) && !s.agents.some(a => a.watch || a.state === 'follow' || a.state === 'board') && (d > 45 || ((s.x - me.x) * -Math.sin(info.yaw) + (s.z - me.z) * -Math.cos(info.yaw)) / Math.max(d, 1) < 0.2))) this.release(s);
+      }
       near.sort((a, b) => a[1] - b[1]);
       const fx = -Math.sin(info.yaw), fz = -Math.cos(info.yaw);
       for (const [s, d] of near) {
@@ -210,6 +234,12 @@ class AmbientLife {
         else h.act = null;
         continue;
       } else if (a.watch) { a.watch = null; h.act = null; a.state = 'return'; }
+      // Getting on the bus / train.
+      if (a.state === 'board') {
+        a.boardT += dt;
+        if (this.walkTo(a, a.boardTo.x, a.boardTo.z, 1.6, dt) || a.boardT > 14) { p.visible = false; a.h.reset(); s.agents = s.agents.filter(q => q !== a); a.spot = null; a.state = 'home'; }
+        continue;
+      }
       // Getting back to where they were.
       if (a.state === 'return' || a.state === 'follow') {
         if (a.state === 'follow' && a.follow) { const f = a.follow; if (this.walkTo(a, f.x, f.z, 1.3, dt)) { a.state = 'home'; f.done && f.done(); a.follow = null; } continue; }
@@ -236,8 +266,11 @@ class AmbientLife {
       if (d < 0.9 && info.speed > 4.2 && a.react <= 0) { a.react = 2; h.hit('jab', Math.sign(dx) || 1); this.say(a, 'ambBump', 1); }
       a.react -= dt;
       if (d < 3.2 && info.speed < 4 && a.greetCD <= 0 && this.globalTalk <= 0 && !info.inCar) {
-        a.greetCD = 50 + Math.random() * 40; this.say(a, info.heat ? 'ambHeat' : info.weapon ? 'ambWeapon' : info.rep >= 120 ? 'ambKnown' : this.night() ? 'ambNight' : a.kid ? 'ambKid' : 'ambGreet', 0.55);
+        const ar = info.area || { r: 0, f: 0 };
+        a.greetCD = 50 + Math.random() * 40; this.say(a, info.heat ? 'ambHeat' : info.weapon ? 'ambWeapon' : ar.f > 40 && !a.kid ? 'ambFear' : ar.r > 35 ? 'ambRespect' : ar.r < -20 ? 'ambDislike' : info.rep >= 120 ? 'ambKnown' : this.night() ? 'ambNight' : a.kid ? 'ambKid' : 'ambGreet', 0.55);
       }
+      // Feared round here: people give you room.
+      if (info.area && info.area.f > 40 && d < 2.4 && !info.inCar && s.kind !== 'bench' && s.kind !== 'chair') { this.ctx.slide(p.position, -dx / (d || 1) * 1.3 * dt, -dz / (d || 1) * 1.3 * dt); }
     }
     for (const bl of this.balls) if (bl.spot) this.ballFrame(bl, dt);
     this.dogFrame(dt, t, me, info);
@@ -326,7 +359,7 @@ class AmbientLife {
   }
   vanFrame(dt, t, me, info) {
     const V = this.van, T = this.ctx.traffic; if (!V || !T || !T.nodes.length) return;
-    if (this.night()) { if (V.on) { V.on = false; V.g.visible = false; } return; }
+    if (this.night() || (this.world.clock && !this.world.clock.between(11, 20.5))) { if (V.on) { V.on = false; V.g.visible = false; } return; }
     if (!V.on || Math.hypot(V.x - me.x, V.z - me.z) > 260) {
       // Turn up on a quiet street 90-180 m away now and then.
       V.g.visible = false; V.on = false; if ((V.cruise -= dt) > 0) return; V.cruise = 20;

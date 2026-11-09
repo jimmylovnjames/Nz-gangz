@@ -14,7 +14,7 @@ const CAST = {
   rawiri: { name: 'RAWIRI', color: '#c8e0a0' },
   lani: { name: 'AUNTY LANI', color: '#ffb8d8' },
   rival: { name: 'RIVAL', color: '#ff7070' }, // renamed to the rival crew's name
-  uce: { name: 'BRO', color: '#d6d6d6' }, aunty: { name: 'AUNTY', color: '#ffc8a8' }, kid: { name: 'KID', color: '#a8e0ff' }, van: { name: 'MR SWIRL', color: '#ff9ccf' }, local: { name: 'LOCAL', color: '#dddddd' },
+  uce: { name: 'BRO', color: '#d6d6d6' }, aunty: { name: 'AUNTY', color: '#ffc8a8' }, kid: { name: 'KID', color: '#a8e0ff' }, van: { name: 'MR SWIRL', color: '#ff9ccf' }, local: { name: 'LOCAL', color: '#dddddd' }, cop: { name: 'CONSTABLE', color: '#9fc3ff' }, host: { name: 'PARTY HOST', color: '#ffb0e0' },
 };
 const SCRIPT = {
   proIntro: [
@@ -302,6 +302,76 @@ Object.assign(SCRIPT, {
   ],
   ambVanBuy: [{ who: 'van', id: 'amb_v2', text: 'There you go, my bro. Don\'t get brain freeze.' }],
   ambVanBroke: [{ who: 'van', id: 'amb_v3', text: 'Sorry bro. No money, no ice cream.' }],
+});
+// Run 23: the standing you've got in an area, street events, the bus.
+Object.assign(SCRIPT, {
+  ambFear: [
+    { who: 'local', id: 'amb_fe1', text: 'Sweet, sweet. No trouble here, bro.' },
+    { who: 'local', id: 'amb_fe2', text: 'All good, uce. We\'re going.' },
+    { who: 'local', id: 'amb_fe3', text: 'Eyes down, eyes down.' },
+    { who: 'local', id: 'amb_fe4', text: 'Don\'t want any beef, man.' },
+    { who: 'local', id: 'amb_fe5', text: 'Easy, easy. We\'re sweet.' },
+  ],
+  ambRespect: [
+    { who: 'local', id: 'amb_re1', text: 'Chur, my bro! Good to see you round.' },
+    { who: 'local', id: 'amb_re2', text: 'There\'s the main man!' },
+    { who: 'local', id: 'amb_re3', text: 'Kia ora, uce. Heard what you did. Mean.' },
+    { who: 'local', id: 'amb_re4', text: 'Respect, bro.' },
+    { who: 'local', id: 'amb_re5', text: 'You need anything, you just ask, eh.' },
+  ],
+  ambDislike: [
+    { who: 'local', id: 'amb_di1', text: 'Here\'s trouble.' },
+    { who: 'local', id: 'amb_di2', text: 'Keep walking, eh.' },
+    { who: 'local', id: 'amb_di3', text: 'Not you again.' },
+    { who: 'local', id: 'amb_di4', text: 'Egg.' },
+    { who: 'local', id: 'amb_di5', text: 'Go on, get.' },
+  ],
+  evPartyB: [
+    { who: 'local', id: 'ev_pb1', text: 'Turn it up!' },
+    { who: 'local', id: 'ev_pb2', text: 'Cuz! Grab a plate!' },
+    { who: 'local', id: 'ev_pb3', text: 'Who\'s on the speaker?' },
+    { who: 'local', id: 'ev_pb4', text: 'Chur chur!' },
+    { who: 'local', id: 'ev_pb5', text: 'Aye, this song!' },
+    { who: 'local', id: 'ev_pb6', text: 'Another round, another round!' },
+  ],
+  evParty: [{ who: 'host', id: 'ev_p1', text: 'Kia ora! Come in, come in. There\'s heaps of kai out the back.' }, { choice: [{ text: 'Grab a plate. (+40 health)', id: 'ev_pc1', result: 'feed' }, { text: 'Have a dance.', id: 'ev_pc2', result: 'dance' }, { text: 'All good, just passing.', id: 'ev_pc3', result: 'no' }] }],
+  evPartyFeed: [{ who: 'host', id: 'ev_p2', text: 'Get into it. The boil-up\'s still hot.' }],
+  evPartyDance: [{ who: 'host', id: 'ev_p3', text: 'Ayyy, look at those moves! Uce can dance!' }],
+  evPartyNo: [{ who: 'host', id: 'ev_p4', text: 'Nah. Not you. Keep walking, we don\'t want trouble here.' }],
+  evCopB: [
+    { who: 'cop', id: 'ev_cb1', text: 'Licence, please.' },
+    { who: 'cop', id: 'ev_cb2', text: 'Do you know how fast you were going?' },
+    { who: 'cop', id: 'ev_cb3', text: 'Stay in the vehicle, please.' },
+    { who: 'cop', id: 'ev_cb4', text: 'Have you had anything to drink tonight?' },
+    { who: 'cop', id: 'ev_cb5', text: 'Whose car is this?' },
+  ],
+  evCopNotice: [
+    { who: 'cop', id: 'ev_cn1', text: 'Oi. You. I know your face.' },
+    { who: 'cop', id: 'ev_cn2', text: 'Hey! Don\'t go far, mate.' },
+  ],
+  evCop: [{ who: 'cop', id: 'ev_c1', text: 'Nothing to see here. Move along, please.' }],
+  evCopHeat: [{ who: 'cop', id: 'ev_c2', text: 'Hold on. You match a description. Don\'t go anywhere.' }],
+  evScuffleB: [
+    { who: 'local', id: 'ev_sb1', text: 'Come on then!' },
+    { who: 'local', id: 'ev_sb2', text: 'Say it again, I dare you!' },
+    { who: 'local', id: 'ev_sb3', text: 'You wanna go, uce?!' },
+    { who: 'local', id: 'ev_sb4', text: 'Hold my phone!' },
+    { who: 'local', id: 'ev_sb5', text: 'Ooooh!' },
+    { who: 'local', id: 'ev_sb6', text: 'Get him!' },
+  ],
+  evScuffle: [{ who: 'local', id: 'ev_s1', text: 'Stay out of it, bro. This is between them.' }, { choice: [{ text: 'Oi! Break it up, both of you.', id: 'ev_sc1', result: 'stop' }, { text: 'Ten bucks on the big fella. ($10)', id: 'ev_sc2', result: 'bet' }, { text: 'Leave them to it.', id: 'ev_sc3', result: 'leave' }] }],
+  evScuffleStop: [{ who: 'local', id: 'ev_s2', text: '...Yeah, all good. Didn\'t know it was you, bro. We\'re done.' }],
+  evScuffleTurn: [{ who: 'local', id: 'ev_s3', text: 'Who do you think you are? You want some too?' }],
+  evBetWin: [{ who: 'local', id: 'ev_s4', text: 'Ahh, the big fella dropped him! Here\'s your ten.' }],
+  evBetLose: [{ who: 'local', id: 'ev_s5', text: 'Ohhh, the big fella\'s down! Bad luck, your tenner\'s mine.' }],
+  evBetBroke: [{ who: 'local', id: 'ev_s6', text: 'No money, no bet, egg.' }],
+  evThiefB: [
+    { who: 'local', id: 'ev_tb1', text: 'Oh, crap!' },
+    { who: 'local', id: 'ev_tb2', text: 'Gotta go!' },
+    { who: 'local', id: 'ev_tb3', text: 'Wasn\'t me!' },
+  ],
+  evThiefCaught: [{ who: 'local', id: 'ev_t1', text: 'That\'s my car! You got him? Legend, bro. Here, take this for your trouble.' }],
+  evRacers: [{ who: 'local', id: 'ev_r1', text: 'Ayyy! Watch this skid! Stay out of the circle though, they don\'t stop.' }],
 });
 const TEXTS = {
   c1Call: [

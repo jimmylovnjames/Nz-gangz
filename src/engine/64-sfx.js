@@ -51,6 +51,13 @@ const SFX = {
       case 'kick': this.burst(t, 0.05, 700, 1, 0.16 * k, 'lowpass'); this.tone(t, 0.07, 160, 0.12 * k, 'sine', 80); break;
       case 'thump': this.tone(t, 0.18, 70, 0.32 * k, 'sine', 38); this.burst(t, 0.04, 220, 1, 0.08 * k, 'lowpass'); break;
       case 'sirenFar': for (let i = 0; i < 4; i++) { this.tone(t + i * 1.4, 0.7, 620, 0.018, 'sine', 980); this.tone(t + i * 1.4 + 0.7, 0.7, 980, 0.018, 'sine', 620); } break;
+      case 'hiss': this.burst(t, 0.7, 2600, 0.5, 0.1 * k, 'highpass'); break;
+      case 'clack': this.burst(t, 0.05, 800, 1, 0.14 * k, 'lowpass'); this.tone(t, 0.05, 120, 0.06 * k, 'sine', 70); this.burst(t + 0.12, 0.05, 800, 1, 0.12 * k, 'lowpass'); break;
+      case 'trainHorn': for (const f of [370, 466]) this.held(t, 1.3, f, 0.035 * k, 'sawtooth'); break;
+      case 'alarm': for (let i = 0; i < 3; i++) this.held(t + i * 0.36, 0.2, i % 2 ? 1300 : 1050, 0.03 * k, 'square'); break;
+      case 'hat': this.burst(t, 0.03, 8000, 0.8, 0.03 * k, 'highpass'); break;
+      case 'rev': this.tone(t, 0.9, 90, 0.05 * k, 'sawtooth', 240); this.tone(t + 0.7, 0.6, 240, 0.04 * k, 'sawtooth', 140); break;
+      case 'screech': this.burst(t, 0.8, 2400, 3, 0.05 * k, 'bandpass', 1800); break;
       case 'banner': this.tone(t, 0.18, 660, 0.12, 'triangle'); this.tone(t + 0.12, 0.3, 990, 0.12, 'triangle'); break;
     }
   },
@@ -60,6 +67,22 @@ const SFX = {
     const t0 = this.ac.currentTime + 0.05, e = 0.17, mid = n => 440 * Math.pow(2, (n - 69) / 12);
     const tune = [[69, 1], [72, 2], [74, 1], [76, 1.5], [77, 0.5], [76, 1], [74, 2], [71, 1], [67, 1.5], [69, 0.5], [71, 1], [72, 2], [69, 1], [69, 1.5], [68, 0.5], [69, 1], [71, 2], [68, 1], [64, 2], [69, 1], [72, 2], [74, 1], [76, 1.5], [77, 0.5], [76, 1], [74, 2], [71, 1], [67, 1.5], [69, 0.5], [71, 1], [72, 1.5], [71, 0.5], [69, 1], [68, 1.5], [66, 0.5], [68, 1], [69, 3]];
     let tt = t0; for (const [n, d] of tune) { this.tone(tt, d * e * 0.95, mid(n + 12), 0.05 * g, 'triangle'); this.tone(tt, d * e * 0.6, mid(n + 24), 0.012 * g, 'sine'); tt += d * e; }
+  },
+  // A sustained note with a short release (horns, alarms).
+  held(t0, dur, freq, gain, type = 'sine') {
+    const ac = this.ac, o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain(); o.type = type; o.frequency.value = freq; f.type = 'lowpass'; f.frequency.value = freq * 4;
+    g.gain.setValueAtTime(0.0005, t0); g.gain.exponentialRampToValueAtTime(gain, t0 + 0.04); g.gain.setValueAtTime(gain, t0 + dur - 0.08); g.gain.exponentialRampToValueAtTime(0.0005, t0 + dur);
+    o.connect(f); f.connect(g); g.connect(this.master); o.start(t0); o.stop(t0 + dur + 0.02);
+  },
+  // A train going by: low rumble, louder the closer it is (0 = off).
+  rumble(level) {
+    if (!this.ac || !this.on) return;
+    if (!this.rb && level > 0.01) {
+      const ac = this.ac, s = ac.createBufferSource(); s.buffer = this.noise; s.loop = true;
+      const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 150; const g = ac.createGain(); g.gain.value = 0;
+      s.connect(f); f.connect(g); g.connect(this.master); s.start(); this.rb = { g };
+    }
+    if (this.rb) this.rb.g.gain.setTargetAtTime(Math.min(1, level) * 0.5, this.ac.currentTime, 0.3);
   },
   // Lawn mower: a two-stroke drone, louder the closer you are (0 = off).
   mower(level) {

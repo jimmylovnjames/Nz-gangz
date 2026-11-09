@@ -26,6 +26,7 @@ GPU-generated textures and sky.
 | Tree bark | bark_willow |
 | Golden-hour sky | kloppenheim_06_puresky (2K HDR) |
 | Overcast sky | kloofendal_overcast_puresky (1K HDR) |
+| Clear-day sky (Run 23 clock) | kloofendal_48d_partly_cloudy_puresky (1K HDR) |
 
 
 ## Run 16 additions

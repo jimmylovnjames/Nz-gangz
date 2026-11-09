@@ -86,19 +86,46 @@ class Police {
 // starts or the cops turn up, and go down if you hit them (which brings heat).
 class Pedestrians {
   constructor(world, nodes, people) {
-    this.nodes = nodes; this.people = people; this.agents = people.map(p => ({ p, h: p.userData.human, active: false }));
+    this.nodes = nodes; this.people = people; this.agents = people.map(p => ({ p, h: p.userData.human, active: false })); this.max = people.length; this.homes = null;
     // 60 m grid of street nodes so spawns pick from what's actually near the player.
     this.grid = new Map();
     nodes.forEach((n, i) => { const k = Math.floor(n.x / 60) + ',' + Math.floor(n.z / 60); if (!this.grid.has(k)) this.grid.set(k, []); this.grid.get(k).push(i); });
   }
+  // Houses people come out of and go home to (comings and goings), on the same 60 m grid.
+  setHomes(houses, collides) {
+    this.homes = new Map(); this.collides = collides;
+    for (const hs of houses) { const k = Math.floor(hs.pos.x / 60) + ',' + Math.floor(hs.pos.z / 60); if (!this.homes.has(k)) this.homes.set(k, []); this.homes.get(k).push(hs); }
+  }
+  // Front door, front yard, footpath: only if the walk is clear (no fence in the way).
+  housePath(hs) {
+    if (hs.blocked) return null;
+    const nx = Math.sin(hs.rot), nz = Math.cos(hs.rot), door = { x: hs.pos.x - nx * 2.1, z: hs.pos.z - nz * 2.1 }, yard = { x: hs.pos.x, z: hs.pos.z }, path = { x: hs.spawn.pos.x, z: hs.spawn.pos.z };
+    if (this.collides) for (const [a, b] of [[door, yard], [yard, path]]) { const L = Math.hypot(b.x - a.x, b.z - a.z); for (let d = 0; d <= L; d += 0.5) if (this.collides(a.x + (b.x - a.x) * d / L, a.z + (b.z - a.z) * d / L, 0.3)) { hs.blocked = true; return null; } }
+    return [door, yard, path];
+  }
+  housesNear(x, z, r) { const out = [], cx = Math.floor(x / 60), cz = Math.floor(z / 60); if (!this.homes) return out; for (let i = cx - 1; i <= cx + 1; i++) for (let j = cz - 1; j <= cz + 1; j++) for (const hs of this.homes.get(i + ',' + j) || []) if (Math.hypot(hs.pos.x - x, hs.pos.z - z) < r) out.push(hs); return out; }
+  nearestNode(x, z) { let best = -1, bd = 60; const cx = Math.floor(x / 60), cz = Math.floor(z / 60); for (let i = cx - 1; i <= cx + 1; i++) for (let j = cz - 1; j <= cz + 1; j++) for (const k of this.grid.get(i + ',' + j) || []) { const n = this.nodes[k], d = Math.hypot(n.x - x, n.z - z); if (d < bd && n.nb.length) { bd = d; best = k; } } return best; }
+  join(a, x, z) { const i = this.nearestNode(x, z); if (i < 0) return false; const n = this.nodes[i], e = n.nb[Math.floor(Math.random() * n.nb.length)]; Object.assign(a, { from: i, to: e.to, e, t: 0 }); return true; }
+  // Someone stepping off a bus (or out of anywhere) at (x, z), then on their way.
+  spawnAt(x, z) {
+    const a = this.agents.find(q => !q.active); if (!a || !this.join(a, x, z)) return null;
+    Object.assign(a, { active: true, side: Math.random() < 0.5 ? 1 : -1, speed: 1.15 + Math.random() * 0.4, flee: 0, down: 0, house: null, watching: null });
+    a.p.position.set(x, groundHeight(x, z), z); a.p.visible = true; a.h.reset(); a.h.mode = 'idle'; return a;
+  }
   spawn(a, px, pz) {
+    // Now and then they come out of a house instead of just appearing on the street.
+    if (this.homes && Math.random() < 0.3) {
+      const hs = this.housesNear(px, pz, 110).filter(h => { const d = Math.hypot(h.pos.x - px, h.pos.z - pz); return d > 35; });
+      const h = hs[Math.floor(Math.random() * hs.length)], path = h && this.housePath(h);
+      if (path) { Object.assign(a, { active: true, side: Math.random() < 0.5 ? 1 : -1, speed: 1.1 + Math.random() * 0.3, flee: 0, down: 0, watching: null, house: { pts: [path[1], path[2]], i: 0, T: 0, out: true } }); a.p.position.set(path[0].x, groundHeight(path[0].x, path[0].z), path[0].z); a.p.visible = true; a.h.reset(); a.h.mode = 'idle'; return true; }
+    }
     const cand = [], cx = Math.floor(px / 60), cz = Math.floor(pz / 60);
     for (let x = cx - 2; x <= cx + 2; x++) for (let z = cz - 2; z <= cz + 2; z++) for (const i of this.grid.get(x + ',' + z) || []) { const n = this.nodes[i], d = Math.hypot(n.x - px, n.z - pz); if (d > 45 && d < 120 && n.nb.length) cand.push(i); }
     if (!cand.length) return false;
     {
       const i = cand[Math.floor(Math.random() * cand.length)], n = this.nodes[i];
       const e = n.nb[Math.floor(Math.random() * n.nb.length)];
-      Object.assign(a, { active: true, from: i, to: e.to, e, t: Math.random() * 5, side: Math.random() < 0.5 ? 1 : -1, speed: 1.15 + Math.random() * 0.4, flee: 0, down: 0 });
+      Object.assign(a, { active: true, from: i, to: e.to, e, t: Math.random() * 5, side: Math.random() < 0.5 ? 1 : -1, speed: 1.15 + Math.random() * 0.4, flee: 0, down: 0, house: null });
       // Start on the footpath beside the node (otherwise they'd slide in from the map origin).
       const B = this.nodes[e.to], L = Math.hypot(B.x - n.x, B.z - n.z) || 1, vx = (B.x - n.x) / L, vz = (B.z - n.z) / L, off = (e.lane * 2 + 3.4) * a.side;
       a.p.position.set(n.x + vz * off, 0, n.z - vx * off); a.p.position.y = groundHeight(a.p.position.x, a.p.position.z);
@@ -108,11 +135,19 @@ class Pedestrians {
   update(dt, px, pz, collide, fightAt) {
     // One new walker every 0.4 s while there are free slots (steady, not frame-rate dependent).
     this.spawnT = (this.spawnT ?? 0) - dt;
-    if (this.spawnT <= 0) { const free = this.agents.find(a => !a.active); if (free) this.spawn(free, px, pz); this.spawnT = 0.4; }
+    const live = this.agents.reduce((n, a) => n + (a.active ? 1 : 0), 0);
+    if (this.spawnT <= 0) { const free = this.agents.find(a => !a.active); if (free && live < this.max) this.spawn(free, px, pz); this.spawnT = 0.4; }
     for (const a of this.agents) {
       if (!a.active) continue;
       const p = a.p, d = Math.hypot(p.position.x - px, p.position.z - pz);
-      if (d > 160) { a.active = false; p.visible = false; continue; }
+      if (d > 160 || (live > this.max && d > 70)) { a.active = false; p.visible = false; continue; }
+      // Going in the front door / coming out to the footpath.
+      if (a.house && a.flee <= 0 && a.down <= 0) {
+        const H = a.house, tg = H.pts[H.i], ex = tg.x - p.position.x, ez = tg.z - p.position.z, el = Math.hypot(ex, ez); H.T += dt;
+        if (el > 0.35 && H.T < 25) { const st = Math.min(el, a.speed * dt), b0 = p.position.clone(); collide(p.position, ex / el * st, ez / el * st); a.h.speed = b0.distanceTo(p.position) / Math.max(dt, 1e-4); p.rotation.y += wrapA(Math.atan2(ex, ez) - p.rotation.y) * Math.min(1, dt * 6); p.position.y = groundHeight(p.position.x, p.position.z); continue; }
+        if (++H.i < H.pts.length && H.T < 25) continue;
+        if (H.out && this.join(a, p.position.x, p.position.z)) { a.house = null; } else { a.active = false; p.visible = false; a.house = null; continue; }
+      }
       if (a.down > 0) { a.down -= dt; a.h.speed = 0; if (a.down <= 0) { a.h.getUp(); a.flee = 5; } continue; }
       // A scrap nearby: stop and watch from the footpath (filming, cheering), then carry on.
       if (fightAt && a.flee <= 0 && Math.hypot(p.position.x - fightAt.x, p.position.z - fightAt.z) < 28) {
@@ -134,6 +169,8 @@ class Pedestrians {
       a.t += a.speed * dt;
       if (a.t >= L) {
         a.t -= L; const prev = a.from; a.from = a.to; const opts = B.nb.filter(e => e.to !== prev), pool = opts.length ? opts : B.nb;
+        // Home time: turn in at a house on this stretch.
+        if (this.homes && Math.random() < 0.08) { const hs = this.housesNear(p.position.x, p.position.z, 30).filter(h => Math.hypot(h.spawn.pos.x - p.position.x, h.spawn.pos.z - p.position.z) < 16); const h = hs[0], path = h && this.housePath(h); if (path) { a.house = { pts: [path[2], path[1], path[0]], i: 0, T: 0 }; continue; } }
         a.e = pool[Math.floor(Math.random() * pool.length)]; a.to = a.e.to;
       }
       const A2 = this.nodes[a.from], B2 = this.nodes[a.to], fx = B2.x - A2.x, fz = B2.z - A2.z, l2 = Math.hypot(fx, fz) || 0.01, vx = fx / l2, vz = fz / l2;

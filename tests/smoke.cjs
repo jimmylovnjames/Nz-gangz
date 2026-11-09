@@ -275,6 +275,83 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
     let b0 = await state(page), moved = Math.hypot(b0.x - a0.x, b0.z - a0.z);
     if (moved < 0.5) { await page.evaluate(() => window.__auGame.face(Math.PI)); await holdUntil(page, 'KeyW', p0 => Math.hypot(window.__auGame.state().x - p0.x, window.__auGame.state().z - p0.z) > 0.5, { x: a0.x, z: a0.z }); b0 = await state(page); moved = Math.hypot(b0.x - a0.x, b0.z - a0.z); }
     check('after the cells you can walk away from the station', moved > 0.5, `moved ${moved.toFixed(2)}m`); }
+  // ---- Run 23: the clock, buses and trains, street events, what locals think of you ----
+  {
+    const ck = () => page.evaluate(() => ({ min: window.__auClock.min, sky: window.__auClock.sky, live: window.__auClock.live, hud: document.getElementById('clock').textContent }));
+    const c0 = await ck();
+    check('a night in the cells: you come out the next morning', c0.min > 7 * 60 && c0.min < 9 * 60, JSON.stringify(c0));
+    await page.evaluate(() => window.__auClock.set(12 * 60 + 30)); await page.waitForFunction(() => window.__auClock.sky === 'day' || window.__auClock.sky === 'overcast', null, { timeout: 30000 }).catch(() => { });
+    const cDay = await ck();
+    await page.evaluate(() => window.__auClock.set(22 * 60)); await page.waitForFunction(() => window.__auClock.sky === 'night', null, { timeout: 30000 }).catch(() => { });
+    const cNight = await ck();
+    check('the live clock runs the sky: day at 12:30, night at 10 pm, time on the HUD', cDay.live && /^(day|overcast)$/.test(cDay.sky) && cNight.sky === 'night' && /10:0\d PM/.test(cNight.hud), JSON.stringify({ cDay, cNight }));
+    // Shops keep hours: the barber's shut at 3 am.
+    await page.evaluate(() => window.__auClock.set(3 * 60));
+    const barber = (await page.evaluate(() => window.__auGame.shopsList())).find(s => s.kind === 'barber' || s.kind === 'bakery' || s.kind === 'pharmacy');
+    if (barber) { await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 0.5, z + 0.5); g.talk(); }, [barber.x, barber.z]); await page.waitForTimeout(500); }
+    const shut = await page.evaluate(() => ({ cash: document.getElementById('shopCash').textContent, open: document.getElementById('shopPanel').style.display, dis: [...document.querySelectorAll('#shopItems button')].every(b => b.disabled) }));
+    await page.evaluate(() => document.getElementById('shopClose').click());
+    check('shops keep opening hours (closed at 3 am)', !!barber && /CLOSED/.test(shut.cash) && shut.dis, JSON.stringify({ barber, shut }));
+    // The bus: one at the nearest stop, doors open; TALK at the door, pick a stop, get off there later.
+    await page.evaluate(() => window.__auClock.set(11 * 60));
+    await page.evaluate(() => window.__auGame.teleport(-1180, 572)); await page.waitForTimeout(500);
+    const bus = await page.evaluate(() => window.__auGame.busHere());
+    await page.evaluate(([x, z]) => window.__auGame.teleport(x, z), [bus.door.x, bus.door.z]); await page.waitForTimeout(400);
+    await page.evaluate(() => window.__auGame.talk()); await page.waitForTimeout(500);
+    const stops = await page.evaluate(() => [...document.querySelectorAll('#shopItems button')].map(b => b.textContent));
+    const b0 = await state(page), m0 = (await ck()).min, cash0 = b0.cash;
+    await page.evaluate(() => document.querySelector('#shopItems button').click()); await page.waitForTimeout(1500);
+    const b1 = await state(page), m1 = (await ck()).min;
+    check('a bus pulls in at a real stop and you can ride it ($3)', stops.length > 2 && Math.hypot(b1.x - b0.x, b1.z - b0.z) > 300 && m1 > m0 && b1.cash === cash0 - 3, JSON.stringify({ stops: stops.length, from: [b0.x | 0, b0.z | 0], to: [b1.x | 0, b1.z | 0], m0, m1, cash: [cash0, b1.cash] }));
+    const tr0 = await page.evaluate(() => window.__auGame.trainNow(0));
+    await page.waitForFunction(s => window.__auGame.transit().trains.some(t => t.s > s + 1), tr0.s, { timeout: 60000 }).catch(() => { });
+    const tr = await page.evaluate(() => window.__auGame.transit());
+    check('trains run both tracks through Manurewa station', tr.tracks.length === 2 && tr.tracks.every(t => t.station != null) && tr.trains.some(t => t.s > tr0.s + 1), JSON.stringify(tr));
+    // A scrap outside the shops: a crowd watches; step in without the standing and one of them turns on you.
+    await page.evaluate(() => window.__auClock.set(15 * 60)); await page.evaluate(() => window.__auGame.teleport(-1180, 572)); await page.waitForTimeout(300);
+    const sc = await page.evaluate(() => window.__auGame.event('scuffle'));
+    let info = await page.evaluate(() => window.__auGame.eventInfo());
+    const watchers = info ? info.actors.filter(a => a.role === 'watch').length : 0, f0 = info && info.actors.find(a => a.role === 'fighter');
+    if (f0) { await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 1.6, z); g.face(Math.atan2(1.6, 0)); g.talk(); }, [f0.x, f0.z]); await advanceUntil(page, () => !!(window.__auStory.line && window.__auStory.line.choice)); await page.evaluate(() => window.__auStory.choose(0)); await advanceUntil(page, () => !window.__auStory.active); }
+    info = await page.evaluate(() => window.__auGame.eventInfo());
+    check('a street scrap draws a crowd, and stepping in starts on you', !!sc && watchers > 0 && info && info.hostiles === 1, JSON.stringify({ sc, watchers, info }));
+    const fear0 = (await page.evaluate(() => window.__auGame.standing())).clendon?.f || 0;
+    for (let k = 0; k < 40; k++) {
+      const I = await page.evaluate(() => window.__auGame.eventInfo()); const h = I && I.actors.find(a => a.st && !a.down);
+      if (!I || !I.hostiles || !h) break;
+      await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 2.2, z); g.face(Math.atan2(2.2, 0)); g.setHp(100); }, [h.x, h.z]);
+      await page.waitForTimeout(300); await strike(page);
+    }
+    const st1 = await page.evaluate(() => window.__auGame.standing());
+    check('putting him down: Clendon Park fears you a bit more', (st1.clendon?.f || 0) > fear0 && (await page.evaluate(() => window.__auGame.eventInfo()))?.hostiles === 0, JSON.stringify({ fear0, st1 }));
+    await page.evaluate(() => { const g = window.__auGame; g.endEvent(); g.clearHeat(); g.setHp(60); });
+    // A sausage sizzle outside the supermarket: buy a feed.
+    await page.evaluate(() => window.__auClock.set(11 * 60)); await page.evaluate(() => window.__auGame.teleport(1300, -505)); await page.waitForTimeout(300);
+    const sz = await page.evaluate(() => window.__auGame.event('sizzle'));
+    info = await page.evaluate(() => window.__auGame.eventInfo());
+    const till = info && info.actors.find(a => a.role === 'till');
+    if (till) { await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + 1.2, z + 1.2); g.talk(); }, [till.x, till.z]); await page.waitForTimeout(500); }
+    const hp0 = (await state(page)).hp;
+    await page.evaluate(() => { const b = document.querySelector('#shopItems button'); if (b) b.click(); document.getElementById('shopClose').click(); });
+    check('a sausage sizzle by the supermarket sells you a feed', !!sz && (await state(page)).hp > hp0, JSON.stringify({ sz, till, hp0, hp: (await state(page)).hp }));
+    await page.evaluate(() => window.__auGame.endEvent());
+    // A car break-in at night: run the thief down for a reward and the street's respect.
+    await page.evaluate(() => window.__auClock.set(23 * 60)); await page.evaluate(() => window.__auGame.teleport(-1214, 235)); await page.waitForTimeout(300);
+    const bi = await page.evaluate(() => window.__auGame.event('breakin'));
+    const r0 = (await page.evaluate(() => window.__auGame.standing()))[bi ? (bi.x < -480 ? 'clendon' : 'manurewa') : 'clendon']?.r || 0, cashB = (await state(page)).cash;
+    for (let k = 0; k < 30 && bi; k++) {
+      const I = await page.evaluate(() => window.__auGame.eventInfo()); if (!I || I.state === 'caught' || I.state === 'over') break;
+      const th = I.actors.find(a => a.role === 'thief'); if (!th) break;
+      await page.evaluate(([x, z]) => { const g = window.__auGame; g.teleport(x + (Math.random() - 0.5) * 2.4, z + (Math.random() - 0.5) * 2.4); }, [th.x, th.z]); await page.waitForTimeout(400);
+    }
+    await advanceUntil(page, () => !window.__auStory.active);
+    const r1 = (await page.evaluate(() => window.__auGame.standing()))[bi ? (bi.x < -480 ? 'clendon' : 'manurewa') : 'clendon']?.r || 0;
+    check('catching a car thief pays and earns the street\'s respect', !!bi && (await state(page)).cash > cashB && r1 > r0, JSON.stringify({ bi, r0, r1, cash: [cashB, (await state(page)).cash], ev: await page.evaluate(() => window.__auGame.eventInfo()) }));
+    await page.evaluate(() => { window.__auGame.endEvent(); window.__auGame.saveNow && window.__auGame.saveNow(); });
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('aotearoa-underworld-v2') || '{}'));
+    check('the clock and what each area thinks of you are saved', Number.isFinite(saved.clock) && saved.areas && Object.keys(saved.areas).length > 0, JSON.stringify({ clock: saved.clock, areas: saved.areas }));
+    await page.evaluate(() => window.__auClock.set(17 * 60 + 40));
+  }
   // Chapter One.
   await page.evaluate(() => window.__auGame.skipTimers());
   await page.waitForFunction(() => window.__auGame.state().stage === 'c1-car', null, { timeout: 90000 }).catch(() => { });

@@ -1,4 +1,4 @@
-AOTEAROA: UNDERWORLD | RUN 20 (JUMP + CLIMB, GRAB + THROW, BATS, REAL HANDS, CAR HANDLING)
+AOTEAROA: UNDERWORLD | RUN 23 (AROUND THE CLOCK: DAY AND NIGHT, BUSES AND TRAINS, STREET EVENTS, YOUR NAME ON THE STREET)
 
 Extract this ZIP and keep the voice folder next to index.html. Open index.html on your phone with internet on.
 Give the progress bar a few seconds on first load, then tap NEW GAME.
@@ -9,6 +9,33 @@ The map is real Manurewa and Clendon Park (OpenStreetMap): real streets and name
 Southmall with the Norfolk pine, the station, the Clendon shops and Clendon skate park. The HUD shows the street you're on.
 
 RUN is a toggle: tap it once (it lights up) and steer with your other thumb; it switches off when you stop.
+
+NEW IN RUN 23
+- The clock runs: dawn, a clear day, dusk and night (about 20 minutes for a whole day, nights go quicker).
+  The time is on the HUD. PAUSE > TIME: LIVE CLOCK (default), or pick a sky to freeze it there.
+- The street follows the clock: kids out till dark, mowing in working hours, quiet roads in the small hours,
+  shops keep their hours (some dairies never shut). A night in the cells really is a night: out at 7 am.
+- Buses run the main roads and pull in at the real bus stops. Whoever's waiting gets on, someone gets off.
+  TALK at the open door to ride ($3) to Southmall, the station, the Clendon shops, Manu's and more.
+- Trains run both tracks through Manurewa station and stop at the platforms. Stay off the tracks.
+- People come home and go out: walking up their drive and in the front door, or out to the footpath.
+- Street events, by time of day: a house party (TALK to the host for a feed), a sausage sizzle outside
+  the supermarket, the cops pulling someone over, two locals scrapping (break it up, bet on it, or it's
+  you next), someone breaking into a car at night (run them down), boy racers doing donuts in a car park.
+- Each area remembers you (Clendon Park, Manurewa, Homai). Help people and they respect you: greetings,
+  10% off at the shops, and a word from you stops a scrap. Hurt people and they fear you: they give you room
+  but don't want you round. Your standing shows under the suburb on the minimap.
+
+NEW IN RUN 22
+- Car crashes: proper collision with rotation, sliding along walls, damage by impact speed.
+- After the cells or a knockout you come out somewhere you can walk away from.
+- The living street: locals at bus stops, shopfronts, courts and front yards, crowds round a scrap,
+  dogs, the Mr Swirl ice-cream van, and street moments (a smoke, Aunty's bags, the kids' ball).
+
+NEW IN RUN 21
+- Everyone animates properly: planted feet, real strides, a boxing guard, real punches, hit reactions,
+  knockdowns and getting back up. Fights: jab-cross-hook-uppercut string, parry (tap BLOCK as their
+  punch lands), counters, guard breaks, enemies who cover up.
 
 NEW IN RUN 20
 - JUMP button: jumps, and in front of a fence, wall, car or ramp it vaults or climbs over (not house walls).

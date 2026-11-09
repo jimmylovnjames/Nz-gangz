@@ -17,6 +17,9 @@ const SHOP_MENUS = {
 };
 const SHOP_TITLES = { dairy: 'Dairy', takeaway: 'Takeaways', bakery: 'Bakery', supermarket: 'Supermarket', pharmacy: 'Pharmacy', barber: 'Barber', gym: 'Gym' };
 const TRAIN_COST = [30, 60, 120];
+// Opening hours (24-hour clock). A few dairies never shut.
+const SHOP_HOURS = { dairy: [6, 23], takeaway: [11, 23.5], bakery: [5, 16], supermarket: [7, 22], pharmacy: [8.5, 18], barber: [9, 17.5], gym: [5, 22] };
+const fmtHour = h => `${(Math.floor(h) % 12) || 12}${h % 1 ? ':30' : ''} ${h % 24 < 12 ? 'AM' : 'PM'}`;
 
 class Shops {
   constructor(city) {
@@ -29,22 +32,27 @@ class Shops {
     this.panel = $('shopPanel');
   }
   nearest(p, r = 6) { let best = null, bd = r; for (const s of this.list) { const d = Math.hypot(s.x - p.x, s.z - p.z); if (d < bd) { bd = d; best = s; } } return best; }
+  hoursOf(shop) { return shop.items || (shop.kind === 'dairy' && hash2(shop.x, shop.z) > 0.6) ? null : SHOP_HOURS[shop.kind]; }
+  openAt(shop, h) { const H = this.hoursOf(shop); return !H || h == null || (h >= H[0] && h < H[1]); }
   get isOpen() { return this.panel.style.display === 'flex'; }
   // api: { cash(), spend(n), heal(n), energy(n, boost), rep(n), strength(), train() , close() }
   open(shop, api) {
     this.shop = shop; this.api = api;
-    $('shopTitle').textContent = shop.name; $('shopSub').textContent = SHOP_TITLES[shop.kind];
+    const H = this.hoursOf(shop);
+    $('shopTitle').textContent = shop.name; $('shopSub').textContent = shop.sub || `${SHOP_TITLES[shop.kind]} · ${H ? `${fmtHour(H[0])} – ${fmtHour(H[1])}` : 'open 24/7'}`;
     this.render(); this.panel.style.display = 'flex';
   }
   render() {
     const box = $('shopItems'), api = this.api; box.innerHTML = '';
-    $('shopCash').textContent = `You have $${api.cash()}`;
-    for (const it of SHOP_MENUS[this.shop.kind]) {
-      const lvl = api.strength(), price = it.train ? TRAIN_COST[lvl] : it.price;
+    const shut = !this.openAt(this.shop, api.hour?.());
+    const disc = !this.shop.items && (api.discount?.() || 1) < 1;
+    $('shopCash').textContent = !shut && disc ? `You have $${api.cash()} · local discount 10%` : shut ? `CLOSED · opens ${fmtHour(this.hoursOf(this.shop)[0])} · you have $${api.cash()}` : `You have $${api.cash()}`;
+    for (const it of this.shop.items || SHOP_MENUS[this.shop.kind]) {
+      const lvl = api.strength(), price = it.train ? TRAIN_COST[lvl] : it.go || !it.price ? it.price : Math.max(1, Math.round(it.price * (api.discount?.() || 1)));
       const b = document.createElement('button');
-      const fx = it.train ? (lvl >= 3 ? 'Fully trained' : `Punch power ${lvl} → ${lvl + 1}`) : [it.hp && `+${it.hp} health`, it.energy && `+${it.energy} energy`, it.boost && `${it.boost}s full sprint`, it.rep && `+${it.rep} rep`].filter(Boolean).join(' · ');
+      const fx = it.note ? it.note : it.train ? (lvl >= 3 ? 'Fully trained' : `Punch power ${lvl} → ${lvl + 1}`) : [it.hp && `+${it.hp} health`, it.energy && `+${it.energy} energy`, it.boost && `${it.boost}s full sprint`, it.rep && `+${it.rep} rep`].filter(Boolean).join(' · ');
       b.innerHTML = `<b></b><span></span><i></i>`; b.children[0].textContent = it.name; b.children[1].textContent = price == null ? '' : `$${price}`; b.children[2].textContent = fx;
-      b.disabled = (it.train && lvl >= 3) || api.cash() < (price || 0);
+      b.disabled = shut || (it.train && lvl >= 3) || api.cash() < (price || 0);
       b.onclick = () => this.buy(it, price);
       box.appendChild(b);
     }
@@ -52,6 +60,7 @@ class Shops {
   buy(it, price) {
     const api = this.api; if (api.cash() < price) return;
     api.spend(price); SFX.play('cash');
+    if (it.go) { this.close(); it.go(); return; }
     if (it.hp) api.heal(it.hp); if (it.energy) api.energy(it.energy, it.boost || 0); if (it.rep) api.rep(it.rep); if (it.train) api.train();
     api.say(it.train ? `Good session. Punch power ${api.strength()}.` : `${it.name}: sweet as.`);
     this.render();

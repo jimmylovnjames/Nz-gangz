@@ -1,6 +1,7 @@
 // Entry point: build the world, wire settings, run the frame loop.
 async function boot() {
   const settings = loadSettings();
+  let rainLevel = Number.isInteger(settings.rain) ? clamp(settings.rain, 0, 2) : 1;
   const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance', stencil: false });
   renderer.domElement.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;touch-action:none';
   document.body.prepend(renderer.domElement);
@@ -26,7 +27,14 @@ async function boot() {
   scene.add(camera);
   const sky = new SkySystem(scene, renderer);
   sky.configureShadows(q);
-  let timeName = TIME_PRESETS[settings.time] ? settings.time : 'golden';
+  // The live clock drives the sky (LIVE, the default); picking a sky in the pause menu freezes the time to match.
+  const clock = new WorldClock(), qTime = new URLSearchParams(location.search).get('time');
+  const okMode = m => m === 'live' || !!TIME_PRESETS[m];
+  let clockMode = okMode(qTime) ? qTime : okMode(settings.clock) ? settings.clock : 'live';
+  const fixClock = () => { clock.live = clockMode === 'live'; if (!clock.live) { clock.min = CLOCK_FIXED[clockMode]; clock.snap = true; } };
+  fixClock();
+  const wantSky = () => { if (clockMode !== 'live') return clockMode; const p = clock.preset(); return p === 'day' && rainLevel > 1 ? 'overcast' : p; };
+  let timeName = wantSky();
   sky.apply(timeName, post);
 
   setLoad(0.05, 'Generating surface materials…');
@@ -54,7 +62,6 @@ async function boot() {
   const charMaterial = buildCharacterAtlas();
   const fists = new Fists(charMaterial, camera);
   const rain = new Rain(scene, 2600);
-  let rainLevel = Number.isInteger(settings.rain) ? clamp(settings.rain, 0, 2) : 1;
   rain.set(rainLevel, q, sky.preset.night);
 
   // Night lighting: a small pool of real point lights follows the player between the nearest lamps.
@@ -84,7 +91,7 @@ async function boot() {
   const shortyHome = nearestHome(1180, -300, [cousinHome]);
   const pitaHome = nearestHome(1560, -260, [cousinHome, shortyHome]);
   const phone = new Phone();
-  const world = { scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0, dialogue, prologue, phone, cousinHome, shortyHome, pitaHome, spots: city.spots, places: city.places, city, realDt: 0, trafficCount: tierName === 'low' ? 4 : tierName === 'medium' ? 8 : 12, pedCount: tierName === 'low' ? 3 : tierName === 'medium' ? 5 : 8 };
+  const world = { clock, scene, camera, renderer, collision: city.collision, charMaterial, fists, shake: 0, hurt: 0, dialogue, prologue, phone, cousinHome, shortyHome, pitaHome, spots: city.spots, places: city.places, city, realDt: 0, trafficCount: tierName === 'low' ? 4 : tierName === 'medium' ? 8 : 12, pedCount: tierName === 'low' ? 3 : tierName === 'medium' ? 5 : 8 };
   window.__auDebug = { scene, renderer, camera, post, sky, city, lounge, updateCull, THREE };
   window.__auStory = {
     get active() { return dialogue.active; }, get line() { return dialogue.line; }, get prologue() { return prologue.active; },
@@ -98,12 +105,12 @@ async function boot() {
   // ---- settings panel ---------------------------------------------------------------------
   const mark = () => {
     document.querySelectorAll('[data-gfx]').forEach(b => b.classList.toggle('on', b.dataset.gfx === tierName));
-    document.querySelectorAll('[data-time]').forEach(b => b.classList.toggle('on', b.dataset.time === timeName));
+    document.querySelectorAll('[data-time]').forEach(b => b.classList.toggle('on', b.dataset.time === clockMode));
     document.querySelectorAll('[data-rain]').forEach(b => b.classList.toggle('on', +b.dataset.rain === rainLevel));
     $('fpsToggle').classList.toggle('on', !!settings.fps);
     $('fps').style.display = settings.fps ? 'block' : 'none';
   };
-  const persist = () => { settings.tier = tierName; settings.time = timeName; settings.rain = rainLevel; saveSettings(settings); mark(); };
+  const persist = () => { settings.tier = tierName; settings.time = timeName; settings.clock = clockMode; settings.rain = rainLevel; saveSettings(settings); mark(); };
   document.querySelectorAll('[data-gfx]').forEach(b => b.addEventListener('click', () => {
     tierName = b.dataset.gfx; q = QUALITY[tierName];
     post.configure(q); sky.configureShadows(q); rain.set(rainLevel, q, sky.preset.night);
@@ -111,8 +118,8 @@ async function boot() {
     $('gfxNote').textContent = q.tex !== startTex ? 'Texture detail for this setting applies after you reload the page.' : `Graphics: ${tierName.toUpperCase()}. GPU: ${detected.gpu}`;
     persist();
   }));
-  document.querySelectorAll('[data-time]').forEach(b => b.addEventListener('click', () => { timeName = b.dataset.time; applySky(); loadSkyPhoto(); applyNight(); rain.set(rainLevel, q, sky.preset.night); persist(); }));
-  document.querySelectorAll('[data-rain]').forEach(b => b.addEventListener('click', () => { rainLevel = +b.dataset.rain; rain.set(rainLevel, q, sky.preset.night); persist(); }));
+  document.querySelectorAll('[data-time]').forEach(b => b.addEventListener('click', () => { clockMode = b.dataset.time; fixClock(); switchSky(wantSky()); persist(); }));
+  document.querySelectorAll('[data-rain]').forEach(b => b.addEventListener('click', () => { rainLevel = +b.dataset.rain; rain.set(rainLevel, q, sky.preset.night); if (wantSky() !== timeName) switchSky(wantSky()); persist(); }));
   $('fpsToggle').addEventListener('click', () => { settings.fps = !settings.fps; persist(); });
   $('gfxNote').textContent = `Auto-detected: ${detected.tier.toUpperCase()} (${detected.gpu})`;
   mark();
@@ -147,6 +154,35 @@ async function boot() {
     const want = timeName;
     photo.loadHDRI(p.hdri, p.sunAzim).then(() => { if (timeName === want) applySky(); }).catch(err => console.info('Photo sky unavailable, keeping the generated sky.', err?.message));
   }
+  function switchSky(name) { timeName = name; applySky(); loadSkyPhoto(); applyNight(); rain.set(rainLevel, q, sky.preset.night); }
+  // ---- the live clock: the sky follows the time of day, with a short dip to dark at each change -------
+  const dip = document.createElement('div');
+  dip.style.cssText = 'position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:30;display:flex;align-items:center;justify-content:center;color:#f3d98c;font:800 16px/1 system-ui,sans-serif;letter-spacing:5px';
+  document.body.appendChild(dip);
+  const clockEl = $('clock'), skyLoad = {}; let shownMin = -1, trans = null;
+  // Is this sky's photo ready (or not needed / unavailable)? Starts the download if not.
+  const skyReady = name => {
+    const p = TIME_PRESETS[name]; if (!p.hdri || !photo.enabled || photo.hdri[p.hdri] || skyLoad[p.hdri] === 'failed') return true;
+    if (!skyLoad[p.hdri]) skyLoad[p.hdri] = photo.loadHDRI(p.hdri, p.sunAzim).catch(() => { skyLoad[p.hdri] = 'failed'; });
+    return false;
+  };
+  function clockFrame(dt, realDt) {
+    if (clock.live && !game.isPaused()) clock.tick(dt);
+    const m = Math.floor(clock.min); if (m !== shownMin && clockEl) { shownMin = m; clockEl.textContent = clock.label(); }
+    const want = wantSky();
+    // A jump in time (a night in the cells, a bus ride, a loaded save): straight to the right sky.
+    if (clock.snap) { clock.snap = false; trans = null; dip.style.opacity = '0'; if (want !== timeName) switchSky(want); return; }
+    if (clock.live) { const n = clock.next(); if (n.in < 30) skyReady(n.name === 'day' && rainLevel > 1 ? 'overcast' : n.name); }
+    if (!trans && want !== timeName && skyReady(want)) { trans = { to: want, t: 0 }; dip.textContent = clock.label(); }
+    if (trans) {
+      const T = 1.1; trans.t += Math.min(realDt, 0.25);
+      if (!trans.done && trans.t >= T) { trans.done = true; switchSky(trans.to); }
+      const k = trans.t < T ? trans.t / T : Math.max(0, 2 - trans.t / T);
+      dip.style.opacity = (k * 0.9).toFixed(2);
+      if (trans.t >= 2 * T) { trans = null; dip.style.opacity = '0'; }
+    }
+  }
+  window.__auClock = { get min() { return clock.min; }, get live() { return clock.live; }, get sky() { return timeName; }, set: m => clock.set(m), label: () => clock.label() };
   // Photographic textures and sky stream in after the district is playable.
   photo.loadTextures().then(n => { if (n) console.info(`Photo textures applied: ${n} sets`); });
   loadSkyPhoto();
@@ -166,6 +202,7 @@ async function boot() {
       setLook(false);
       dialogue.setPaused(game.isPaused()); dialogue.update(dt);
       world.realDt = Math.min(elapsed / 1000, 0.5);
+      clockFrame(dt, world.realDt);
       if (!game.isPaused()) phone.update(world.realDt);
       const forward = game.update(dt, now, G.uTime.value);
       updateCull(camera, cullScale());
