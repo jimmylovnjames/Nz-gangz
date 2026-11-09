@@ -141,6 +141,9 @@ Known rough edges:
 - The ground is flat (no terrain heights).
 - House cladding and colours are generated.
 - The skate park layout is generic.
+- Run 23: buses wander the main roads rather than following real route numbers; riding is a fade, not a ride.
+  Trains only stop at Manurewa (the only station in the crop). One street event at a time.
+- Night was retuned in Run 23 (moonlight 0.95, env 1.7, exposure 1.8, sodium-glow horizon) because the old night was near-black. Judged in SwiftShader only; check it on the phone.
 
 ## Next steps the user has discussed
 - Their call on the order:

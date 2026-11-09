@@ -192,7 +192,8 @@ class Transit {
   horn(R, me, k) { const d = R.near ?? Math.hypot(R.cars[0].position.x - me.x, R.cars[0].position.z - me.z); if (d < 600) SFX.play('trainHorn', clamp(1 - d / 600, 0.05, 1) * k); }
   // On the tracks in front of a moving train? (x, z) is you; returns the car that hit you.
   trainHit(x, z) {
-    for (const R of this.trains) { if (R.v < 2 || R.near > 40) continue; for (const g of R.cars) { const fx = Math.sin(g.rotation.y), fz = Math.cos(g.rotation.y), rx = x - g.position.x, rz = z - g.position.z, al = rx * fx + rz * fz, la = rx * fz - rz * fx; if (Math.abs(al) < 12.5 && Math.abs(la) < 1.9) return R; } }
+    if (groundHeight(x, z) > 0.5) return null; // up on the platform: safe behind the yellow line
+    for (const R of this.trains) { if (R.v < 2 || R.near > 40) continue; for (const g of R.cars) { const fx = Math.sin(g.rotation.y), fz = Math.cos(g.rotation.y), rx = x - g.position.x, rz = z - g.position.z, al = rx * fx + rz * fz, la = rx * fz - rz * fx; if (Math.abs(al) < 12.3 && Math.abs(la) < 1.55) return R; } }
     return null;
   }
   obstacles() {

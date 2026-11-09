@@ -296,7 +296,7 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
     await page.evaluate(() => window.__auClock.set(11 * 60));
     await page.evaluate(() => window.__auGame.teleport(-1180, 572)); await page.waitForTimeout(500);
     const bus = await page.evaluate(() => window.__auGame.busHere());
-    await page.evaluate(([x, z]) => window.__auGame.teleport(x, z), [bus.door.x, bus.door.z]); await page.waitForTimeout(400);
+    if (bus) await page.evaluate(([x, z]) => window.__auGame.teleport(x, z), [bus.door.x, bus.door.z]); await page.waitForTimeout(400);
     await page.evaluate(() => window.__auGame.talk()); await page.waitForTimeout(500);
     const stops = await page.evaluate(() => [...document.querySelectorAll('#shopItems button')].map(b => b.textContent));
     const b0 = await state(page), m0 = (await ck()).min, cash0 = b0.cash;
@@ -309,6 +309,7 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
     check('trains run both tracks through Manurewa station', tr.tracks.length === 2 && tr.tracks.every(t => t.station != null) && tr.trains.some(t => t.s > tr0.s + 1), JSON.stringify(tr));
     // A scrap outside the shops: a crowd watches; step in without the standing and one of them turns on you.
     await page.evaluate(() => window.__auClock.set(15 * 60)); await page.evaluate(() => window.__auGame.teleport(-1180, 572)); await page.waitForTimeout(300);
+    const repKeep = await page.evaluate(() => window.__auGame.getRep()); await page.evaluate(() => window.__auGame.setRep(40));
     const sc = await page.evaluate(() => window.__auGame.event('scuffle'));
     let info = await page.evaluate(() => window.__auGame.eventInfo());
     const watchers = info ? info.actors.filter(a => a.role === 'watch').length : 0, f0 = info && info.actors.find(a => a.role === 'fighter');
@@ -324,7 +325,7 @@ async function walkTo(page, x, z) { await page.evaluate(([x, z]) => window.__auG
     }
     const st1 = await page.evaluate(() => window.__auGame.standing());
     check('putting him down: Clendon Park fears you a bit more', (st1.clendon?.f || 0) > fear0 && (await page.evaluate(() => window.__auGame.eventInfo()))?.hostiles === 0, JSON.stringify({ fear0, st1 }));
-    await page.evaluate(() => { const g = window.__auGame; g.endEvent(); g.clearHeat(); g.setHp(60); });
+    await page.evaluate(r => { const g = window.__auGame; g.endEvent(); g.clearHeat(); g.setHp(60); g.setRep(r); }, repKeep);
     // A sausage sizzle outside the supermarket: buy a feed.
     await page.evaluate(() => window.__auClock.set(11 * 60)); await page.evaluate(() => window.__auGame.teleport(1300, -505)); await page.waitForTimeout(300);
     const sz = await page.evaluate(() => window.__auGame.event('sizzle'));

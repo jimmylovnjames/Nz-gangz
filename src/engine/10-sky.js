@@ -26,11 +26,13 @@ const TIME_PRESETS = {
     shadowTint: [-0.006, 0.0, 0.012], highTint: [0.008, 0.004, -0.006],
     hdri: 'kloofendal_48d_partly_cloudy_puresky_1k.hdr', hdriSun: 2.5, hdriExposure: 0.56, hdriEnv: 1.9, bgIntensity: 1.0, hdriFog: 0.0009, hdriContrast: 1.1, hdriSat: 1.05,
   },
+  // Moonlit, with the orange glow of Auckland on the horizon: dark, but you can see the street (Run 23: the
+  // live clock makes night a third of play, and the old near-black night was unplayable on a phone).
   night: {
-    sunElev: 34, sunAzim: 60, sunColor: lin(0x9fb4e6), sunIntensity: 0.16,
-    zenith: lin(0x02040a), horizon: lin(0x2a2120), horizon2: lin(0x14151c), ground: lin(0x070707), cloudLit: lin(0x2a2526), cloudShade: lin(0x0b0b10),
-    cover: 0.6, fog: lin(0x17161a), fogSun: lin(0x1c1c24), fogDensity: 0.003, fogFalloff: 0.03,
-    exposure: 1.2, env: 0.35, night: 1, litFrac: 0.42, sat: 1.05, contrast: 1.08, tone: 0,
+    sunElev: 34, sunAzim: 60, sunColor: lin(0x9fb4e6), sunIntensity: 0.95,
+    zenith: lin(0x0e1a32), horizon: lin(0x5a4436), horizon2: lin(0x232838), ground: lin(0x1a1a1a), cloudLit: lin(0x2a2526), cloudShade: lin(0x0b0b10),
+    cover: 0.6, fog: lin(0x262a36), fogSun: lin(0x1c1c24), fogDensity: 0.002, fogFalloff: 0.03,
+    exposure: 1.8, env: 1.7, night: 1, litFrac: 0.42, sat: 1.05, contrast: 1.08, tone: 0,
     shadowTint: [-0.006, 0.0, 0.014], highTint: [0.012, 0.004, -0.01],
   },
 };

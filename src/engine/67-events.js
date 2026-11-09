@@ -141,11 +141,13 @@ class StreetEvents {
   start_pullover(E, me, yaw, force) {
     const T = this.ctx.traffic, nodes = T.nodes; let pick = null;
     const close = []; for (let i = 0; i < nodes.length; i++) { const n = nodes[i], d = Math.hypot(n.x - me.x, n.z - me.z); if (d > 20 && d < 160) close.push(i); }
-    for (let k = 0; k < 160 && !pick && close.length; k++) { const i = close[Math.floor(Math.random() * close.length)], n = nodes[i]; const e = n.nb.find(e => e.vmax <= 13 && e.vmax >= 9); if (!e) continue; const m = nodes[e.to], L = Math.hypot(m.x - n.x, m.z - n.z); if (L < 30) continue; const cx = (n.x + m.x) / 2, cz = (n.z + m.z) / 2; if (force ? Math.hypot(cx - me.x, cz - me.z) > 25 && Math.hypot(cx - me.x, cz - me.z) < 90 : this.okSpot(cx, cz, me, yaw)) pick = { n, m, e }; }
+    for (let k = 0; k < 160 && !pick && close.length; k++) { const i = close[Math.floor(Math.random() * close.length)], n = nodes[i]; const e = n.nb.find(e => e.vmax <= 13 && e.vmax >= 9); if (!e) continue; const m = nodes[e.to], L = Math.hypot(m.x - n.x, m.z - n.z); if (L < 30) continue; const ux = (m.x - n.x) / L, uz = (m.z - n.z) / L, lane = e.lane + 1.1, cx = (n.x + m.x) / 2 + uz * lane, cz = (n.z + m.z) / 2 - ux * lane;
+      // Room at the kerb for both cars and the constable.
+      if (this.ctx.collides(cx, cz, 1.0) || this.ctx.collides(cx - ux * 7, cz - uz * 7, 1.0) || this.ctx.collides(cx + ux * 0.4 - uz * 1.45, cz + uz * 0.4 + ux * 1.45, 0.35)) continue;
+      if (force ? Math.hypot(cx - me.x, cz - me.z) > 25 && Math.hypot(cx - me.x, cz - me.z) < 120 : this.okSpot(cx, cz, me, yaw)) pick = { n, m, e }; }
     if (!pick) return false;
     const { n, m, e } = pick, L = Math.hypot(m.x - n.x, m.z - n.z), ux = (m.x - n.x) / L, uz = (m.z - n.z) / L, h = Math.atan2(ux, uz), lane = e.lane + 1.1;
     const cx = (n.x + m.x) / 2 + uz * lane, cz = (n.z + m.z) / 2 - ux * lane;
-    if (this.ctx.collides(cx, cz, 1.0)) return false;
     E.x = cx; E.z = cz;
     const car = this.car(Math.floor(Math.random() * 3), [0x8a1414, 0x15171a, 0xb8bcc0, 0x1f3f78][Math.floor(Math.random() * 4)]); if (!car) return false;
     car.position.set(cx, groundHeight(cx, cz) * 0.2, cz); car.rotation.y = h; E.props.push(car);
@@ -176,7 +178,9 @@ class StreetEvents {
   // ---- two locals scrapping ----------------------------------------------------------------------------------------
   start_scuffle(E, me, yaw, force) {
     const sp = this.ctx.spots().filter(s => s.kind === 'chat' && !s.yard && (force ? Math.hypot(s.x - me.x, s.z - me.z) < 70 && Math.hypot(s.x - me.x, s.z - me.z) > 8 : this.okSpot(s.x, s.z, me, yaw, 45, 130)) && !s.agents.length).sort(() => Math.random() - 0.5)[0];
-    let x, z; if (sp) { x = sp.x; z = sp.z; } else if (force) { x = me.x + 7; z = me.z + 3; } else return false;
+    let x, z; if (sp) { x = sp.x; z = sp.z; }
+    else if (force) { for (let k = 0; k < 48 && x == null; k++) { const a = k * 2.4, r = 7 + (k % 4) * 2, px = me.x + Math.sin(a) * r, pz = me.z + Math.cos(a) * r; if (!this.ctx.collides(px, pz, 1.3) && !isCarriageway(px, pz)) { x = px; z = pz; } } if (x == null) return false; }
+    else return false;
     if (this.ctx.collides(x, z, 1.2)) return false;
     E.x = x; E.z = z;
     const [A, B] = this.take(2); if (!B) return false;

@@ -1519,6 +1519,8 @@ function createGame(world) {
     eventInfo: () => { const E = events.active; return E ? { kind: E.kind, state: E.state, x: E.x, z: E.z, t: E.t, actors: E.actors.filter(a => a.p.visible).map(a => ({ role: a.role, x: a.p.position.x, z: a.p.position.z, down: !!a.down, act: a.h.act, st: !!a.st })), hostiles: events.hostiles.length } : null; },
     endEvent: () => events.end(),
     saveNow: () => store(),
+    setRep: n => { rep = n; updateHUD(); },
+    getRep: () => rep,
     transit: () => ({ buses: transit.buses.map(B => ({ x: B.x, z: B.z, h: B.h, state: B.state, v: B.v, dest: B.dest })), trains: transit.trains.map(R => ({ s: R.s, v: R.v, state: R.state, near: R.near, track: transit.tracks.indexOf(R.T) })), tracks: transit.tracks.map(T => ({ L: T.L, station: T.station })) }),
     busHere: () => { const S = transit.nearestStop(eye.position.x, eye.position.z); const B = transit.busAt(S); if (!B) return null; for (let i = 0; i < 3; i++) transit.busFrame(B, 0.05, eye.position, eye.position); const d = transit.door(B); return { x: B.x, z: B.z, h: B.h, door: d, stop: { x: S.x, z: S.z } }; },
     trainNow: (i = 0, stopped = false) => { const R = transit.trainNow(i, stopped); return R ? { s: R.s, station: R.T.station, platform: R.T.platform ? { x: R.T.platform.x, z: R.T.platform.z } : null } : null; },

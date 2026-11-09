@@ -508,11 +508,13 @@ const TIME_PRESETS = {
     shadowTint: [-0.006, 0.0, 0.012], highTint: [0.008, 0.004, -0.006],
     hdri: 'kloofendal_48d_partly_cloudy_puresky_1k.hdr', hdriSun: 2.5, hdriExposure: 0.56, hdriEnv: 1.9, bgIntensity: 1.0, hdriFog: 0.0009, hdriContrast: 1.1, hdriSat: 1.05,
   },
+  // Moonlit, with the orange glow of Auckland on the horizon: dark, but you can see the street (Run 23: the
+  // live clock makes night a third of play, and the old near-black night was unplayable on a phone).
   night: {
-    sunElev: 34, sunAzim: 60, sunColor: lin(0x9fb4e6), sunIntensity: 0.16,
-    zenith: lin(0x02040a), horizon: lin(0x2a2120), horizon2: lin(0x14151c), ground: lin(0x070707), cloudLit: lin(0x2a2526), cloudShade: lin(0x0b0b10),
-    cover: 0.6, fog: lin(0x17161a), fogSun: lin(0x1c1c24), fogDensity: 0.003, fogFalloff: 0.03,
-    exposure: 1.2, env: 0.35, night: 1, litFrac: 0.42, sat: 1.05, contrast: 1.08, tone: 0,
+    sunElev: 34, sunAzim: 60, sunColor: lin(0x9fb4e6), sunIntensity: 0.95,
+    zenith: lin(0x0e1a32), horizon: lin(0x5a4436), horizon2: lin(0x232838), ground: lin(0x1a1a1a), cloudLit: lin(0x2a2526), cloudShade: lin(0x0b0b10),
+    cover: 0.6, fog: lin(0x262a36), fogSun: lin(0x1c1c24), fogDensity: 0.002, fogFalloff: 0.03,
+    exposure: 1.8, env: 1.7, night: 1, litFrac: 0.42, sat: 1.05, contrast: 1.08, tone: 0,
     shadowTint: [-0.006, 0.0, 0.014], highTint: [0.012, 0.004, -0.01],
   },
 };
@@ -6216,6 +6218,8 @@ function createGame(world) {
     eventInfo: () => { const E = events.active; return E ? { kind: E.kind, state: E.state, x: E.x, z: E.z, t: E.t, actors: E.actors.filter(a => a.p.visible).map(a => ({ role: a.role, x: a.p.position.x, z: a.p.position.z, down: !!a.down, act: a.h.act, st: !!a.st })), hostiles: events.hostiles.length } : null; },
     endEvent: () => events.end(),
     saveNow: () => store(),
+    setRep: n => { rep = n; updateHUD(); },
+    getRep: () => rep,
     transit: () => ({ buses: transit.buses.map(B => ({ x: B.x, z: B.z, h: B.h, state: B.state, v: B.v, dest: B.dest })), trains: transit.trains.map(R => ({ s: R.s, v: R.v, state: R.state, near: R.near, track: transit.tracks.indexOf(R.T) })), tracks: transit.tracks.map(T => ({ L: T.L, station: T.station })) }),
     busHere: () => { const S = transit.nearestStop(eye.position.x, eye.position.z); const B = transit.busAt(S); if (!B) return null; for (let i = 0; i < 3; i++) transit.busFrame(B, 0.05, eye.position, eye.position); const d = transit.door(B); return { x: B.x, z: B.z, h: B.h, door: d, stop: { x: S.x, z: S.z } }; },
     trainNow: (i = 0, stopped = false) => { const R = transit.trainNow(i, stopped); return R ? { s: R.s, station: R.T.station, platform: R.T.platform ? { x: R.T.platform.x, z: R.T.platform.z } : null } : null; },
@@ -7504,7 +7508,8 @@ class Transit {
   horn(R, me, k) { const d = R.near ?? Math.hypot(R.cars[0].position.x - me.x, R.cars[0].position.z - me.z); if (d < 600) SFX.play('trainHorn', clamp(1 - d / 600, 0.05, 1) * k); }
   // On the tracks in front of a moving train? (x, z) is you; returns the car that hit you.
   trainHit(x, z) {
-    for (const R of this.trains) { if (R.v < 2 || R.near > 40) continue; for (const g of R.cars) { const fx = Math.sin(g.rotation.y), fz = Math.cos(g.rotation.y), rx = x - g.position.x, rz = z - g.position.z, al = rx * fx + rz * fz, la = rx * fz - rz * fx; if (Math.abs(al) < 12.5 && Math.abs(la) < 1.9) return R; } }
+    if (groundHeight(x, z) > 0.5) return null; // up on the platform: safe behind the yellow line
+    for (const R of this.trains) { if (R.v < 2 || R.near > 40) continue; for (const g of R.cars) { const fx = Math.sin(g.rotation.y), fz = Math.cos(g.rotation.y), rx = x - g.position.x, rz = z - g.position.z, al = rx * fx + rz * fz, la = rx * fz - rz * fx; if (Math.abs(al) < 12.3 && Math.abs(la) < 1.55) return R; } }
     return null;
   }
   obstacles() {
@@ -7684,11 +7689,13 @@ class StreetEvents {
   start_pullover(E, me, yaw, force) {
     const T = this.ctx.traffic, nodes = T.nodes; let pick = null;
     const close = []; for (let i = 0; i < nodes.length; i++) { const n = nodes[i], d = Math.hypot(n.x - me.x, n.z - me.z); if (d > 20 && d < 160) close.push(i); }
-    for (let k = 0; k < 160 && !pick && close.length; k++) { const i = close[Math.floor(Math.random() * close.length)], n = nodes[i]; const e = n.nb.find(e => e.vmax <= 13 && e.vmax >= 9); if (!e) continue; const m = nodes[e.to], L = Math.hypot(m.x - n.x, m.z - n.z); if (L < 30) continue; const cx = (n.x + m.x) / 2, cz = (n.z + m.z) / 2; if (force ? Math.hypot(cx - me.x, cz - me.z) > 25 && Math.hypot(cx - me.x, cz - me.z) < 90 : this.okSpot(cx, cz, me, yaw)) pick = { n, m, e }; }
+    for (let k = 0; k < 160 && !pick && close.length; k++) { const i = close[Math.floor(Math.random() * close.length)], n = nodes[i]; const e = n.nb.find(e => e.vmax <= 13 && e.vmax >= 9); if (!e) continue; const m = nodes[e.to], L = Math.hypot(m.x - n.x, m.z - n.z); if (L < 30) continue; const ux = (m.x - n.x) / L, uz = (m.z - n.z) / L, lane = e.lane + 1.1, cx = (n.x + m.x) / 2 + uz * lane, cz = (n.z + m.z) / 2 - ux * lane;
+      // Room at the kerb for both cars and the constable.
+      if (this.ctx.collides(cx, cz, 1.0) || this.ctx.collides(cx - ux * 7, cz - uz * 7, 1.0) || this.ctx.collides(cx + ux * 0.4 - uz * 1.45, cz + uz * 0.4 + ux * 1.45, 0.35)) continue;
+      if (force ? Math.hypot(cx - me.x, cz - me.z) > 25 && Math.hypot(cx - me.x, cz - me.z) < 120 : this.okSpot(cx, cz, me, yaw)) pick = { n, m, e }; }
     if (!pick) return false;
     const { n, m, e } = pick, L = Math.hypot(m.x - n.x, m.z - n.z), ux = (m.x - n.x) / L, uz = (m.z - n.z) / L, h = Math.atan2(ux, uz), lane = e.lane + 1.1;
     const cx = (n.x + m.x) / 2 + uz * lane, cz = (n.z + m.z) / 2 - ux * lane;
-    if (this.ctx.collides(cx, cz, 1.0)) return false;
     E.x = cx; E.z = cz;
     const car = this.car(Math.floor(Math.random() * 3), [0x8a1414, 0x15171a, 0xb8bcc0, 0x1f3f78][Math.floor(Math.random() * 4)]); if (!car) return false;
     car.position.set(cx, groundHeight(cx, cz) * 0.2, cz); car.rotation.y = h; E.props.push(car);
@@ -7719,7 +7726,9 @@ class StreetEvents {
   // ---- two locals scrapping ----------------------------------------------------------------------------------------
   start_scuffle(E, me, yaw, force) {
     const sp = this.ctx.spots().filter(s => s.kind === 'chat' && !s.yard && (force ? Math.hypot(s.x - me.x, s.z - me.z) < 70 && Math.hypot(s.x - me.x, s.z - me.z) > 8 : this.okSpot(s.x, s.z, me, yaw, 45, 130)) && !s.agents.length).sort(() => Math.random() - 0.5)[0];
-    let x, z; if (sp) { x = sp.x; z = sp.z; } else if (force) { x = me.x + 7; z = me.z + 3; } else return false;
+    let x, z; if (sp) { x = sp.x; z = sp.z; }
+    else if (force) { for (let k = 0; k < 48 && x == null; k++) { const a = k * 2.4, r = 7 + (k % 4) * 2, px = me.x + Math.sin(a) * r, pz = me.z + Math.cos(a) * r; if (!this.ctx.collides(px, pz, 1.3) && !isCarriageway(px, pz)) { x = px; z = pz; } } if (x == null) return false; }
+    else return false;
     if (this.ctx.collides(x, z, 1.2)) return false;
     E.x = x; E.z = z;
     const [A, B] = this.take(2); if (!B) return false;
