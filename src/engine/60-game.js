@@ -1516,7 +1516,7 @@ function createGame(world) {
     block: on => { move.block = !!on; },
     ambient: () => ({ active: ambient.agents.filter(a => a.spot && a.p.visible).length, kids: ambient.agents.filter(a => a.spot && a.kid).length, watching: ambient.agents.filter(a => a.watch).length + peds.agents.filter(a => a.watching).length, dogs: ambient.dogs.filter(d => d.home).length, van: !!(ambient.van && ambient.van.on), moments: ambient.agents.filter(a => a.spot && a.moment).length }),
     event: k => { const E = events.start(k, eye.position, yaw, true); return E ? { kind: E.kind, x: E.x, z: E.z } : null; },
-    eventInfo: () => { const E = events.active; return E ? { kind: E.kind, state: E.state, x: E.x, z: E.z, t: E.t, actors: E.actors.filter(a => a.p.visible).map(a => ({ role: a.role, x: a.p.position.x, z: a.p.position.z, down: !!a.down, act: a.h.act, st: !!a.st })), hostiles: events.hostiles.length } : null; },
+    eventInfo: () => { const E = events.active; return E ? { kind: E.kind, state: E.state, x: E.x, z: E.z, t: E.t, face: E.face ?? null, actors: E.actors.filter(a => a.p.visible).map(a => ({ role: a.role, x: a.p.position.x, z: a.p.position.z, down: !!a.down, act: a.h.act, st: !!a.st })), hostiles: events.hostiles.length } : null; },
     endEvent: () => events.end(),
     saveNow: () => store(),
     setRep: n => { rep = n; updateHUD(); },

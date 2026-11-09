@@ -84,7 +84,7 @@ class StreetEvents {
   start_party(E, me, yaw, force) {
     const hs = this.ctx.houses.filter(h => force ? Math.hypot(h.pos.x - me.x, h.pos.z - me.z) < 130 && Math.hypot(h.pos.x - me.x, h.pos.z - me.z) > 15 : this.okSpot(h.pos.x, h.pos.z, me, yaw)).sort(() => Math.random() - 0.5)[0]; if (!hs) return false;
     const nx = Math.sin(hs.rot), nz = Math.cos(hs.rot), tx = Math.cos(hs.rot), tz = -Math.sin(hs.rot);
-    E.x = hs.pos.x; E.z = hs.pos.z; E.house = hs;
+    E.x = hs.pos.x; E.z = hs.pos.z; E.house = hs; E.face = hs.rot;
     const cast = this.take(5); if (cast.length < 3) return false;
     cast.forEach((a, i) => { const ang = i / cast.length * TAU, px = E.x + nx * 0.6 + Math.sin(ang) * 1.4, pz = E.z + nz * 0.6 + Math.cos(ang) * 1.4; this.put(a, px, pz, Math.atan2(E.x - px, E.z - pz)); a.h.act = i === 0 ? 'talk' : i % 2 ? 'cheer' : 'listen'; a.role = 'guest'; E.actors.push(a); });
     cast[0].talk = 'party'; this.marker(cast[0]);
